@@ -19,7 +19,6 @@ using System.Globalization;
 using System.IO;
 using Microsoft.Win32;
 using static Crayon.Output;
-using Markdig;
 using Microsoft.PowerShell.MarkdownRender;
 
 namespace ChatGptApiClientV2
@@ -83,13 +82,7 @@ namespace ChatGptApiClientV2
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-
-                var pipeline = new MarkdownPipelineBuilder()
-                    .UseAdvancedExtensions()
-
-                    .Build();
-                var normalized_markdown = Markdig.Markdown.Normalize(Content, null, pipeline);
-                var document = MarkdownConverter.Convert(normalized_markdown, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
+                var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
                 Console.WriteLine(document.VT100EncodedString);
             }
         }
