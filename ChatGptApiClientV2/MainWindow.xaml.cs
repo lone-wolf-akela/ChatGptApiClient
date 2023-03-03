@@ -130,7 +130,7 @@ namespace ChatGptApiClientV2
             if (current_session_record is null)
             {
                 string prompt = ((cbx_initial.SelectedItem as ComboBoxItem).Content as TextBlock).Text;
-                prompt = prompt.Replace("{DateTime}", DateTime.Now.ToString("D", CultureInfo.GetCultureInfo("en-US")));
+                prompt = prompt.Replace("{DateTime}", DateTime.Now.ToString("F", CultureInfo.GetCultureInfo("en-US")));
                 var record = new ChatRecord(ChatRecord.ChatType.System, prompt);
                 current_session_record = new ChatRecordList(record);
                 record.Display();
