@@ -1,0 +1,27 @@
+﻿<Window x:Class="ChatGptApiClientV2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatGptApiClientV2"
+        mc:Ignorable="d"
+        Title="ChatGPT" Height="495" Width="800" Loaded="Window_Loaded">
+    <Grid Margin="0,0,0,13">
+        <TextBox x:Name="txtbx_input" HorizontalAlignment="Center" Margin="0,164,0,0" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" Width="656" Height="168" VerticalAlignment="Top" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True"/>
+        <Label Content="API KEY" HorizontalAlignment="Left" Margin="71,27,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.502,0.644"/>
+        <TextBox x:Name="txtbx_apikey" HorizontalAlignment="Left" Margin="176,31,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="544" RenderTransformOrigin="0.536,0.584" Height="21" TextChanged="txtbx_apikey_TextChanged"/>
+        <Button Content="发送" HorizontalAlignment="Left" Margin="554,0,0,29" Width="174" Height="48" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <Label Content="Initial Prompt" HorizontalAlignment="Left" Margin="71,75,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.137,0.525"/>
+        <ComboBox x:Name="cbx_initial" HorizontalAlignment="Left" Margin="176,75,0,0" VerticalAlignment="Top" Width="544" Height="46" MaxDropDownHeight="285" SelectedIndex="0">
+            <ComboBoxItem>
+                <TextBlock TextWrapping="Wrap" Text="You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}" Width="450" />
+            </ComboBoxItem>
+        </ComboBox>
+        <Slider x:Name="slid_temp" HorizontalAlignment="Left" Margin="176,132,0,0" VerticalAlignment="Top" Width="231" Maximum="2" LargeChange="0.5" Value="1" ValueChanged="Slider_ValueChanged"/>
+        <Label Content="Temperature" HorizontalAlignment="Left" Margin="71,128,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txt_temp" HorizontalAlignment="Left" Margin="422,133,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="120" TextChanged="TextBox_TextChanged" InputScope="Number"/>
+        <Button Content="保存" HorizontalAlignment="Left" Margin="71,0,0,29" Width="174" Height="48" VerticalAlignment="Bottom" Click="Button_Click_1"/>
+        <Button Content="载入" HorizontalAlignment="Left" Margin="292,0,0,29" Width="174" Height="48" VerticalAlignment="Bottom" Click="Button_Click_2"/>
+
+    </Grid>
+</Window>
