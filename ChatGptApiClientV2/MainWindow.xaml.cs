@@ -208,12 +208,11 @@ namespace ChatGptApiClientV2
             }
             public void UseDefaultPromptList()
             {
-                _promptsOptions = new ObservableCollection<ChatRecordList>()
-                {
-                    new()
-                };
-                _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
-                _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the user is Bob. And the name of the assistant is Alice. Session starts at: {DateTime}"));
+                _promptsOptions = new ObservableCollection<ChatRecordList>();
+                _promptsOptions.Add(new());
+                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
+                _promptsOptions.Add(new());
+                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the user is Bob. And the name of the assistant is Alice. Session starts at: {DateTime}"));
             }
         }
         private InitialPrompts? initial_prompts;
