@@ -68,7 +68,7 @@ namespace ChatGptApiClientV2
                 var content = jobj["content"]?.ToString();
                 return new ChatRecord(type, content ?? "[Error: Empty Content]");
             }
-            public void Display()
+            public void Display(bool useMarkdown)
             {
                 switch (Type)
                 {
@@ -85,8 +85,17 @@ namespace ChatGptApiClientV2
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
-                Console.Write(document.VT100EncodedString);
+                string msg_to_display;
+                if (useMarkdown)
+                {
+                    var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
+                    msg_to_display = document.VT100EncodedString;
+                }
+                else
+                {
+                    msg_to_display = $"{Content}\n";
+                }
+                Console.Write(msg_to_display);
             }
         }
         class ChatRecordList
@@ -154,10 +163,25 @@ namespace ChatGptApiClientV2
                     SaveConfig();
                 }
             }
+            private bool _enableMarkdown;
+            public bool EnableMarkdown
+            {
+                get { return _enableMarkdown; }
+                set
+                {
+                    _enableMarkdown = value;
+                    if (PropertyChanged is not null)
+                    {
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(EnableMarkdown)));
+                    }
+                    SaveConfig();
+                }
+            }
             public Config()
             {
                 _api_key = "";
                 _temperature = 1.0;
+                _enableMarkdown = false;
             }
             private void SaveConfig()
             {
@@ -180,7 +204,7 @@ namespace ChatGptApiClientV2
             Console.WriteLine(new string('=', Console.WindowWidth));
             foreach (var record in current_session_record.ChatRecords)
             {
-                record.Display();
+                record.Display(config.EnableMarkdown);
             }
         }
         private async void Button_Click(object sender, RoutedEventArgs e)
@@ -190,7 +214,7 @@ namespace ChatGptApiClientV2
                 ResetSession();
             }
             var new_user_input = new ChatRecord(ChatRecord.ChatType.User, txtbx_input.Text);
-            new_user_input.Display();
+            new_user_input.Display(config.EnableMarkdown);
             current_session_record!.ChatRecords.Add(new_user_input);
 
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
@@ -214,7 +238,7 @@ namespace ChatGptApiClientV2
             if (bot_response is JObject response_obj)
             {
                 var bot_response_record = ChatRecord.FromJson(response_obj);
-                bot_response_record.Display();
+                bot_response_record.Display(config.EnableMarkdown);
                 current_session_record.ChatRecords.Add(bot_response_record);
             }
             else
