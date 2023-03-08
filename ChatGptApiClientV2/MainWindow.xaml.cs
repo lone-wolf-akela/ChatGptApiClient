@@ -22,6 +22,8 @@ using static Crayon.Output;
 using Microsoft.PowerShell.MarkdownRender;
 using System.Windows.Resources;
 using System.ComponentModel;
+using System.Security.Cryptography;
+using System.Collections.ObjectModel;
 
 namespace ChatGptApiClientV2
 {
@@ -69,45 +71,78 @@ namespace ChatGptApiClientV2
                 var content = jobj["content"]?.ToString();
                 return new ChatRecord(type, content ?? "[Error: Empty Content]");
             }
-            public void Display(bool useMarkdown)
+            public string ToString(bool useMarkdown, bool advancedFormat = true)
             {
-                switch (Type)
+                if (useMarkdown && !advancedFormat)
                 {
-                    case ChatType.User:
-                        Console.WriteLine(new string('-', Console.WindowWidth));
-                        Console.WriteLine(Bold().Green("用户："));
-                        break;
-                    case ChatType.Bot:
-                        Console.WriteLine(Bold().Yellow("助手："));
-                        break;
-                    case ChatType.System:
-                        Console.WriteLine(Bold().Blue("系统："));
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    throw new ArgumentException("Markdown is not supported in simple format.");
                 }
-                string msg_to_display;
-                if (useMarkdown)
+                StringBuilder sb = new StringBuilder();
+                if (advancedFormat)
                 {
-                    var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
-                    msg_to_display = document.VT100EncodedString;
+                    switch (Type)
+                    {
+                        case ChatType.User:
+                            sb.AppendLine(new string('-', Console.WindowWidth));
+                            sb.AppendLine(Bold().Green("用户："));
+                            break;
+                        case ChatType.Bot:
+                            sb.AppendLine(Bold().Yellow("助手："));
+                            break;
+                        case ChatType.System:
+                            sb.AppendLine(Bold().Blue("系统："));
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
                 else
                 {
-                    msg_to_display = $"{Content}\n";
+                    switch (Type)
+                    {
+                        case ChatType.User:
+                            sb.AppendLine("用户：");
+                            break;
+                        case ChatType.Bot:
+                            sb.AppendLine("助手：");
+                            break;
+                        case ChatType.System:
+                            sb.AppendLine("系统：");
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
-                Console.Write(msg_to_display);
+                if (useMarkdown)
+                {
+                    var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
+                    sb.Append(document.VT100EncodedString);
+                }
+                else
+                {
+                    sb.AppendLine(Content);
+                }
+                return sb.ToString();
+            }
+            public void Display(bool useMarkdown)
+            {
+                Console.Write(this.ToString(useMarkdown));
             }
         }
         class ChatRecordList
         {
             public List<ChatRecord> ChatRecords { get; set; }
-            public ChatRecordList(ChatRecord initial_prompt)
+            public ChatRecordList(ChatRecordList? initial_prompt=null)
             {
-                ChatRecords = new List<ChatRecord>
+                ChatRecords = new();
+                if (initial_prompt is not null)
                 {
-                    initial_prompt
-                };
+                    foreach (var record in initial_prompt.ChatRecords)
+                    {
+                        string prompt = record.Content.Replace("{DateTime}", DateTime.Now.ToString("F", CultureInfo.GetCultureInfo("en-US")));
+                        ChatRecords.Add(new(record.Type, prompt));
+                    }
+                }
             }
             public JArray ToJson()
             {
@@ -118,7 +153,63 @@ namespace ChatGptApiClientV2
                 }
                 return jarray;
             }
+            public string Text
+            {
+                get
+                {
+                    var sb = new StringBuilder();
+                    foreach (var record in ChatRecords)
+                    {
+                        sb.Append(record.ToString(false, false));
+                    }
+                    return sb.ToString();
+                }
+            }
         }
+
+        class InitialPrompts : INotifyPropertyChanged
+        {
+            public event PropertyChangedEventHandler? PropertyChanged;
+
+            private ObservableCollection<ChatRecordList> _promptsOptions;
+            public ObservableCollection<ChatRecordList> PromptsOptions 
+            { 
+                get { return _promptsOptions; }
+                set
+                {
+                    _promptsOptions = value;
+                    if (PropertyChanged is not null)
+                    {
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(PromptsOptions)));
+                    }
+                }
+            }
+            private ChatRecordList? _selectedOption;
+            public ChatRecordList? SelectedOption
+            {
+                get { return _selectedOption; }
+                set
+                {
+                    _selectedOption = value;
+                    if (PropertyChanged is not null)
+                    {
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedOption)));
+                    }
+                }
+            }
+            public InitialPrompts(bool useDefault = false)
+            {
+                _promptsOptions = new ObservableCollection<ChatRecordList>()
+                {
+                    new()
+                };
+                if (useDefault)
+                {
+                    _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
+                }
+            }
+        }
+        private InitialPrompts? initial_prompts;
 
         public MainWindow()
         {
@@ -197,15 +288,9 @@ namespace ChatGptApiClientV2
         private bool first_input = true;
         private void ResetSession(ChatRecordList? loaded_session = null)
         {
-            Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal
+            Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal, until https://github.com/dotnet/runtime/issues/28355 get fixed
             Console.Clear();
-            if (loaded_session is null)
-            {
-                string prompt = ((TextBlock)((ComboBoxItem)cbx_initial.SelectedItem).Content).Text;
-                prompt = prompt.Replace("{DateTime}", DateTime.Now.ToString("F", CultureInfo.GetCultureInfo("en-US")));
-                var record = new ChatRecord(ChatRecord.ChatType.System, prompt);
-                loaded_session = new ChatRecordList(record);
-            }
+            loaded_session ??= new ChatRecordList(initial_prompts?.SelectedOption);
             current_session_record = loaded_session;
             Console.WriteLine(new string('=', Console.WindowWidth));
             foreach (var record in current_session_record.ChatRecords)
@@ -276,6 +361,23 @@ namespace ChatGptApiClientV2
                     this.DataContext = config;
                 }
             }
+
+            if (File.Exists("initial_prompts.json"))
+            {
+                string saved_prompts = File.ReadAllText("initial_prompts.json");
+                var parsed_prompts = JsonConvert.DeserializeObject<InitialPrompts>(saved_prompts);
+                if (parsed_prompts is not null)
+                {
+                    initial_prompts = parsed_prompts;
+                }
+            }
+            if (initial_prompts is null || !initial_prompts.PromptsOptions.Any())
+            {
+                initial_prompts = new(useDefault:true);
+                File.WriteAllText("initial_prompts.json", JsonConvert.SerializeObject(initial_prompts));
+            }
+            initial_prompts.SelectedOption = initial_prompts.PromptsOptions[0];
+            cbx_initial.DataContext = initial_prompts;
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)

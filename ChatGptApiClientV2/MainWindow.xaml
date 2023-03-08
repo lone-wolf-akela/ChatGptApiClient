@@ -27,10 +27,12 @@
             <Label Content="API KEY" VerticalAlignment="Center"/>
             <TextBox x:Name="txtbx_apikey" TextWrapping="Wrap" Text="{Binding Path=API_KEY, Mode=TwoWay}" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center"/>
             <Label Content="Initial Prompt" Grid.Row="1" VerticalAlignment="Center"/>
-            <ComboBox x:Name="cbx_initial" MaxDropDownHeight="285" SelectedIndex="0" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2">
-                <ComboBoxItem>
-                    <TextBlock TextWrapping="Wrap" Text="You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}" Width="450" />
-                </ComboBoxItem>
+            <ComboBox x:Name="cbx_initial" MaxDropDownHeight="285" SelectedIndex="0" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" ItemsSource="{Binding PromptsOptions}" SelectedItem="{Binding SelectedOption}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock TextWrapping="Wrap" Width="450" Text="{Binding Text}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
             </ComboBox>
             <Label Content="Temperature" Grid.Row="2" VerticalAlignment="Center"/>
             <Slider x:Name="slid_temp"  Maximum="2" LargeChange="0.1" Value="{Binding Path=Temperature, Mode=TwoWay}" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,10,0"/>
