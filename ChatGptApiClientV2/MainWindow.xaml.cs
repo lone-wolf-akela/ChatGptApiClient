@@ -13,8 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Net.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Globalization;
 using System.IO;
 using Microsoft.Win32;
@@ -24,6 +24,7 @@ using System.Windows.Resources;
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Collections.ObjectModel;
+using System.Text.Json.Nodes;
 
 namespace ChatGptApiClientV2
 {
@@ -50,9 +51,9 @@ namespace ChatGptApiClientV2
                 Type = type;
                 Content = content;
             }
-            public JObject ToJson()
+            public JsonObject ToJson()
             {
-                var jobj = new JObject
+                var jobj = new JsonObject
                 {
                     ["role"] =
                         Type == ChatType.User ? "user" :
@@ -62,7 +63,7 @@ namespace ChatGptApiClientV2
                 };
                 return jobj;
             }
-            public static ChatRecord FromJson(JObject jobj)
+            public static ChatRecord FromJson(JsonObject jobj)
             {
                 var type =
                     jobj["role"]?.ToString() == "user" ? ChatType.User :
@@ -132,7 +133,11 @@ namespace ChatGptApiClientV2
         class ChatRecordList
         {
             public List<ChatRecord> ChatRecords { get; set; }
-            public ChatRecordList(ChatRecordList? initial_prompt=null)
+            [JsonConstructor]
+            public ChatRecordList() : this(null)
+            {
+            }
+            public ChatRecordList(ChatRecordList? initial_prompt)
             {
                 ChatRecords = new();
                 if (initial_prompt is not null)
@@ -144,9 +149,9 @@ namespace ChatGptApiClientV2
                     }
                 }
             }
-            public JArray ToJson()
+            public JsonArray ToJson()
             {
-                var jarray = new JArray();
+                var jarray = new JsonArray();
                 foreach (var record in ChatRecords)
                 {
                     jarray.Add(record.ToJson());
@@ -197,16 +202,18 @@ namespace ChatGptApiClientV2
                     }
                 }
             }
-            public InitialPrompts(bool useDefault = false)
+            public InitialPrompts()
+            {
+                _promptsOptions = new ObservableCollection<ChatRecordList>();
+            }
+            public void UseDefaultPromptList()
             {
                 _promptsOptions = new ObservableCollection<ChatRecordList>()
                 {
                     new()
                 };
-                if (useDefault)
-                {
-                    _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
-                }
+                _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
+                _promptsOptions[0].ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the user is Bob. And the name of the assistant is Alice. Session starts at: {DateTime}"));
             }
         }
         private InitialPrompts? initial_prompts;
@@ -280,7 +287,12 @@ namespace ChatGptApiClientV2
             }
             private void SaveConfig()
             {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(this));
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    IgnoreReadOnlyProperties = true,
+                };
+                File.WriteAllText("config.json", JsonSerializer.Serialize(this, options));
             }
         }
 
@@ -310,7 +322,7 @@ namespace ChatGptApiClientV2
 
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
 
-            var msg = new JObject
+            var msg = new JsonObject
             {
                 ["model"] = "gpt-3.5-turbo",
                 ["messages"] = current_session_record.ToJson(),
@@ -319,14 +331,14 @@ namespace ChatGptApiClientV2
             var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
             var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", post_content);
             var responseString = await response.Content.ReadAsStringAsync();
-            var responseJson = JObject.Parse(responseString);
-            if (responseJson["error"] is not null)
+            var responseJson = JsonObject.Parse(responseString);
+            if (responseJson?["error"] is not null)
             {
                 Console.WriteLine(responseJson?["error"]?["message"]?.ToString());
                 return;
             }
             var bot_response = responseJson?["choices"]?[0]?["message"];
-            if (bot_response is JObject response_obj)
+            if (bot_response is JsonObject response_obj)
             {
                 var bot_response_record = ChatRecord.FromJson(response_obj);
                 bot_response_record.Display(config.EnableMarkdown);
@@ -354,7 +366,7 @@ namespace ChatGptApiClientV2
             if (File.Exists("config.json"))
             {
                 string saved_config = File.ReadAllText("config.json");
-                var parsed_config = JsonConvert.DeserializeObject<Config>(saved_config);
+                var parsed_config = JsonSerializer.Deserialize<Config>(saved_config);
                 if (parsed_config is not null)
                 {
                     config = parsed_config;
@@ -365,7 +377,7 @@ namespace ChatGptApiClientV2
             if (File.Exists("initial_prompts.json"))
             {
                 string saved_prompts = File.ReadAllText("initial_prompts.json");
-                var parsed_prompts = JsonConvert.DeserializeObject<InitialPrompts>(saved_prompts);
+                var parsed_prompts = JsonSerializer.Deserialize<InitialPrompts>(saved_prompts);
                 if (parsed_prompts is not null)
                 {
                     initial_prompts = parsed_prompts;
@@ -373,8 +385,14 @@ namespace ChatGptApiClientV2
             }
             if (initial_prompts is null || !initial_prompts.PromptsOptions.Any())
             {
-                initial_prompts = new(useDefault:true);
-                File.WriteAllText("initial_prompts.json", JsonConvert.SerializeObject(initial_prompts));
+                initial_prompts = new();
+                initial_prompts.UseDefaultPromptList();
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    IgnoreReadOnlyProperties = true,
+                };
+                File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(initial_prompts, options));
             }
             initial_prompts.SelectedOption = initial_prompts.PromptsOptions[0];
             cbx_initial.DataContext = initial_prompts;
@@ -382,7 +400,12 @@ namespace ChatGptApiClientV2
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            string saved_session = JsonConvert.SerializeObject(current_session_record);
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                IgnoreReadOnlyProperties = true,
+            };
+            string saved_session = JsonSerializer.Serialize(current_session_record, options);
             var dlg = new SaveFileDialog
             {
                 FileName = "session",
@@ -405,7 +428,7 @@ namespace ChatGptApiClientV2
             if (dlg.ShowDialog() == true)
             {
                 string saved_session = File.ReadAllText(dlg.FileName);
-                var loaded_session = JsonConvert.DeserializeObject<ChatRecordList>(saved_session);
+                var loaded_session = JsonSerializer.Deserialize<ChatRecordList>(saved_session);
                 if (loaded_session is null)
                 {
                     MessageBox.Show("Error: Invalid session file.");
