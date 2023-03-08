@@ -30,6 +30,7 @@ namespace ChatGptApiClientV2
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
 
         class ChatRecord
@@ -141,6 +142,7 @@ namespace ChatGptApiClientV2
                 get { return _api_key; }
                 set
                 {
+                    if (value == _api_key) return;
                     _api_key = value;
                     if (PropertyChanged is not null)
                     {
@@ -155,6 +157,7 @@ namespace ChatGptApiClientV2
                 get { return _temperature; }
                 set
                 {
+                    if (value == _temperature) return;
                     _temperature = value;
                     if (PropertyChanged is not null)
                     {
@@ -169,6 +172,7 @@ namespace ChatGptApiClientV2
                 get { return _enableMarkdown; }
                 set
                 {
+                    if (value == _enableMarkdown) return;
                     _enableMarkdown = value;
                     if (PropertyChanged is not null)
                     {
@@ -193,6 +197,8 @@ namespace ChatGptApiClientV2
         private bool first_input = true;
         private void ResetSession(ChatRecordList? loaded_session = null)
         {
+            Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal
+            Console.Clear();
             if (loaded_session is null)
             {
                 string prompt = ((TextBlock)((ComboBoxItem)cbx_initial.SelectedItem).Content).Text;
@@ -310,6 +316,11 @@ namespace ChatGptApiClientV2
         private void Button_Click_3(object sender, RoutedEventArgs e)
         {
             ResetSession();
+        }
+
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            ResetSession(current_session_record);
         }
     }
 }
