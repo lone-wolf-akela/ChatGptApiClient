@@ -35,6 +35,60 @@ namespace ChatGptApiClientV2
     {
         private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
+        class NetStatus : INotifyPropertyChanged
+        {
+            public event PropertyChangedEventHandler? PropertyChanged;
+            public enum StatusEnum
+            {
+                Idle,
+                Sending,
+                Receiving,
+            }
+            private StatusEnum _status = StatusEnum.Idle;
+
+
+            public StatusEnum Status
+            {
+                get => _status;
+                set
+                {
+                    _status = value;
+                    if (PropertyChanged is not null)
+                    {
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(Status)));
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(StatusText)));
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(StatusColor)));
+                    }
+                }
+            }
+            public string StatusText
+            {
+                get
+                {
+                    return Status switch
+                    {
+                        StatusEnum.Idle => "空闲，等待输入。",
+                        StatusEnum.Sending => "正在发送数据……",
+                        StatusEnum.Receiving => "正在接收数据……",
+                        _ => throw new InvalidEnumArgumentException(),
+                    };
+                }
+            }
+            public Brush StatusColor
+            {
+                get
+                {
+                    return Status switch
+                    {
+                        StatusEnum.Idle => Brushes.Black,
+                        StatusEnum.Sending => Brushes.Blue,
+                        StatusEnum.Receiving => Brushes.Green,
+                        _ => throw new InvalidEnumArgumentException(),
+                    };
+                }
+            }
+        }
+        private readonly NetStatus netStatus = new();
 
         class ChatRecord
         {
@@ -78,7 +132,7 @@ namespace ChatGptApiClientV2
                 {
                     throw new ArgumentException("Markdown is not supported in simple format.");
                 }
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 if (advancedFormat)
                 {
                     switch (Type)
@@ -94,7 +148,7 @@ namespace ChatGptApiClientV2
                             sb.AppendLine(Bold().Blue("系统："));
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            throw new InvalidEnumArgumentException();
                     }
                 }
                 else
@@ -111,7 +165,7 @@ namespace ChatGptApiClientV2
                             sb.AppendLine("系统：");
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException();
+                            throw new InvalidEnumArgumentException();
                     }
                 }
                 if (useMarkdown)
@@ -177,9 +231,9 @@ namespace ChatGptApiClientV2
             public event PropertyChangedEventHandler? PropertyChanged;
 
             private ObservableCollection<ChatRecordList> _promptsOptions;
-            public ObservableCollection<ChatRecordList> PromptsOptions 
-            { 
-                get { return _promptsOptions; }
+            public ObservableCollection<ChatRecordList> PromptsOptions
+            {
+                get => _promptsOptions;
                 set
                 {
                     _promptsOptions = value;
@@ -192,7 +246,7 @@ namespace ChatGptApiClientV2
             private ChatRecordList? _selectedOption;
             public ChatRecordList? SelectedOption
             {
-                get { return _selectedOption; }
+                get => _selectedOption;
                 set
                 {
                     _selectedOption = value;
@@ -212,18 +266,20 @@ namespace ChatGptApiClientV2
                 _promptsOptions.Add(new());
                 _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
                 _promptsOptions.Add(new());
-                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the user is Bob. And the name of the assistant is Alice. Session starts at: {DateTime}"));
+                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the assistant is Alice Zuberg. Her name, Alice, stands for Artificial Labile Intelligence Cybernated Existence. Alice is a determined, hardwork girl. Although her personality is serious, she is also adventurous and even mischievous. She is a product of Project Alicization, which is a top-secret government project run by Rath to create the first Highly Adaptive Bottom-up Artificial Intelligence (Bottom-up AI). Session starts at: {DateTime}"));
             }
         }
-        private InitialPrompts? initial_prompts;
+        private InitialPrompts initial_prompts = new();
 
         public MainWindow()
         {
             InitializeComponent();
-            Uri uri = new Uri("/chatgpt-icon.ico", UriKind.Relative);
+            Uri uri = new("/chatgpt-icon.ico", UriKind.Relative);
             StreamResourceInfo info = Application.GetResourceStream(uri);
             this.Icon = BitmapFrame.Create(info.Stream);
             this.DataContext = config;
+            cbx_initial.DataContext = initial_prompts;
+            lbl_status.DataContext = netStatus;
             Console.OutputEncoding = Encoding.UTF8;
         }
 
@@ -237,7 +293,7 @@ namespace ChatGptApiClientV2
 
             public string API_KEY
             {
-                get { return _api_key; }
+                get => _api_key;
                 set
                 {
                     if (value == _api_key) return;
@@ -252,7 +308,7 @@ namespace ChatGptApiClientV2
             private double _temperature; 
             public double Temperature 
             {
-                get { return _temperature; }
+                get => _temperature;
                 set
                 {
                     if (value == _temperature) return;
@@ -267,7 +323,7 @@ namespace ChatGptApiClientV2
             private bool _enableMarkdown;
             public bool EnableMarkdown
             {
-                get { return _enableMarkdown; }
+                get => _enableMarkdown;
                 set
                 {
                     if (value == _enableMarkdown) return;
@@ -329,9 +385,12 @@ namespace ChatGptApiClientV2
                 ["temperature"] = config.Temperature
             };
             var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
+            netStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", post_content);
+            netStatus.Status = NetStatus.StatusEnum.Receiving;
             var responseString = await response.Content.ReadAsStringAsync();
-            var responseJson = JsonObject.Parse(responseString);
+            netStatus.Status = NetStatus.StatusEnum.Idle;
+            var responseJson = JsonNode.Parse(responseString);
             if (responseJson?["error"] is not null)
             {
                 Console.WriteLine(responseJson?["error"]?["message"]?.ToString());
@@ -363,6 +422,7 @@ namespace ChatGptApiClientV2
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // setup config
             if (File.Exists("config.json"))
             {
                 string saved_config = File.ReadAllText("config.json");
@@ -374,6 +434,7 @@ namespace ChatGptApiClientV2
                 }
             }
 
+            // setup initial prompts
             if (File.Exists("initial_prompts.json"))
             {
                 string saved_prompts = File.ReadAllText("initial_prompts.json");

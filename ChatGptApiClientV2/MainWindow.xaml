@@ -11,7 +11,8 @@
             <RowDefinition Height="6*"></RowDefinition>
             <RowDefinition Height="9*"></RowDefinition>
             <RowDefinition Height="1*"></RowDefinition>
-            <RowDefinition Height="3*"></RowDefinition>
+            <RowDefinition Height="2.5*"></RowDefinition>
+            <RowDefinition Height="1.1*"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.RowDefinitions>
@@ -40,7 +41,7 @@
         </Grid>
         <TextBox x:Name="txtbx_input" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto"/>
         <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
-        <Grid Grid.Row="3" Margin="0,10,0,15">
+        <Grid Grid.Row="3" Margin="0,10,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition/>
@@ -57,5 +58,9 @@
             </Button>
             <Button Content="发送" Click="Button_Click" Grid.Column="6"/>
         </Grid>
+        <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,0,0,5">
+            <Label Content="状态"/>
+            <Label x:Name="lbl_status" Content="{Binding Path=StatusText}" Foreground="{Binding Path=StatusColor}"/>
+        </StackPanel>
     </Grid>
 </Window>
