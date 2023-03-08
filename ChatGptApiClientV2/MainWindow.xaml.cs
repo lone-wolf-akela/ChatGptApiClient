@@ -25,6 +25,7 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
+using System.Text.Encodings.Web;
 
 namespace ChatGptApiClientV2
 {
@@ -35,6 +36,8 @@ namespace ChatGptApiClientV2
     {
         private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
+        static JsonSerializerOptions JSerializerOptions = new();
+        
         class NetStatus : INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler? PropertyChanged;
@@ -281,6 +284,10 @@ namespace ChatGptApiClientV2
             cbx_initial.DataContext = initial_prompts;
             lbl_status.DataContext = netStatus;
             Console.OutputEncoding = Encoding.UTF8;
+
+            JSerializerOptions.WriteIndented = true;
+            JSerializerOptions.IgnoreReadOnlyFields = true;
+            JSerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
         }
 
         private ChatRecordList? current_session_record;
@@ -343,12 +350,7 @@ namespace ChatGptApiClientV2
             }
             private void SaveConfig()
             {
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    IgnoreReadOnlyProperties = true,
-                };
-                File.WriteAllText("config.json", JsonSerializer.Serialize(this, options));
+                File.WriteAllText("config.json", JsonSerializer.Serialize(this, JSerializerOptions));
             }
         }
 
@@ -448,12 +450,7 @@ namespace ChatGptApiClientV2
             {
                 initial_prompts = new();
                 initial_prompts.UseDefaultPromptList();
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    IgnoreReadOnlyProperties = true,
-                };
-                File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(initial_prompts, options));
+                File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(initial_prompts, JSerializerOptions));
             }
             initial_prompts.SelectedOption = initial_prompts.PromptsOptions[0];
             cbx_initial.DataContext = initial_prompts;
@@ -461,12 +458,7 @@ namespace ChatGptApiClientV2
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                IgnoreReadOnlyProperties = true,
-            };
-            string saved_session = JsonSerializer.Serialize(current_session_record, options);
+            string saved_session = JsonSerializer.Serialize(current_session_record, JSerializerOptions);
             var dlg = new SaveFileDialog
             {
                 FileName = "session",
