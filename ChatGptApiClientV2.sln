@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33414.496
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatGptApiClientV2", "ChatGptApiClientV2\ChatGptApiClientV2.csproj", "{729F85E6-A93E-4A76-BE20-BBB3068B866E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatGptApiClientV2", "ChatGptApiClientV2\ChatGptApiClientV2.csproj", "{729F85E6-A93E-4A76-BE20-BBB3068B866E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.PowerShell.MarkdownRender", "MarkdownRender\src\Microsoft.PowerShell.MarkdownRender.csproj", "{513FAB29-9730-4125-A8A1-04700F412D03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorCode.Console", "ColorCode.Console\ColorCode.Console.csproj", "{108684EB-1693-4422-8547-C999BB26AC34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{513FAB29-9730-4125-A8A1-04700F412D03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{513FAB29-9730-4125-A8A1-04700F412D03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{513FAB29-9730-4125-A8A1-04700F412D03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{108684EB-1693-4422-8547-C999BB26AC34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{108684EB-1693-4422-8547-C999BB26AC34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{108684EB-1693-4422-8547-C999BB26AC34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{108684EB-1693-4422-8547-C999BB26AC34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

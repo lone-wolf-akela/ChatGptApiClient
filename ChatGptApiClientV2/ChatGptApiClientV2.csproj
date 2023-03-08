@@ -5,7 +5,12 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>chatgpt-icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="chatgpt-icon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Crayon" Version="2.0.69" />
