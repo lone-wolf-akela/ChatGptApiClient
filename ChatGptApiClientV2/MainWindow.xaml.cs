@@ -224,6 +224,7 @@ namespace ChatGptApiClientV2
             StreamResourceInfo info = Application.GetResourceStream(uri);
             this.Icon = BitmapFrame.Create(info.Stream);
             this.DataContext = config;
+            Console.OutputEncoding = Encoding.UTF8;
         }
 
         private ChatRecordList? current_session_record;
