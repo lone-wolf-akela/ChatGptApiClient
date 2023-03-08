@@ -39,7 +39,7 @@
             <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" Grid.Column="2" Grid.Row="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
         </Grid>
         <TextBox x:Name="txtbx_input" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto"/>
-        <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
+        <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
         <Grid Grid.Row="3" Margin="0,10,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
