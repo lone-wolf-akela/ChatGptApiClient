@@ -26,6 +26,8 @@ using System.Security.Cryptography;
 using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
 using System.Text.Encodings.Web;
+using System.Reflection.Metadata;
+using System.Windows.Threading;
 
 namespace ChatGptApiClientV2
 {
@@ -129,12 +131,8 @@ namespace ChatGptApiClientV2
                 var content = jobj["content"]?.ToString();
                 return new ChatRecord(type, content ?? "[Error: Empty Content]");
             }
-            public string ToString(bool useMarkdown, bool advancedFormat = true)
+            public string GetHeader(bool advancedFormat = true)
             {
-                if (useMarkdown && !advancedFormat)
-                {
-                    throw new ArgumentException("Markdown is not supported in simple format.");
-                }
                 StringBuilder sb = new();
                 if (advancedFormat)
                 {
@@ -171,6 +169,16 @@ namespace ChatGptApiClientV2
                             throw new InvalidEnumArgumentException();
                     }
                 }
+                return sb.ToString();
+            }
+            public string ToString(bool useMarkdown, bool advancedFormat = true)
+            {
+                if (useMarkdown && !advancedFormat)
+                {
+                    throw new ArgumentException("Markdown is not supported in simple format.");
+                }
+                StringBuilder sb = new();
+                sb.Append(GetHeader(advancedFormat));
                 if (useMarkdown)
                 {
                     var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
@@ -384,33 +392,68 @@ namespace ChatGptApiClientV2
             {
                 ["model"] = "gpt-3.5-turbo",
                 ["messages"] = current_session_record.ToJson(),
-                ["temperature"] = config.Temperature
+                ["temperature"] = config.Temperature,
+                ["stream"] = true
             };
             var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage { 
+                Method = HttpMethod.Post, 
+                RequestUri = new Uri("https://api.openai.com/v1/chat/completions"), 
+                Content = post_content
+            };
             netStatus.Status = NetStatus.StatusEnum.Sending;
-            var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", post_content);
+            var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             netStatus.Status = NetStatus.StatusEnum.Receiving;
-            var responseString = await response.Content.ReadAsStringAsync();
+            StringBuilder response_sb = new();
+            ChatRecord response_record = new(ChatRecord.ChatType.Bot, "");
+            Console.Write(response_record.GetHeader());
+            using (var responseStream = await response.Content.ReadAsStreamAsync())
+            using (var reader = new StreamReader(responseStream))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        if (line == "data: [DONE]")
+                        {
+                            break; // 结束聊天响应数据接收
+                        }
+                        if (line.StartsWith("data: "))
+                        {
+                            var chatResponse = line.Substring("data: ".Length);
+                            var responseJson = JsonNode.Parse(chatResponse);
+                            if (responseJson?["error"] is not null)
+                            {
+                                Console.WriteLine(responseJson?["error"]?["message"]?.ToString());
+                                return;
+                            }
+                            if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
+                            {
+                                Console.WriteLine(responseJson?.ToString());
+                                return;
+                            }
+                            string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
+                            if (ch is not null)
+                            {
+                                response_sb.Append(ch);
+                                Console.Write(ch);
+                                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
+                            }
+                            string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
+                            if (role is not null && role != "assistant")
+                            {
+                                throw new InvalidDataException($"Wrong reply role: {{{role}}}");
+                            }
+                        }
+                    }
+                }
+            }
+            response_record.Content = response_sb.ToString();
+            current_session_record.ChatRecords.Add(response_record);
             netStatus.Status = NetStatus.StatusEnum.Idle;
-            var responseJson = JsonNode.Parse(responseString);
-            if (responseJson?["error"] is not null)
-            {
-                Console.WriteLine(responseJson?["error"]?["message"]?.ToString());
-                return;
-            }
-            var bot_response = responseJson?["choices"]?[0]?["message"];
-            if (bot_response is JsonObject response_obj)
-            {
-                var bot_response_record = ChatRecord.FromJson(response_obj);
-                bot_response_record.Display(config.EnableMarkdown);
-                current_session_record.ChatRecords.Add(bot_response_record);
-            }
-            else
-            {
-                Console.WriteLine("Error: Unexpected response from server.");
-                return;
-            }
             txtbx_input.Text = "";
+            ResetSession(current_session_record);
         }
 
         private void txtbx_input_GotFocus(object sender, RoutedEventArgs e)
