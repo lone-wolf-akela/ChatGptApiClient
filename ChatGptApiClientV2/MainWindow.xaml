@@ -47,7 +47,18 @@
             </Grid>
             <TextBox x:Name="txtbx_input" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto"/>
             <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
-            <Grid Grid.Row="3" Margin="0,10,0,10">
+            <Grid Grid.Row="3" Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="6*"/>
+                    <ColumnDefinition Width="6*"/>
+                    <ColumnDefinition Width="0.25*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Content="载入附件（附件文本内容会被附在下一次发送的文本末尾）"/>
+                <TextBox x:Name="txtblk_attachment" Grid.Column="1"/>
+                <Button Grid.Column="3" Content="浏览" Click="Button_Click_4"/>
+            </Grid>
+            <Grid Grid.Row="4" Margin="0,10,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="3*"/>
                     <ColumnDefinition/>
@@ -64,54 +75,22 @@
                 </Button>
                 <Button Content="发送" Click="Button_Click" Grid.Column="6"/>
             </Grid>
-            <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,0,0,5">
+            <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,0,0,5">
                 <Label Content="状态"/>
                 <Label x:Name="lbl_status" Content="{Binding Path=StatusText}" Foreground="{Binding Path=StatusColor}"/>
             </StackPanel>
         </Grid>
         <Grid Margin="10,10,25,10"  Grid.Column="2">
             <Grid.RowDefinitions>
-                <RowDefinition Height="9*"></RowDefinition>
+                <RowDefinition Height="6*"></RowDefinition>
                 <RowDefinition Height="1*"></RowDefinition>
             </Grid.RowDefinitions>
             <GroupBox Header="插件">
-                <CheckBox Content="Python" IsChecked="{Binding Path=PluginPythonEnable, Mode=TwoWay}"/>
+                <CheckBox IsChecked="{Binding Path=PluginPythonEnable, Mode=TwoWay}">
+                    <TextBlock Text="Python (将就用吧，不太好使)" TextWrapping="WrapWithOverflow"></TextBlock>
+                </CheckBox>
             </GroupBox>
             <TextBlock Grid.Row="2" Text="注意：插件启用状态的更改仅在重置对话时生效。" TextWrapping="WrapWithOverflow"/>
         </Grid>
-        <TextBox x:Name="txtbx_input" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto"/>
-        <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
-        <Grid Grid.Row="3" Margin="0,0,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6*"/>
-                <ColumnDefinition Width="6*"/>
-                <ColumnDefinition Width="0.25*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
-            <Label Grid.Column="0" Content="载入附件（附件文本内容会被附在下一次发送的文本末尾）"/>
-            <TextBox x:Name="txtblk_attachment" Grid.Column="1"/>
-            <Button Grid.Column="3" Content="浏览" Click="Button_Click_4"/>
-        </Grid>
-        <Grid Grid.Row="4" Margin="0,10,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="3*"/>
-            </Grid.ColumnDefinitions>
-            <Button Content="保存对话历史" Click="Button_Click_1"/>
-            <Button Content="载入对话历史" Click="Button_Click_2" Grid.Column="2"/>
-            <Button Grid.Column="4" Click="Button_Click_3">
-                <TextBlock TextAlignment="Center">重置对话<LineBreak/>（清空当前对话历史）</TextBlock>
-            </Button>
-            <Button Content="发送" Click="Button_Click" Grid.Column="6"/>
-        </Grid>
-        <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,0,0,5">
-            <Label Content="状态"/>
-            <Label x:Name="lbl_status" Content="{Binding Path=StatusText}" Foreground="{Binding Path=StatusColor}"/>
-        </StackPanel>
     </Grid>
 </Window>

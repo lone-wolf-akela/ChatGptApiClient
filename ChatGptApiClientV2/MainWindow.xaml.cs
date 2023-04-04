@@ -247,7 +247,10 @@ namespace ChatGptApiClientV2
                 loaded_session = new ChatRecordList(initial_prompts?.SelectedOption);
                 if (config.PluginPythonEnable) 
                 {
-                    loaded_session.ChatRecords.Add(new(ChatRecord.ChatType.System, Plugins.PythonPlugin.InitialPrompt));
+                    foreach(var line in Plugins.PythonPlugin.InitialPrompt)
+                    {
+                        loaded_session.ChatRecords.Add(line);
+                    }
                 }
             }
             current_session_record = loaded_session;
@@ -259,23 +262,7 @@ namespace ChatGptApiClientV2
         }
         private async Task Send()
         {
-            if (current_session_record is null)
-            {
-                ResetSession();
-            }
-            StringBuilder input_txt = new();
-            input_txt.Append(txtbx_input.Text);
-            if (txtblk_attachment.Text != "")
-            {
-                input_txt.AppendLine("");
-                input_txt.AppendLine("Attachment: ");
-                string file_content = await File.ReadAllTextAsync(txtblk_attachment.Text);
-                input_txt.AppendLine(file_content);
-            }
-            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString());
-            new_user_input.Display(config.EnableMarkdown);
-            current_session_record!.ChatRecords.Add(new_user_input);
-
+            
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
 
             var msg = new JsonObject
@@ -340,6 +327,7 @@ namespace ChatGptApiClientV2
                     }
                 }
             }
+            Console.WriteLine();
             response_record.Content = response_sb.ToString();
             current_session_record.ChatRecords.Add(response_record);
             netStatus.Status = NetStatus.StatusEnum.Idle;
@@ -361,10 +349,20 @@ namespace ChatGptApiClientV2
             {
                 ResetSession();
             }
-            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, txtbx_input.Text);
+
+            StringBuilder input_txt = new();
+            input_txt.Append(txtbx_input.Text);
+            if (txtblk_attachment.Text != "")
+            {
+                input_txt.AppendLine("");
+                input_txt.AppendLine("Attachment: ");
+                string file_content = await File.ReadAllTextAsync(txtblk_attachment.Text);
+                input_txt.AppendLine(file_content);
+            }
+            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString());
             new_user_input.Display(config.EnableMarkdown);
             current_session_record!.ChatRecords.Add(new_user_input);
-
+            
             await Send();
 
             txtbx_input.Text = "";
@@ -448,6 +446,7 @@ namespace ChatGptApiClientV2
                 }
                 ResetSession(loaded_session);
             }
+
         }
 
         private void Button_Click_3(object sender, RoutedEventArgs e)

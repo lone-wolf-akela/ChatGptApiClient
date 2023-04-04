@@ -22,10 +22,12 @@ namespace ChatGptApiClientV2
         }
         public ChatType Type { get; set; }
         public string Content { get; set; }
-        public ChatRecord(ChatType type, string content)
+        public bool Hidden { get; set; }
+        public ChatRecord(ChatType type, string content, bool hidden = false)
         {
             Type = type;
             Content = content;
+            Hidden = hidden;
         }
         public JsonObject ToJson()
         {
@@ -109,6 +111,10 @@ namespace ChatGptApiClientV2
         }
         public void Display(bool useMarkdown)
         {
+            if (Hidden)
+            {
+                return;
+            }
             Console.Write(this.ToString(useMarkdown));
         }
     }
