@@ -259,6 +259,22 @@ namespace ChatGptApiClientV2
         }
         private async Task Send()
         {
+            if (current_session_record is null)
+            {
+                ResetSession();
+            }
+            StringBuilder input_txt = new();
+            input_txt.Append(txtbx_input.Text);
+            if (txtblk_attachment.Text != "")
+            {
+                input_txt.AppendLine("");
+                input_txt.AppendLine("Attachment: ");
+                string file_content = await File.ReadAllTextAsync(txtblk_attachment.Text);
+                input_txt.AppendLine(file_content);
+            }
+            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString());
+            new_user_input.Display(config.EnableMarkdown);
+            current_session_record!.ChatRecords.Add(new_user_input);
 
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
 
@@ -352,6 +368,7 @@ namespace ChatGptApiClientV2
             await Send();
 
             txtbx_input.Text = "";
+            txtblk_attachment.Text = "";
             ResetSession(current_session_record);
         }
 
@@ -441,6 +458,18 @@ namespace ChatGptApiClientV2
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             ResetSession(current_session_record);
+        }
+
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Any Files|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                txtblk_attachment.Text = dlg.FileName;
+            }
         }
     }
 }
