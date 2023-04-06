@@ -285,45 +285,60 @@ namespace ChatGptApiClientV2
             StringBuilder response_sb = new();
             ChatRecord response_record = new(ChatRecord.ChatType.Bot, "");
             Console.Write(response_record.GetHeader());
-            using (var responseStream = await response.Content.ReadAsStreamAsync())
-            using (var reader = new StreamReader(responseStream))
+            if (response.IsSuccessStatusCode)
             {
-                while (!reader.EndOfStream)
+                using (var responseStream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(responseStream))
                 {
-                    var line = await reader.ReadLineAsync();
-                    if (!string.IsNullOrEmpty(line))
+                    while (!reader.EndOfStream)
                     {
-                        if (line == "data: [DONE]")
+                        var line = await reader.ReadLineAsync();
+                        if (!string.IsNullOrEmpty(line))
                         {
-                            break; // 结束聊天响应数据接收
-                        }
-                        if (line.StartsWith("data: "))
-                        {
-                            var chatResponse = line.Substring("data: ".Length);
-                            var responseJson = JsonNode.Parse(chatResponse);
-                            if (responseJson?["error"] is not null)
+                            if (line == "data: [DONE]")
                             {
-                                Console.WriteLine(responseJson?["error"]?["message"]?.ToString());
-                                return;
+                                break; // 结束聊天响应数据接收
                             }
-                            if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
+                            if (line.StartsWith("data: "))
                             {
-                                Console.WriteLine(responseJson?.ToString());
-                                return;
-                            }
-                            string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
-                            if (ch is not null)
-                            {
-                                response_sb.Append(ch);
-                                Console.Write(ch);
-                                Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
-                            }
-                            string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
-                            if (role is not null && role != "assistant")
-                            {
-                                throw new InvalidDataException($"Wrong reply role: {{{role}}}");
+                                var chatResponse = line.Substring("data: ".Length);
+                                var responseJson = JsonNode.Parse(chatResponse);
+                                if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
+                                {
+                                    Console.WriteLine(responseJson?.ToString());
+                                    return;
+                                }
+                                string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
+                                if (ch is not null)
+                                {
+                                    response_sb.Append(ch);
+                                    Console.Write(ch);
+                                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
+                                }
+                                string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
+                                if (role is not null && role != "assistant")
+                                {
+                                    throw new InvalidDataException($"Wrong reply role: {{{role}}}");
+                                }
                             }
                         }
+                    }
+                }
+            }
+            else
+            {
+                using (var responseStream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(responseStream))
+                {
+                    var chatResponse = await reader.ReadToEndAsync();
+                    var responseJson = JsonNode.Parse(chatResponse);
+                    if (responseJson?["error"] is not null)
+                    {
+                        response_sb.Append($"Error: {responseJson?["error"]?["message"]?.ToString()}");
+                    }
+                    else
+                    {
+                        response_sb.Append($"Error: {chatResponse}");
                     }
                 }
             }
