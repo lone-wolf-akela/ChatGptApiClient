@@ -158,7 +158,11 @@ namespace ChatGptApiClientV2
         }
 
         private ChatRecordList? current_session_record;
-
+        class ModelInfo
+        {
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
         class Config : INotifyPropertyChanged
         {
             private string _api_key;
@@ -224,11 +228,34 @@ namespace ChatGptApiClientV2
                     SaveConfig();
                 }
             }
+            private ObservableCollection<ModelInfo> _modelOptions = new ObservableCollection<ModelInfo>
+            {
+                new ModelInfo{ Name="gpt-3.5-turbo-0613", Description="gpt-3.5-turbo-0613 (4k tokens)" },
+                new ModelInfo{ Name="gpt-3.5-turbo-16k-0613", Description="gpt-3.5-turbo-16k-0613 (16k tokens)" },
+                new ModelInfo{ Name="gpt-3.5-turbo-0301", Description="gpt-3.5-turbo-0301 (deprecated, 4k tokens)" },
+            };
+            public ObservableCollection<ModelInfo> ModelOptions { get => _modelOptions; }
+            private ModelInfo? _selectedModel;
+            public ModelInfo? SelectedModel
+            {
+                get => _selectedModel;
+                set
+                {
+                    if (value == _selectedModel) return;
+                    _selectedModel = value;
+                    if (PropertyChanged is not null)
+                    {
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedModel)));
+                    }
+                    SaveConfig();
+                }
+            }
             public Config()
             {
                 _api_key = "";
                 _temperature = 1.0;
                 _enableMarkdown = false;
+                _selectedModel = _modelOptions.First();
             }
             private void SaveConfig()
             {
@@ -264,10 +291,13 @@ namespace ChatGptApiClientV2
         {
             
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
-
+            if (config.SelectedModel is null)
+            {
+                throw new ArgumentNullException(nameof(config.SelectedModel));
+            }
             var msg = new JsonObject
             {
-                ["model"] = "gpt-3.5-turbo",
+                ["model"] = config.SelectedModel.Name,
                 ["messages"] = current_session_record!.ToJson(),
                 ["temperature"] = config.Temperature,
                 ["stream"] = true

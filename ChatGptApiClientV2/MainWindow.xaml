@@ -41,9 +41,36 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <Label Content="Temperature" Grid.Row="2" VerticalAlignment="Center"/>
-                <Slider x:Name="slid_temp"  Maximum="2" LargeChange="0.1" Value="{Binding Path=Temperature, Mode=TwoWay}" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" Grid.Column="2" Grid.Row="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <Grid Grid.Row="2" Grid.ColumnSpan="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"></ColumnDefinition>
+                            <ColumnDefinition Width="5*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="模型" Grid.Row="2" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cbx_model" SelectedIndex="0" Grid.Column="1" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel}"  Margin="0,12,0,12">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Description}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                    <Grid Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"></ColumnDefinition>
+                            <ColumnDefinition Width="3*"></ColumnDefinition>
+                            <ColumnDefinition Width="3*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Temperature" Grid.Row="2" VerticalAlignment="Center"/>
+                        <Slider x:Name="slid_temp"  Maximum="2" LargeChange="0.1" Value="{Binding Path=Temperature, Mode=TwoWay}" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" Grid.Column="2" Grid.Row="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    </Grid>
+                </Grid>
             </Grid>
             <TextBox x:Name="txtbx_input" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" Margin="0,10,0,10" VerticalScrollBarVisibility="Auto"/>
             <CheckBox Grid.Row="2" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click"/>
