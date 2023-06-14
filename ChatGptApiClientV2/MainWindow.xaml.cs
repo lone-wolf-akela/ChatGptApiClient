@@ -154,6 +154,7 @@ namespace ChatGptApiClientV2
 
             JSerializerOptions.WriteIndented = true;
             JSerializerOptions.IgnoreReadOnlyFields = true;
+            JSerializerOptions.IgnoreReadOnlyProperties = true;
             JSerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
         }
 
@@ -228,34 +229,36 @@ namespace ChatGptApiClientV2
                     SaveConfig();
                 }
             }
-            private ObservableCollection<ModelInfo> _modelOptions = new ObservableCollection<ModelInfo>
+            private readonly ObservableCollection<ModelInfo> _modelOptions = new ObservableCollection<ModelInfo>
             {
                 new ModelInfo{ Name="gpt-3.5-turbo-0613", Description="gpt-3.5-turbo-0613 (4k tokens)" },
                 new ModelInfo{ Name="gpt-3.5-turbo-16k-0613", Description="gpt-3.5-turbo-16k-0613 (16k tokens)" },
                 new ModelInfo{ Name="gpt-3.5-turbo-0301", Description="gpt-3.5-turbo-0301 (deprecated, 4k tokens)" },
             };
+            [JsonIgnore]
             public ObservableCollection<ModelInfo> ModelOptions { get => _modelOptions; }
-            private ModelInfo? _selectedModel;
-            public ModelInfo? SelectedModel
+            private int _selectedModelIndex;
+            public int SelectedModelIndex
             {
-                get => _selectedModel;
+                get => _selectedModelIndex;
                 set
                 {
-                    if (value == _selectedModel) return;
-                    _selectedModel = value;
+                    if (value == _selectedModelIndex) return;
+                    _selectedModelIndex = value;
                     if (PropertyChanged is not null)
                     {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedModel)));
+                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedModelIndex)));
                     }
                     SaveConfig();
                 }
             }
+            public ModelInfo SelectedModel { get=> _modelOptions[_selectedModelIndex]; }
             public Config()
             {
                 _api_key = "";
                 _temperature = 1.0;
                 _enableMarkdown = false;
-                _selectedModel = _modelOptions.First();
+                _selectedModelIndex = 0;
             }
             private void SaveConfig()
             {
