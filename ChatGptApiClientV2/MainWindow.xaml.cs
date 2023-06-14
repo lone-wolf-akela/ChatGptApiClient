@@ -160,8 +160,8 @@ namespace ChatGptApiClientV2
         private ChatRecordList? current_session_record;
         class ModelInfo
         {
-            public string Name { get; set; }
-            public string Description { get; set; }
+            public string Name { get; set; } = "";
+            public string Description { get; set; } = "";
         }
         class Config : INotifyPropertyChanged
         {

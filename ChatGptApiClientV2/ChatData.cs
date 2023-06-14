@@ -19,6 +19,7 @@ namespace ChatGptApiClientV2
             User,
             Bot,
             System,
+            Function,
         }
         public ChatType Type { get; set; }
         public string Content { get; set; }
@@ -36,6 +37,7 @@ namespace ChatGptApiClientV2
                 ["role"] =
                     Type == ChatType.User ? "user" :
                     Type == ChatType.Bot ? "assistant" :
+                    Type == ChatType.Function ? "function" :
                     "system",
                 ["content"] = Content
             };
@@ -46,6 +48,7 @@ namespace ChatGptApiClientV2
             var type =
                 jobj["role"]?.ToString() == "user" ? ChatType.User :
                 jobj["role"]?.ToString() == "assistant" ? ChatType.Bot :
+                jobj["role"]?.ToString() == "function" ? ChatType.Function :
                 ChatType.System;
             var content = jobj["content"]?.ToString();
             return new ChatRecord(type, content ?? "[Error: Empty Content]");
@@ -64,6 +67,9 @@ namespace ChatGptApiClientV2
                     case ChatType.Bot:
                         sb.AppendLine(Bold().Yellow("助手："));
                         break;
+                    case ChatType.Function:
+                        sb.AppendLine(Bold().Magenta("函数："));
+                        break;
                     case ChatType.System:
                         sb.AppendLine(Bold().Blue("系统："));
                         break;
@@ -80,6 +86,9 @@ namespace ChatGptApiClientV2
                         break;
                     case ChatType.Bot:
                         sb.AppendLine("助手：");
+                        break;
+                    case ChatType.Function:
+                        sb.AppendLine("函数：");
                         break;
                     case ChatType.System:
                         sb.AppendLine("系统：");
