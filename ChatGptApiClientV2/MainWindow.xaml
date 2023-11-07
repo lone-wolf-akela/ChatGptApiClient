@@ -14,18 +14,19 @@
         </Grid.ColumnDefinitions>
         <Grid Margin="25,0,0,0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="6*"></RowDefinition>
+                <RowDefinition Height="7*"></RowDefinition>
                 <RowDefinition Height="9*"></RowDefinition>
                 <RowDefinition Height="1*"></RowDefinition>
                 <RowDefinition Height="3*"></RowDefinition>
                 <RowDefinition Height="2.5*"></RowDefinition>
                 <RowDefinition Height="1.1*"></RowDefinition>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid Grid.Row="0" Margin="0,0,0,0">
                 <Grid.RowDefinitions>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
-                    <RowDefinition></RowDefinition>
+                    <RowDefinition Height="10*"></RowDefinition>
+                    <RowDefinition Height="10*"></RowDefinition>
+                    <RowDefinition Height="10"></RowDefinition>
+                    <RowDefinition Height="12*"></RowDefinition>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"></ColumnDefinition>
@@ -42,29 +43,32 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <Grid Grid.Row="2" Grid.ColumnSpan="3">
+                <Grid Grid.Row="3" Grid.ColumnSpan="3">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="10"></ColumnDefinition>
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3*"></ColumnDefinition>
                             <ColumnDefinition Width="14*"></ColumnDefinition>
-                            <ColumnDefinition Width="1*"></ColumnDefinition>
-                            <ColumnDefinition Width="3*"></ColumnDefinition>
-                            <ColumnDefinition Width="14*"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
-                        <Label Content="模型" Grid.Row="2" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="cbx_model" Grid.Column="1" ItemsSource="{Binding Config.ModelOptions}" SelectedIndex="{Binding Config.SelectedModelIndex, Mode=TwoWay}"  Margin="0,12,0,12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="5*"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="5*"/>
+                        </Grid.RowDefinitions>
+                        <Label Content="模型" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cbx_model"  Grid.Row="0" Grid.Column="1"  ItemsSource="{Binding Config.ModelOptions}" SelectedIndex="{Binding Config.SelectedModelIndex, Mode=TwoWay}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Description}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <Label Content="版本" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="cbx_model_version" Grid.Column="4" ItemsSource="{Binding Config.ModelVersionOptions}" SelectedIndex="{Binding Config.SelectedModelVersionIndex, Mode=TwoWay}"  Margin="0,12,0,12">
+                        <Label Content="版本"  Grid.Row="2" Grid.Column="0"  VerticalAlignment="Center"/>
+                        <ComboBox x:Name="cbx_model_version"  Grid.Row="2" Grid.Column="1"  ItemsSource="{Binding Config.ModelVersionOptions}" SelectedIndex="{Binding Config.SelectedModelVersionIndex, Mode=TwoWay}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Description}"/>
@@ -72,15 +76,21 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </Grid>
-                    <Grid Grid.Column="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*"></ColumnDefinition>
-                            <ColumnDefinition Width="3*"></ColumnDefinition>
-                            <ColumnDefinition Width="2*"></ColumnDefinition>
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Temperature" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                        <Slider x:Name="slid_temp"  Maximum="2" LargeChange="0.1" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" Grid.Column="2" Grid.Row="2" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0">
+                            <Label Content="Temperature" VerticalAlignment="Center" Width="85"/>
+                            <Slider x:Name="slid_temp" Width="150" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel Grid.Row="1">
+                            <Label DockPanel.Dock="Left" Content="Seed" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Right" Width="85"/>
+                            <Button DockPanel.Dock="Right" Width="75" Content="随机种子" Margin="10,2,0,2" Click="Button_Click_6"/>
+                            <TextBox x:Name="txt_seed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" InputScope="Number" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center"/>
+                        </DockPanel>
                     </Grid>
                 </Grid>
             </Grid>
@@ -128,9 +138,9 @@
                 </Button>
                 <Button Content="发送" Click="Button_Click" Grid.Column="6"/>
             </Grid>
-            <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,0,0,5">
-                <Label Content="状态"/>
-                <Label x:Name="lbl_status" Content="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
+            <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,0,0,0">
+                <Label Content="状态："/>
+                <TextBlock VerticalAlignment="Center" x:Name="lbl_status" Text="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
             </StackPanel>
         </Grid>
         <Grid Grid.Column="2" Margin="0,10,25,25">

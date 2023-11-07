@@ -51,16 +51,22 @@ namespace ChatGptApiClientV2
 
             [ObservableProperty]
             [NotifyPropertyChangedFor(nameof(StatusText))]
+            [NotifyPropertyChangedFor(nameof(StatusColor))]
             private StatusEnum status = StatusEnum.Idle;
+
+            [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(StatusText))]
+            [NotifyPropertyChangedFor(nameof(StatusColor))]
+            private string systemFingerprint = "";
             public string StatusText
             {
                 get
                 {
                     return Status switch
                     {
-                        StatusEnum.Idle => "空闲，等待输入。",
-                        StatusEnum.Sending => "正在发送数据……",
-                        StatusEnum.Receiving => "正在接收数据……",
+                        StatusEnum.Idle => $"空闲，等待输入。\t系统指纹：{SystemFingerprint}",
+                        StatusEnum.Sending => $"正在发送数据……\t\t系统指纹：{SystemFingerprint}",
+                        StatusEnum.Receiving => $"正在接收数据……\t\t系统指纹：{SystemFingerprint}",
                         _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
                     };
                 }
@@ -126,10 +132,10 @@ namespace ChatGptApiClientV2
             public string Description { get; set; } = "";
             public static List<ModelInfo> ModelList = new()
             {
-                new (){ Name="gpt-3.5-4k", Description="gpt-3.5 turbo (4k tokens)" },
                 new (){ Name="gpt-3.5-16k", Description="gpt-3.5 turbo (16k tokens)"},
                 new (){ Name="gpt-4-128k", Description="gpt-4 turbo (128k tokens)" },
-                new (){ Name="gpt-4-8k", Description="gpt-4 (8k tokens)" },
+                new (){ Name="gpt-3.5-4k", Description="gpt-3.5 turbo (4k tokens, deprecated)" },
+                new (){ Name="gpt-4-8k", Description="gpt-4 (8k tokens, deprecated)" },
                 //new (){ Name="gpt-4-32k", Description="gpt-4 (32k tokens)" },
             };
         }
@@ -169,6 +175,13 @@ namespace ChatGptApiClientV2
             [ObservableProperty]
             private double temperature;
             partial void OnTemperatureChanged(double value)
+            {
+                SaveConfig();
+            }
+
+            [ObservableProperty]
+            private int seed;
+            partial void OnSeedChanged(int value)
             {
                 SaveConfig();
             }
@@ -269,6 +282,7 @@ namespace ChatGptApiClientV2
             {
                 _API_KEY = "";
                 temperature = 1.0;
+                seed = 0;
                 enableMarkdown = false;
                 selectedModelIndex = 0;
                 selectedModelVersionIndex = 0;
@@ -338,7 +352,6 @@ namespace ChatGptApiClientV2
         }
         private async Task Send()
         {
-            
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY);
             if (Config.SelectedModel is null)
             {
@@ -350,8 +363,14 @@ namespace ChatGptApiClientV2
                 ["messages"] = current_session_record!.ToJson(),
                 ["temperature"] = Config.Temperature,
                 ["stream"] = true,
-                ["max_tokens"] = 4096,
+                ["seed"] = Config.Seed,
             };
+
+            if(Config.SelectedModel.Name.Contains("vision"))
+            {
+                msg["max_tokens"] = 4096;
+            }
+
             var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
             var request = new HttpRequestMessage
             {
@@ -400,6 +419,8 @@ namespace ChatGptApiClientV2
                                 {
                                     throw new InvalidDataException($"Wrong reply role: {{{role}}}");
                                 }
+                                string? system_fingerprint = responseJson?["system_fingerprint"]?.ToString();
+                                NetStatus.SystemFingerprint = system_fingerprint ?? "";
                             }
                         }
                     }
@@ -587,6 +608,12 @@ namespace ChatGptApiClientV2
             var img_viewer = new ImageViewer();
             img_viewer.ShowImage(img);
             img_viewer.Show();
+        }
+
+        private static readonly Random random = new();
+        private void Button_Click_6(object sender, RoutedEventArgs e)
+        {
+            Config.Seed = random.Next();
         }
     }
 }
