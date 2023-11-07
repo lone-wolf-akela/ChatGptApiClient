@@ -20,53 +20,38 @@ using System.IO;
 using Microsoft.Win32;
 using Microsoft.PowerShell.MarkdownRender;
 using System.Windows.Resources;
-using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
 using System.Text.Encodings.Web;
 using System.Reflection.Metadata;
 using System.Windows.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ChatGptApiClientV2
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    [INotifyPropertyChanged]
     public partial class MainWindow : Window
     {
         private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
         static JsonSerializerOptions JSerializerOptions = new();
-        
-        private readonly Plugins.PythonPlugin pythonPlugin = new();
 
-        class NetStatus : INotifyPropertyChanged
+        public partial class NetStatusType : ObservableObject
         {
-            public event PropertyChangedEventHandler? PropertyChanged;
             public enum StatusEnum
             {
                 Idle,
                 Sending,
                 Receiving,
             }
-            private StatusEnum _status = StatusEnum.Idle;
 
-
-            public StatusEnum Status
-            {
-                get => _status;
-                set
-                {
-                    _status = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(Status)));
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(StatusText)));
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(StatusColor)));
-                    }
-                }
-            }
+            [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(StatusText))]
+            private StatusEnum status = StatusEnum.Idle;
             public string StatusText
             {
                 get
@@ -76,7 +61,7 @@ namespace ChatGptApiClientV2
                         StatusEnum.Idle => "空闲，等待输入。",
                         StatusEnum.Sending => "正在发送数据……",
                         StatusEnum.Receiving => "正在接收数据……",
-                        _ => throw new InvalidEnumArgumentException(),
+                        _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
                     };
                 }
             }
@@ -89,57 +74,36 @@ namespace ChatGptApiClientV2
                         StatusEnum.Idle => Brushes.Black,
                         StatusEnum.Sending => Brushes.Blue,
                         StatusEnum.Receiving => Brushes.Green,
-                        _ => throw new InvalidEnumArgumentException(),
+                        _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
                     };
                 }
             }
         }
-        private readonly NetStatus netStatus = new();
+        [ObservableProperty]
+        private NetStatusType netStatus = new();
 
-        class InitialPrompts : INotifyPropertyChanged
+        public partial class InitialPromptsType : ObservableObject
         {
-            public event PropertyChangedEventHandler? PropertyChanged;
+            [ObservableProperty]
+            private ObservableCollection<ChatRecordList> promptsOptions;
+            [ObservableProperty]
+            private ChatRecordList? selectedOption;
 
-            private ObservableCollection<ChatRecordList> _promptsOptions;
-            public ObservableCollection<ChatRecordList> PromptsOptions
+            public InitialPromptsType()
             {
-                get => _promptsOptions;
-                set
-                {
-                    _promptsOptions = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(PromptsOptions)));
-                    }
-                }
-            }
-            private ChatRecordList? _selectedOption;
-            public ChatRecordList? SelectedOption
-            {
-                get => _selectedOption;
-                set
-                {
-                    _selectedOption = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedOption)));
-                    }
-                }
-            }
-            public InitialPrompts()
-            {
-                _promptsOptions = new ObservableCollection<ChatRecordList>();
+                promptsOptions = new ObservableCollection<ChatRecordList>();
             }
             public void UseDefaultPromptList()
             {
-                _promptsOptions = new ObservableCollection<ChatRecordList>();
-                _promptsOptions.Add(new());
-                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible. Session starts at: {DateTime}"));
-                _promptsOptions.Add(new());
-                _promptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the assistant is Alice Zuberg. Her name, Alice, stands for Artificial Labile Intelligence Cybernated Existence. Alice is a determined, hardwork girl. Although her personality is serious, she is also adventurous and even mischievous. She is a product of Project Alicization, which is a top-secret government project run by Rath to create the first Highly Adaptive Bottom-up Artificial Intelligence (Bottom-up AI). Session starts at: {DateTime}"));
+                PromptsOptions = new ObservableCollection<ChatRecordList>();
+                PromptsOptions.Add(new());
+                PromptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.\nKnowledge cutoff: {Cutoff}\nCurrent date: {DateTime}"));
+                PromptsOptions.Add(new());
+                PromptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the assistant is Alice Zuberg. Her name, Alice, stands for Artificial Labile Intelligence Cybernated Existence. Alice is a determined, hardwork girl. Although her personality is serious, she is also adventurous and even mischievous. She is a product of Project Alicization, which is a top-secret government project run by Rath to create the first Highly Adaptive Bottom-up Artificial Intelligence (Bottom-up AI). Session starts at: {DateTime}"));
             }
         }
-        private InitialPrompts initial_prompts = new();
+        [ObservableProperty]
+        private InitialPromptsType initialPrompts = new();
 
         public MainWindow()
         {
@@ -147,9 +111,6 @@ namespace ChatGptApiClientV2
             Uri uri = new("/chatgpt-icon.ico", UriKind.Relative);
             StreamResourceInfo info = Application.GetResourceStream(uri);
             this.Icon = BitmapFrame.Create(info.Stream);
-            this.DataContext = config;
-            cbx_initial.DataContext = initial_prompts;
-            lbl_status.DataContext = netStatus;
             Console.OutputEncoding = Encoding.UTF8;
 
             JSerializerOptions.WriteIndented = true;
@@ -159,106 +120,165 @@ namespace ChatGptApiClientV2
         }
 
         private ChatRecordList? current_session_record;
-        class ModelInfo
+        public class ModelInfo
         {
             public string Name { get; set; } = "";
             public string Description { get; set; } = "";
-        }
-        class Config : INotifyPropertyChanged
-        {
-            private string _api_key;
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            public string API_KEY
+            public static List<ModelInfo> ModelList = new()
             {
-                get => _api_key;
-                set
-                {
-                    if (value == _api_key) return;
-                    _api_key = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(API_KEY)));
-                    }
-                    SaveConfig();
-                }
-            }
-            private double _temperature; 
-            public double Temperature 
-            {
-                get => _temperature;
-                set
-                {
-                    if (value == _temperature) return;
-                    _temperature = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(Temperature)));
-                    }
-                    SaveConfig();
-                }
-            }
-            private bool _enableMarkdown;
-            public bool EnableMarkdown
-            {
-                get => _enableMarkdown;
-                set
-                {
-                    if (value == _enableMarkdown) return;
-                    _enableMarkdown = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(EnableMarkdown)));
-                    }
-                    SaveConfig();
-                }
-            }
-            private bool _plugin_python_enable;
-            public bool PluginPythonEnable
-            {
-                get => _plugin_python_enable;
-                set
-                {
-                    if (value == _plugin_python_enable) return;
-                    _plugin_python_enable = value;
-                    if (PropertyChanged is not null)
-                    {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(PluginPythonEnable)));
-                    }
-                    SaveConfig();
-                }
-            }
-            private readonly ObservableCollection<ModelInfo> _modelOptions = new ObservableCollection<ModelInfo>
-            {
-                new ModelInfo{ Name="gpt-3.5-turbo-0613", Description="gpt-3.5-turbo-0613 (4k tokens)" },
-                new ModelInfo{ Name="gpt-3.5-turbo-16k-0613", Description="gpt-3.5-turbo-16k-0613 (16k tokens)" },
-                new ModelInfo{ Name="gpt-3.5-turbo-0301", Description="gpt-3.5-turbo-0301 (deprecated, 4k tokens)" },
+                new (){ Name="gpt-3.5-4k", Description="gpt-3.5 turbo (4k tokens)" },
+                new (){ Name="gpt-3.5-16k", Description="gpt-3.5 turbo (16k tokens)"},
+                new (){ Name="gpt-4-128k", Description="gpt-4 turbo (128k tokens)" },
+                new (){ Name="gpt-4-8k", Description="gpt-4 (8k tokens)" },
+                //new (){ Name="gpt-4-32k", Description="gpt-4 (32k tokens)" },
             };
-            [JsonIgnore]
-            public ObservableCollection<ModelInfo> ModelOptions { get => _modelOptions; }
-            private int _selectedModelIndex;
-            public int SelectedModelIndex
+        }
+        public class ModelVersionInfo
+        {
+            public string ModelType { get; set; } = "";
+            public string Name { get; set; } = "";
+            public string Description { get; set; } = "";
+            public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
+            public static List<ModelVersionInfo> VersionList = new()
             {
-                get => _selectedModelIndex;
-                set
+                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-1106", Description="2023-11-06", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-16k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-16k-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0301", Description="2023-03-01", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-128k", Name="gpt-4-vision-preview", Description="2023-11-06 w/ vision", KnowledgeCutoff = new(2023, 4, 1) },
+                new (){ ModelType="gpt-4-128k", Name="gpt-4-1106-preview", Description="2023-11-06", KnowledgeCutoff = new(2023, 4, 1) },
+                new (){ ModelType="gpt-4-8k", Name="gpt-4", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-8k", Name="gpt-4-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-8k", Name="gpt-4-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
+                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
+            };
+        }
+        public partial class ConfigType : ObservableObject
+        {
+            [ObservableProperty]
+            private string _API_KEY;
+            partial void OnAPI_KEYChanged(string value)
+            {
+                SaveConfig();
+            }
+            
+            [ObservableProperty]
+            private double temperature;
+            partial void OnTemperatureChanged(double value)
+            {
+                SaveConfig();
+            }
+
+            [ObservableProperty]
+            private bool enableMarkdown;
+            partial void OnEnableMarkdownChanged(bool value)
+            {
+                SaveConfig();
+            }
+
+            [Obsolete("Python plugin is removed. This config does nothing now.")]
+            public bool PluginPythonEnable { get; set; } = false; 
+
+            [JsonIgnore]
+            public ObservableCollection<ModelInfo> ModelOptions { get; } = new();
+            [JsonIgnore]
+            public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = new();
+
+            [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(SelectedModelType))]
+            private int selectedModelIndex;
+            partial void OnSelectedModelIndexChanged(int value)
+            {
+                if (ModelOptions.Count == 0)
                 {
-                    if (value == _selectedModelIndex) return;
-                    _selectedModelIndex = value;
-                    if (PropertyChanged is not null)
+                    SelectedModelIndex = -1;
+                }
+                else if (value < 0 || value >= ModelOptions.Count)
+                {
+                    SelectedModelIndex = 0;
+                }
+
+                SaveConfig();
+                UpdateModelVersionList();
+            }
+            private void UpdateModelVersionList()
+            {
+                ModelVersionOptions.Clear();
+                if (SelectedModelType is not null)
+                {
+                    var models = from model in ModelVersionInfo.VersionList
+                                 where model.ModelType == SelectedModelType.Name
+                                 select model;
+                    foreach (var model in models)
                     {
-                        PropertyChanged(this, new PropertyChangedEventArgs(nameof(SelectedModelIndex)));
+                        ModelVersionOptions.Add(model);
                     }
-                    SaveConfig();
+                }
+
+                SelectedModelVersionIndex = 0;
+            }
+
+            [ObservableProperty]
+            private int selectedModelVersionIndex;
+            partial void OnSelectedModelVersionIndexChanged(int value)
+            {
+                if (ModelVersionOptions.Count == 0)
+                {
+                    SelectedModelVersionIndex = -1;
+                }
+                else if (value < 0 || value >= ModelVersionOptions.Count)
+                {
+                    SelectedModelVersionIndex = 0;
+                }
+                SaveConfig();
+            }
+
+            public ModelInfo? SelectedModelType
+            {
+                get
+                {
+                    if (SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count)
+                    {
+                        return ModelOptions[SelectedModelIndex];
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
             }
-            public ModelInfo SelectedModel { get=> _modelOptions[_selectedModelIndex]; }
-            public Config()
+            public ModelVersionInfo? SelectedModel
             {
-                _api_key = "";
-                _temperature = 1.0;
-                _enableMarkdown = false;
-                _selectedModelIndex = 0;
+                get
+                {
+                    if (SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count)
+                    {
+                        return ModelVersionOptions[SelectedModelVersionIndex];
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            public ConfigType()
+            {
+                _API_KEY = "";
+                temperature = 1.0;
+                enableMarkdown = false;
+                selectedModelIndex = 0;
+                selectedModelVersionIndex = 0;
+
+                ModelOptions.Clear();
+                foreach (var opt in ModelInfo.ModelList)
+                {
+                    ModelOptions.Add(opt);
+                }
+                UpdateModelVersionList();
             }
             private void SaveConfig()
             {
@@ -266,44 +286,71 @@ namespace ChatGptApiClientV2
             }
         }
 
-        private Config config = new();
+        public class ImageInfo
+        {
+            public string Base64Data { get; set; } = "";
+            public int Index { get; set; } = 0;
+            public BitmapImage Image
+            {
+                get
+                {
+                    var img = Utils.Base64ToImage(Base64Data);
+                    using var ms = new MemoryStream();
+                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    ms.Position = 0;
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = ms;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+                    return bitmapImage;
+                }
+            }
+        }
+        public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = new();
+
+        [ObservableProperty]
+        private ConfigType config = new();
         private bool first_input = true;
         private void ResetSession(ChatRecordList? loaded_session = null)
         {
             Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal, until https://github.com/dotnet/runtime/issues/28355 get fixed
             Console.Clear();
+
+            ChatHistoryImages.Clear();
+
             if (loaded_session is null)
             {
-                loaded_session = new ChatRecordList(initial_prompts?.SelectedOption);
-                if (config.PluginPythonEnable) 
-                {
-                    foreach(var line in Plugins.PythonPlugin.InitialPrompt)
-                    {
-                        loaded_session.ChatRecords.Add(line);
-                    }
-                }
+                loaded_session = new ChatRecordList(InitialPrompts?.SelectedOption, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
             }
             current_session_record = loaded_session;
             Console.WriteLine(new string('=', Console.WindowWidth));
             foreach (var record in current_session_record.ChatRecords)
             {
-                record.Display(config.EnableMarkdown);
+                record.Display(Config.EnableMarkdown);
+
+                foreach (var img_base64 in record.Images)
+                {
+                    ChatHistoryImages.Add(new ImageInfo { Base64Data = img_base64, Index = ChatHistoryImages.Count });
+                }
             }
         }
         private async Task Send()
         {
             
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
-            if (config.SelectedModel is null)
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY);
+            if (Config.SelectedModel is null)
             {
-                throw new ArgumentNullException(nameof(config.SelectedModel));
+                throw new ArgumentNullException(nameof(Config.SelectedModel));
             }
             var msg = new JsonObject
             {
-                ["model"] = config.SelectedModel.Name,
+                ["model"] = Config.SelectedModel.Name,
                 ["messages"] = current_session_record!.ToJson(),
-                ["temperature"] = config.Temperature,
-                ["stream"] = true
+                ["temperature"] = Config.Temperature,
+                ["stream"] = true,
+                ["max_tokens"] = 4096,
             };
             var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
             var request = new HttpRequestMessage
@@ -312,9 +359,9 @@ namespace ChatGptApiClientV2
                 RequestUri = new Uri("https://api.openai.com/v1/chat/completions"),
                 Content = post_content
             };
-            netStatus.Status = NetStatus.StatusEnum.Sending;
+            NetStatus.Status = NetStatusType.StatusEnum.Sending;
             var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netStatus.Status = NetStatus.StatusEnum.Receiving;
+            NetStatus.Status = NetStatusType.StatusEnum.Receiving;
             StringBuilder response_sb = new();
             ChatRecord response_record = new(ChatRecord.ChatType.Bot, "");
             Console.Write(response_record.GetHeader());
@@ -378,18 +425,7 @@ namespace ChatGptApiClientV2
             Console.WriteLine();
             response_record.Content = response_sb.ToString();
             current_session_record.ChatRecords.Add(response_record);
-            netStatus.Status = NetStatus.StatusEnum.Idle;
-
-            // plugin processing
-            bool plugin_usage_detected = pythonPlugin.DetectUsage(response_record.Content);
-            if (plugin_usage_detected)
-            {
-                string plugin_response = pythonPlugin.ProcessData(response_record.Content);
-                var plugin_response_record = new ChatRecord(ChatRecord.ChatType.System, plugin_response);
-                plugin_response_record.Display(config.EnableMarkdown);
-                current_session_record.ChatRecords.Add(plugin_response_record);
-                await Send();
-            }
+            NetStatus.Status = NetStatusType.StatusEnum.Idle;
         }
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -400,21 +436,43 @@ namespace ChatGptApiClientV2
 
             StringBuilder input_txt = new();
             input_txt.Append(txtbx_input.Text);
-            if (txtblk_attachment.Text != "")
+
+            int text_attachment_count = 0;
+            List<string> img_attachments = new();
+            foreach(var file in lst_attachment.Items)
             {
-                input_txt.AppendLine("");
-                input_txt.AppendLine("Attachment: ");
-                string file_content = await File.ReadAllTextAsync(txtblk_attachment.Text);
-                input_txt.AppendLine(file_content);
+                var filename = file.ToString();
+                if(filename is null)
+                {
+                    continue;
+                }
+                var mime = MimeTypes.GetMimeType(filename);
+                if (mime.StartsWith("text/"))
+                {
+                    text_attachment_count += 1;
+                    input_txt.AppendLine("");
+                    input_txt.AppendLine($"Attachment {text_attachment_count}: ");
+                    string file_content = await File.ReadAllTextAsync(filename);
+                    input_txt.AppendLine(file_content);
+                }
+                else if (mime.StartsWith("image/"))
+                {
+                    img_attachments.Add(filename);
+                }
             }
-            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString());
-            new_user_input.Display(config.EnableMarkdown);
+            bool highres = chk_highres_img.IsChecked ?? false;
+            var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString(), highresimage: highres);
+            foreach(var img in img_attachments)
+            {
+                new_user_input.AddImageFromFile(img);
+            }
+            new_user_input.Display(Config.EnableMarkdown);
             current_session_record!.ChatRecords.Add(new_user_input);
-            
+
             await Send();
 
             txtbx_input.Text = "";
-            txtblk_attachment.Text = "";
+            lst_attachment.Items.Clear();
             ResetSession(current_session_record);
         }
 
@@ -433,11 +491,10 @@ namespace ChatGptApiClientV2
             if (File.Exists("config.json"))
             {
                 string saved_config = File.ReadAllText("config.json");
-                var parsed_config = JsonSerializer.Deserialize<Config>(saved_config);
+                var parsed_config = JsonSerializer.Deserialize<ConfigType>(saved_config);
                 if (parsed_config is not null)
                 {
-                    config = parsed_config;
-                    this.DataContext = config;
+                    Config = parsed_config;
                 }
             }
 
@@ -445,20 +502,20 @@ namespace ChatGptApiClientV2
             if (File.Exists("initial_prompts.json"))
             {
                 string saved_prompts = File.ReadAllText("initial_prompts.json");
-                var parsed_prompts = JsonSerializer.Deserialize<InitialPrompts>(saved_prompts);
+                var parsed_prompts = JsonSerializer.Deserialize<InitialPromptsType>(saved_prompts);
                 if (parsed_prompts is not null)
                 {
-                    initial_prompts = parsed_prompts;
+                    InitialPrompts = parsed_prompts;
                 }
             }
-            if (initial_prompts is null || !initial_prompts.PromptsOptions.Any())
+            if (InitialPrompts is null || !InitialPrompts.PromptsOptions.Any())
             {
-                initial_prompts = new();
-                initial_prompts.UseDefaultPromptList();
-                File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(initial_prompts, JSerializerOptions));
+                InitialPrompts = new();
+                InitialPrompts.UseDefaultPromptList();
+                File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(InitialPrompts, JSerializerOptions));
             }
-            initial_prompts.SelectedOption = initial_prompts.PromptsOptions[0];
-            cbx_initial.DataContext = initial_prompts;
+            InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
+            //cbx_initial.DataContext = initial_prompts;
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -515,8 +572,21 @@ namespace ChatGptApiClientV2
             };
             if (dlg.ShowDialog() == true)
             {
-                txtblk_attachment.Text = dlg.FileName;
+                lst_attachment.Items.Add(dlg.FileName);
             }
+        }
+
+        private void Button_Click_5(object sender, RoutedEventArgs e)
+        {
+            lst_attachment.Items.Remove(lst_attachment.SelectedItem);
+        }
+
+        private void ContentControl_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var img = ChatHistoryImages[lst_images.SelectedIndex].Image;
+            var img_viewer = new ImageViewer();
+            img_viewer.ShowImage(img);
+            img_viewer.Show();
         }
     }
 }

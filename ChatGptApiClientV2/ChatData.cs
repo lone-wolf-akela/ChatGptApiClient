@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -12,7 +13,7 @@ using static Crayon.Output;
 
 namespace ChatGptApiClientV2
 {
-    class ChatRecord
+    public class ChatRecord
     {
         public enum ChatType
         {
@@ -23,15 +24,43 @@ namespace ChatGptApiClientV2
         }
         public ChatType Type { get; set; }
         public string Content { get; set; }
+        public List<string> Images { get; set; }
+        public bool HighResImage { get; set; }
         public bool Hidden { get; set; }
-        public ChatRecord(ChatType type, string content, bool hidden = false)
+        public ChatRecord(ChatType type, string content, List<string>? images = null, bool highresimage = false, bool hidden = false)
         {
             Type = type;
             Content = content;
+            Images = images ?? new();
             Hidden = hidden;
+            HighResImage = highresimage;
+        }
+        public void AddImageFromFile(string filename)
+        {
+            Images.Add(Utils.ImageFileToBase64(filename));
         }
         public JsonObject ToJson()
         {
+            var content = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["text"] = Content
+                }
+            };
+            foreach(var img in Images)
+            {
+                content.Add(new JsonObject
+                {
+                    ["type"] = "image_url",
+                    ["image_url"] = new JsonObject
+                    {
+                        ["url"] = img,
+                        ["detail"] = HighResImage ? "high" : "low"
+                    }
+                });
+            }   
             var jobj = new JsonObject
             {
                 ["role"] =
@@ -39,7 +68,7 @@ namespace ChatGptApiClientV2
                     Type == ChatType.Bot ? "assistant" :
                     Type == ChatType.Function ? "function" :
                     "system",
-                ["content"] = Content
+                ["content"] = content
             };
             return jobj;
         }
@@ -116,6 +145,12 @@ namespace ChatGptApiClientV2
             {
                 sb.AppendLine(Content);
             }
+
+            foreach (var img in Images)
+            {
+                sb.AppendLine("(引用了一张图片)");
+            }
+
             return sb.ToString();
         }
         public void Display(bool useMarkdown)
@@ -127,21 +162,22 @@ namespace ChatGptApiClientV2
             Console.Write(this.ToString(useMarkdown));
         }
     }
-    class ChatRecordList
+    public class ChatRecordList
     {
         public List<ChatRecord> ChatRecords { get; set; }
         [JsonConstructor]
-        public ChatRecordList() : this(null)
+        public ChatRecordList() : this(null, DateTime.Now)
         {
         }
-        public ChatRecordList(ChatRecordList? initial_prompt)
+        public ChatRecordList(ChatRecordList? initial_prompt, DateTime knowledge_cutoff)
         {
             ChatRecords = new();
             if (initial_prompt is not null)
             {
                 foreach (var record in initial_prompt.ChatRecords)
                 {
-                    string prompt = record.Content.Replace("{DateTime}", DateTime.Now.ToString("F", CultureInfo.GetCultureInfo("en-US")));
+                    string prompt = record.Content.Replace("{DateTime}", DateTime.Now.ToString("MMM dd yyy", CultureInfo.GetCultureInfo("en-US")));
+                    prompt = prompt.Replace("{Cutoff}", knowledge_cutoff.ToString("MMM yyyy", CultureInfo.GetCultureInfo("en-US")));
                     ChatRecords.Add(new(record.Type, prompt));
                 }
             }
