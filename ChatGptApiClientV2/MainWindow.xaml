@@ -138,10 +138,20 @@
                 </Button>
                 <Button Content="发送" Click="Button_Click" Grid.Column="6"/>
             </Grid>
-            <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,0,0,0">
-                <Label Content="状态："/>
-                <TextBlock VerticalAlignment="Center" x:Name="lbl_status" Text="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
-            </StackPanel>
+            <Grid Grid.Row="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="状态："/>
+                    <TextBlock VerticalAlignment="Center" x:Name="lbl_status" Text="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Grid.Column="1">
+                    <Label Content="系统指纹："/>
+                    <TextBlock VerticalAlignment="Center" x:Name="lbl_fingerprint" Text="{Binding Path=NetStatus.SystemFingerprint}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
+                </StackPanel>
+            </Grid>
         </Grid>
         <Grid Grid.Column="2" Margin="0,10,25,25">
             <Grid.RowDefinitions>

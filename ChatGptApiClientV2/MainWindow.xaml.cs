@@ -1,32 +1,23 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Globalization;
-using System.IO;
-using Microsoft.Win32;
-using Microsoft.PowerShell.MarkdownRender;
 using System.Windows.Resources;
-using System.Security.Cryptography;
-using System.Collections.ObjectModel;
-using System.Text.Json.Nodes;
-using System.Text.Encodings.Web;
-using System.Reflection.Metadata;
 using System.Windows.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ChatGptApiClientV2
 {
@@ -38,7 +29,7 @@ namespace ChatGptApiClientV2
     {
         private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
-        static JsonSerializerOptions JSerializerOptions = new();
+        static readonly JsonSerializerOptions JSerializerOptions = new();
 
         public partial class NetStatusType : ObservableObject
         {
@@ -55,35 +46,21 @@ namespace ChatGptApiClientV2
             private StatusEnum status = StatusEnum.Idle;
 
             [ObservableProperty]
-            [NotifyPropertyChangedFor(nameof(StatusText))]
-            [NotifyPropertyChangedFor(nameof(StatusColor))]
             private string systemFingerprint = "";
-            public string StatusText
+            public string StatusText => Status switch
             {
-                get
-                {
-                    return Status switch
-                    {
-                        StatusEnum.Idle => $"空闲，等待输入。\t系统指纹：{SystemFingerprint}",
-                        StatusEnum.Sending => $"正在发送数据……\t\t系统指纹：{SystemFingerprint}",
-                        StatusEnum.Receiving => $"正在接收数据……\t\t系统指纹：{SystemFingerprint}",
-                        _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
-                    };
-                }
-            }
-            public Brush StatusColor
+                StatusEnum.Idle => $"空闲，等待输入。",
+                StatusEnum.Sending => $"正在发送数据……",
+                StatusEnum.Receiving => $"正在接收数据……",
+                _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
+            };
+            public Brush StatusColor => Status switch
             {
-                get
-                {
-                    return Status switch
-                    {
-                        StatusEnum.Idle => Brushes.Black,
-                        StatusEnum.Sending => Brushes.Blue,
-                        StatusEnum.Receiving => Brushes.Green,
-                        _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
-                    };
-                }
-            }
+                StatusEnum.Idle => Brushes.Black,
+                StatusEnum.Sending => Brushes.Blue,
+                StatusEnum.Receiving => Brushes.Green,
+                _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
+            };
         }
         [ObservableProperty]
         private NetStatusType netStatus = new();
@@ -116,7 +93,7 @@ namespace ChatGptApiClientV2
             InitializeComponent();
             Uri uri = new("/chatgpt-icon.ico", UriKind.Relative);
             StreamResourceInfo info = Application.GetResourceStream(uri);
-            this.Icon = BitmapFrame.Create(info.Stream);
+            Icon = BitmapFrame.Create(info.Stream);
             Console.OutputEncoding = Encoding.UTF8;
 
             JSerializerOptions.WriteIndented = true;
@@ -130,7 +107,7 @@ namespace ChatGptApiClientV2
         {
             public string Name { get; set; } = "";
             public string Description { get; set; } = "";
-            public static List<ModelInfo> ModelList = new()
+            public static readonly List<ModelInfo> ModelList = new()
             {
                 new (){ Name="gpt-3.5-16k", Description="gpt-3.5 turbo (16k tokens)"},
                 new (){ Name="gpt-4-128k", Description="gpt-4 turbo (128k tokens)" },
@@ -145,7 +122,7 @@ namespace ChatGptApiClientV2
             public string Name { get; set; } = "";
             public string Description { get; set; } = "";
             public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
-            public static List<ModelVersionInfo> VersionList = new()
+            public static readonly List<ModelVersionInfo> VersionList = new()
             {
                 new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-1106", Description="2023-11-06", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
@@ -171,7 +148,7 @@ namespace ChatGptApiClientV2
             {
                 SaveConfig();
             }
-            
+
             [ObservableProperty]
             private double temperature;
             partial void OnTemperatureChanged(double value)
@@ -194,7 +171,7 @@ namespace ChatGptApiClientV2
             }
 
             [Obsolete("Python plugin is removed. This config does nothing now.")]
-            public bool PluginPythonEnable { get; set; } = false; 
+            public bool PluginPythonEnable { get => false; set { } }
 
             [JsonIgnore]
             public ObservableCollection<ModelInfo> ModelOptions { get; } = new();
@@ -221,18 +198,18 @@ namespace ChatGptApiClientV2
             private void UpdateModelVersionList()
             {
                 ModelVersionOptions.Clear();
-                if (SelectedModelType is not null)
-                {
-                    var models = from model in ModelVersionInfo.VersionList
-                                 where model.ModelType == SelectedModelType.Name
-                                 select model;
-                    foreach (var model in models)
-                    {
-                        ModelVersionOptions.Add(model);
-                    }
-                }
-
                 SelectedModelVersionIndex = 0;
+                if (SelectedModelType is null)
+                {
+                    return;
+                }
+                var models = from model in ModelVersionInfo.VersionList
+                             where model.ModelType == SelectedModelType.Name
+                             select model;
+                foreach (var model in models)
+                {
+                    ModelVersionOptions.Add(model);
+                }
             }
 
             [ObservableProperty]
@@ -250,34 +227,14 @@ namespace ChatGptApiClientV2
                 SaveConfig();
             }
 
-            public ModelInfo? SelectedModelType
-            {
-                get
-                {
-                    if (SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count)
-                    {
-                        return ModelOptions[SelectedModelIndex];
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            }
-            public ModelVersionInfo? SelectedModel
-            {
-                get
-                {
-                    if (SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count)
-                    {
-                        return ModelVersionOptions[SelectedModelVersionIndex];
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            }
+            public ModelInfo? SelectedModelType => 
+                (SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count) ?
+                ModelOptions[SelectedModelIndex] : null;
+
+            public ModelVersionInfo? SelectedModel => 
+                (SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count) ? 
+                ModelVersionOptions[SelectedModelVersionIndex] : null;
+
             public ConfigType()
             {
                 _API_KEY = "";
@@ -304,51 +261,52 @@ namespace ChatGptApiClientV2
         {
             public string Base64Data { get; set; } = "";
             public int Index { get; set; } = 0;
-            public BitmapImage Image
-            {
-                get
-                {
-                    var img = Utils.Base64ToImage(Base64Data);
-                    using var ms = new MemoryStream();
-                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                    ms.Position = 0;
-                    var bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = ms;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                    bitmapImage.Freeze();
-                    return bitmapImage;
-                }
-            }
+            public BitmapImage Image => Utils.Base64ToBitmap(Base64Data);
         }
         public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = new();
 
         [ObservableProperty]
         private ConfigType config = new();
         private bool first_input = true;
+
+        private void ResetChatHistoryImages()
+        {
+            ChatHistoryImages.Clear();
+            if (current_session_record is not null)
+            {
+                foreach (var record in current_session_record.ChatRecords)
+                {
+                    foreach (var img_base64 in record.Images)
+                    {
+                        ChatHistoryImages.Add(new ImageInfo { Base64Data = img_base64, Index = ChatHistoryImages.Count });
+                    }
+                }
+
+            }
+
+            var imgs = from string filename in lst_attachment.Items
+                       let mime = MimeTypes.GetMimeType(filename)
+                       where mime.StartsWith("image/")
+                       select Utils.ImageFileToBase64(filename);
+            foreach(var base64 in imgs)
+            {
+                ChatHistoryImages.Add(new ImageInfo { Base64Data = base64, Index = ChatHistoryImages.Count });
+            }
+        }
         private void ResetSession(ChatRecordList? loaded_session = null)
         {
             Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal, until https://github.com/dotnet/runtime/issues/28355 get fixed
             Console.Clear();
 
-            ChatHistoryImages.Clear();
-
-            if (loaded_session is null)
-            {
-                loaded_session = new ChatRecordList(InitialPrompts?.SelectedOption, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
-            }
+            loaded_session ??= new ChatRecordList(InitialPrompts?.SelectedOption, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
             current_session_record = loaded_session;
             Console.WriteLine(new string('=', Console.WindowWidth));
             foreach (var record in current_session_record.ChatRecords)
             {
                 record.Display(Config.EnableMarkdown);
-
-                foreach (var img_base64 in record.Images)
-                {
-                    ChatHistoryImages.Add(new ImageInfo { Base64Data = img_base64, Index = ChatHistoryImages.Count });
-                }
             }
+
+            ResetChatHistoryImages();
         }
         private async Task Send()
         {
@@ -366,7 +324,7 @@ namespace ChatGptApiClientV2
                 ["seed"] = Config.Seed,
             };
 
-            if(Config.SelectedModel.Name.Contains("vision"))
+            if (Config.SelectedModel.Name.Contains("vision"))
             {
                 msg["max_tokens"] = 4096;
             }
@@ -386,61 +344,58 @@ namespace ChatGptApiClientV2
             Console.Write(response_record.GetHeader());
             if (response.IsSuccessStatusCode)
             {
-                using (var responseStream = await response.Content.ReadAsStreamAsync())
-                using (var reader = new StreamReader(responseStream))
+                using var responseStream = await response.Content.ReadAsStreamAsync();
+                using var reader = new StreamReader(responseStream);
+                while (!reader.EndOfStream)
                 {
-                    while (!reader.EndOfStream)
+                    var line = await reader.ReadLineAsync();
+                    if (string.IsNullOrEmpty(line))
                     {
-                        var line = await reader.ReadLineAsync();
-                        if (!string.IsNullOrEmpty(line))
+                        continue;
+                    }
+                    if (line == "data: [DONE]")
+                    {
+                        break; // 结束聊天响应数据接收
+                    }
+                    if (line.StartsWith("data: "))
+                    {
+                        var chatResponse = line["data: ".Length..];
+                        var responseJson = JsonNode.Parse(chatResponse);
+                        if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
                         {
-                            if (line == "data: [DONE]")
-                            {
-                                break; // 结束聊天响应数据接收
-                            }
-                            if (line.StartsWith("data: "))
-                            {
-                                var chatResponse = line.Substring("data: ".Length);
-                                var responseJson = JsonNode.Parse(chatResponse);
-                                if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
-                                {
-                                    Console.WriteLine(responseJson?.ToString());
-                                    return;
-                                }
-                                string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
-                                if (ch is not null)
-                                {
-                                    response_sb.Append(ch);
-                                    Console.Write(ch);
-                                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
-                                }
-                                string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
-                                if (role is not null && role != "assistant")
-                                {
-                                    throw new InvalidDataException($"Wrong reply role: {{{role}}}");
-                                }
-                                string? system_fingerprint = responseJson?["system_fingerprint"]?.ToString();
-                                NetStatus.SystemFingerprint = system_fingerprint ?? "";
-                            }
+                            Console.WriteLine(responseJson?.ToString());
+                            return;
                         }
+                        string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
+                        if (ch is not null)
+                        {
+                            response_sb.Append(ch);
+                            Console.Write(ch);
+                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
+                        }
+                        string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
+                        if (role is not null && role != "assistant")
+                        {
+                            throw new InvalidDataException($"Wrong reply role: {{{role}}}");
+                        }
+                        string? system_fingerprint = responseJson?["system_fingerprint"]?.ToString();
+                        NetStatus.SystemFingerprint = system_fingerprint ?? "";
                     }
                 }
             }
             else
             {
-                using (var responseStream = await response.Content.ReadAsStreamAsync())
-                using (var reader = new StreamReader(responseStream))
+                using var responseStream = await response.Content.ReadAsStreamAsync();
+                using var reader = new StreamReader(responseStream);
+                var chatResponse = await reader.ReadToEndAsync();
+                var responseJson = JsonNode.Parse(chatResponse);
+                if (responseJson?["error"] is not null)
                 {
-                    var chatResponse = await reader.ReadToEndAsync();
-                    var responseJson = JsonNode.Parse(chatResponse);
-                    if (responseJson?["error"] is not null)
-                    {
-                        response_sb.Append($"Error: {responseJson?["error"]?["message"]?.ToString()}");
-                    }
-                    else
-                    {
-                        response_sb.Append($"Error: {chatResponse}");
-                    }
+                    response_sb.Append($"Error: {responseJson?["error"]?["message"]?.ToString()}");
+                }
+                else
+                {
+                    response_sb.Append($"Error: {chatResponse}");
                 }
             }
             Console.WriteLine();
@@ -458,35 +413,32 @@ namespace ChatGptApiClientV2
             StringBuilder input_txt = new();
             input_txt.Append(txtbx_input.Text);
 
+            var txtfiles = from string file in lst_attachment.Items
+                           let mime = MimeTypes.GetMimeType(file)
+                           where mime.StartsWith("text/")
+                           select file;
             int text_attachment_count = 0;
-            List<string> img_attachments = new();
-            foreach(var file in lst_attachment.Items)
+            foreach (var file in txtfiles)
             {
-                var filename = file.ToString();
-                if(filename is null)
-                {
-                    continue;
-                }
-                var mime = MimeTypes.GetMimeType(filename);
-                if (mime.StartsWith("text/"))
-                {
-                    text_attachment_count += 1;
-                    input_txt.AppendLine("");
-                    input_txt.AppendLine($"Attachment {text_attachment_count}: ");
-                    string file_content = await File.ReadAllTextAsync(filename);
-                    input_txt.AppendLine(file_content);
-                }
-                else if (mime.StartsWith("image/"))
-                {
-                    img_attachments.Add(filename);
-                }
+                text_attachment_count += 1;
+                input_txt.AppendLine("");
+                input_txt.AppendLine($"Attachment {text_attachment_count}: ");
+                var file_content = await File.ReadAllTextAsync(file);
+                input_txt.AppendLine(file_content);
             }
+
             bool highres = chk_highres_img.IsChecked ?? false;
             var new_user_input = new ChatRecord(ChatRecord.ChatType.User, input_txt.ToString(), highresimage: highres);
-            foreach(var img in img_attachments)
+
+            var imgfiles = from string file in lst_attachment.Items
+                           let mime = MimeTypes.GetMimeType(file)
+                           where mime.StartsWith("image/")
+                           select file;
+            foreach (var img in imgfiles)
             {
                 new_user_input.AddImageFromFile(img);
             }
+
             new_user_input.Display(Config.EnableMarkdown);
             current_session_record!.ChatRecords.Add(new_user_input);
 
@@ -536,7 +488,6 @@ namespace ChatGptApiClientV2
                 File.WriteAllText("initial_prompts.json", JsonSerializer.Serialize(InitialPrompts, JSerializerOptions));
             }
             InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
-            //cbx_initial.DataContext = initial_prompts;
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -572,7 +523,6 @@ namespace ChatGptApiClientV2
                 }
                 ResetSession(loaded_session);
             }
-
         }
 
         private void Button_Click_3(object sender, RoutedEventArgs e)
@@ -595,11 +545,13 @@ namespace ChatGptApiClientV2
             {
                 lst_attachment.Items.Add(dlg.FileName);
             }
+            ResetChatHistoryImages();
         }
 
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
             lst_attachment.Items.Remove(lst_attachment.SelectedItem);
+            ResetChatHistoryImages();
         }
 
         private void ContentControl_MouseDoubleClick(object sender, MouseButtonEventArgs e)

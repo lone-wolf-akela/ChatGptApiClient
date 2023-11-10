@@ -146,7 +146,7 @@ namespace ChatGptApiClientV2
                 sb.AppendLine(Content);
             }
 
-            foreach (var img in Images)
+            foreach (var _ in Images)
             {
                 sb.AppendLine("(引用了一张图片)");
             }
@@ -191,17 +191,6 @@ namespace ChatGptApiClientV2
             }
             return jarray;
         }
-        public string Text
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                foreach (var record in ChatRecords)
-                {
-                    sb.Append(record.ToString(false, false));
-                }
-                return sb.ToString();
-            }
-        }
+        public string Text => string.Join(string.Empty, (from record in ChatRecords select record.ToString(false, false)));
     }
 }
