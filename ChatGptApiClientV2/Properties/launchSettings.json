@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ChatGptApiClientV2": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

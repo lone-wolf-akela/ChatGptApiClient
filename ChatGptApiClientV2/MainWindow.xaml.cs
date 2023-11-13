@@ -261,7 +261,7 @@ namespace ChatGptApiClientV2
         {
             public string Base64Data { get; set; } = "";
             public int Index { get; set; } = 0;
-            public BitmapImage Image => Utils.Base64ToBitmap(Base64Data);
+            public BitmapImage Image => Utils.Base64ToBitmapImage(Base64Data);
         }
         public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = new();
 

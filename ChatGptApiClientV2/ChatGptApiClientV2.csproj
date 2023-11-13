@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>chatgpt-icon.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\derasterize\derasterize.vcxproj" />
     <ProjectReference Include="..\MarkdownRender\src\Microsoft.PowerShell.MarkdownRender.csproj" />
   </ItemGroup>
 

@@ -146,9 +146,11 @@ namespace ChatGptApiClientV2
                 sb.AppendLine(Content);
             }
 
-            foreach (var _ in Images)
+            foreach (var img_url in Images)
             {
-                sb.AppendLine("(引用了一张图片)");
+                //sb.AppendLine("(引用了一张图片)");
+                var bitmap = Utils.Base64ToBitmap(img_url);
+                Utils.ConsolePrintImage(bitmap);
             }
 
             return sb.ToString();
