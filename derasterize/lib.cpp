@@ -1,5 +1,7 @@
 ﻿// from https://github.com/csdvrx/derasterize
 
+#pragma managed(push, off)
+
 /*bin/echo  ' -*- mode:c;indent-tabs-mode:nil;c-basic-offset:2;coding:utf-8 -*-│
 │vi: set net ft=c ts=2 sts=2 sw=2 fenc=utf-8                                :vi│
 ╞══════════════════════════════════════════════════════════════════════════════╡
@@ -84,6 +86,8 @@ Copyright 2019 Csdvrx & Justine Alexandra Roberts Tunney\"");
 #endif
 
 #include <limits>
+
+#include <immintrin.h>
 
 #include <fcntl.h>
 #include <fenv.h>
@@ -933,6 +937,7 @@ static unsigned combinecolors(unsigned char bf[1u << MC][2],
 /**
  * Computes distance between synthetic block and actual.
  */
+#ifndef __AVX2__
 static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
     const FLOAT lb[CN * BN]) {
     unsigned i, k, gu;
@@ -942,6 +947,7 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
         gu = kGlyphs[g];
         bu = lb[k * BN + b];
         fu = lb[k * BN + f];
+
         for (i = 0; i < BN; ++i) p[i] = (gu & (1u << i)) ? fu : bu;
         for (i = 0; i < BN; ++i) p[i] -= lb[k * BN + i];
         // For a minimization problem, abs could do, but not faster in practice
@@ -956,6 +962,63 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
     for (i = 0; i < BN; ++i) r += q[i];
     return r;
 }
+#else
+__m256i bitmap2vecmask(int m) {
+    const __m256i vshift_count = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
+    __m256i bcast = _mm256_set1_epi32(m);
+    __m256i shifted = _mm256_sllv_epi32(bcast, vshift_count);  // high bit of each element = corresponding bit of the mask
+    return shifted;
+
+    // use _mm256_and and _mm256_cmpeq if you need all bits set, not two shifts.
+    // would work but not worth it: return _mm256_srai_epi32(shifted, 31);             // broadcast the sign bit to the whole element
+}
+
+// x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
+float sum8(__m256 x) {
+    // hiQuad = ( x7, x6, x5, x4 )
+    const __m128 hiQuad = _mm256_extractf128_ps(x, 1);
+    // loQuad = ( x3, x2, x1, x0 )
+    const __m128 loQuad = _mm256_castps256_ps128(x);
+    // sumQuad = ( x3 + x7, x2 + x6, x1 + x5, x0 + x4 )
+    const __m128 sumQuad = _mm_add_ps(loQuad, hiQuad);
+    // loDual = ( -, -, x1 + x5, x0 + x4 )
+    const __m128 loDual = sumQuad;
+    // hiDual = ( -, -, x3 + x7, x2 + x6 )
+    const __m128 hiDual = _mm_movehl_ps(sumQuad, sumQuad);
+    // sumDual = ( -, -, x1 + x3 + x5 + x7, x0 + x2 + x4 + x6 )
+    const __m128 sumDual = _mm_add_ps(loDual, hiDual);
+    // lo = ( -, -, -, x0 + x2 + x4 + x6 )
+    const __m128 lo = sumDual;
+    // hi = ( -, -, -, x1 + x3 + x5 + x7 )
+    const __m128 hi = _mm_shuffle_ps(sumDual, sumDual, 0x1);
+    // sum = ( -, -, -, x0 + x1 + x2 + x3 + x4 + x5 + x6 + x7 )
+    const __m128 sum = _mm_add_ss(lo, hi);
+    return _mm_cvtss_f32(sum);
+}
+
+static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
+    const FLOAT lb[CN * BN]) {
+    __m256 q_vec = _mm256_setzero_ps();
+    for (int k = 0; k < CN; ++k) {
+        unsigned gu = kGlyphs[g];
+        float bu = lb[k * BN + b];
+        float fu = lb[k * BN + f];
+
+        __m256 bu_vec = _mm256_set1_ps(bu);
+        __m256 fu_vec = _mm256_set1_ps(fu);
+
+        for (int i = 0; i < BN; i += 8) {
+            __m256 lb_vec = _mm256_loadu_ps(&lb[k * BN + i]);
+            unsigned mask = (gu >> i) & 0xFF; // Calculate the mask for the next 8 bits
+            __m256i mask_vec = bitmap2vecmask(mask);
+            __m256 p_vec = _mm256_blendv_ps(bu_vec, fu_vec, _mm256_castsi256_ps(mask_vec));
+            __m256 diff_vec = _mm256_sub_ps(p_vec, lb_vec);
+            q_vec = _mm256_fmadd_ps(diff_vec, diff_vec, q_vec);
+        }
+    }
+    return sum8(q_vec);
+}
+#endif
 
 /**
  * Converts tiny bitmap graphic into unicode glyph.
@@ -1042,7 +1105,8 @@ std::string PrintImage(void* rgb, unsigned yn, unsigned xn) {
     btoa(0, 0);
 
     char* v, * vt;
-    vt = (char*)malloc(yn * (xn * (32 + (2 + (1 + 3) * 3) * 2 + 1 + 3)) * 1 + 5 + 1);
+    constexpr size_t pagesize = 4096;
+    vt = (char*)_aligned_malloc(yn * (xn * (32 + (2 + (1 + 3) * 3) * 2 + 1 + 3)) * 1 + 5 + 1, pagesize);
     v = RenderImage(vt, (unsigned char*)rgb, yn, xn);
     *v++ = '\r';
     *v++ = 033;
@@ -1052,7 +1116,7 @@ std::string PrintImage(void* rgb, unsigned yn, unsigned xn) {
 
     std::string result(vt, v - vt);
     //write(1, vt, v - vt);
-    free(vt);
+    _aligned_free(vt);
 
     return result;
 }
@@ -1175,3 +1239,5 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 */
+
+#pragma managed(pop)

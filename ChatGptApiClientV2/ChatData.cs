@@ -25,6 +25,7 @@ namespace ChatGptApiClientV2
         public ChatType Type { get; set; }
         public string Content { get; set; }
         public List<string> Images { get; set; }
+        private readonly Dictionary<string, string> imageConsoleSeqCache = new();
         public bool HighResImage { get; set; }
         public bool Hidden { get; set; }
         public ChatRecord(ChatType type, string content, List<string>? images = null, bool highresimage = false, bool hidden = false)
@@ -145,14 +146,6 @@ namespace ChatGptApiClientV2
             {
                 sb.AppendLine(Content);
             }
-
-            foreach (var img_url in Images)
-            {
-                //sb.AppendLine("(引用了一张图片)");
-                var bitmap = Utils.Base64ToBitmap(img_url);
-                Utils.ConsolePrintImage(bitmap);
-            }
-
             return sb.ToString();
         }
         public void Display(bool useMarkdown)
@@ -162,6 +155,16 @@ namespace ChatGptApiClientV2
                 return;
             }
             Console.Write(this.ToString(useMarkdown));
+            foreach (var img_url in Images)
+            {
+                if (!imageConsoleSeqCache.ContainsKey(img_url))
+                {
+                    var bitmap = Utils.Base64ToBitmap(img_url);
+                    imageConsoleSeqCache[img_url] = Utils.ConvertImageToConsoleSeq(bitmap);
+                }
+                var seq = imageConsoleSeqCache[img_url];
+                Utils.ConsolePrintImage(seq);
+            }
         }
     }
     public class ChatRecordList

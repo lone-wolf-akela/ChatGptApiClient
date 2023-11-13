@@ -187,10 +187,9 @@ namespace ChatGptApiClientV2
                 return imgToResize;
             }
         }
-
-        public static void ConsolePrintImage(Bitmap img)
+        public static string ConvertImageToConsoleSeq(Bitmap img)
         {
-            float float_width = 480;
+            float float_width = 240;
             float float_height = img.Height * (float_width / img.Width);
             // make sure width is multiple of 4 and height is multiple of 8
             int width = (int)Math.Ceiling(float_width / 4) * 4;
@@ -198,9 +197,13 @@ namespace ChatGptApiClientV2
 
             var resized = ResizeImage(img, new Size(width, height), PixelFormat.Format24bppRgb);
             string converted = Derasterize.ConvertImageToString(resized);
+            return converted;
+        }
+        public static void ConsolePrintImage(string img)
+        {
             ConsoleEnableVTSeq();
             ConsoleDisableWrap();
-            Console.Write(converted);
+            Console.WriteLine(img);
             ConsoleEnableWrap();
         }
     }
