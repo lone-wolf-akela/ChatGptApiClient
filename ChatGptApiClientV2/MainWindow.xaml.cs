@@ -497,7 +497,8 @@ namespace ChatGptApiClientV2
             {
                 FileName = "session",
                 DefaultExt = ".json",
-                Filter = "JSON documents|*.json"
+                Filter = "JSON documents|*.json",
+                ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6"),
             };
             if (dlg.ShowDialog() == true)
             {
@@ -510,7 +511,8 @@ namespace ChatGptApiClientV2
             var dlg = new OpenFileDialog
             {
                 DefaultExt = ".json",
-                Filter = "JSON documents|*.json"
+                Filter = "JSON documents|*.json",
+                ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6"),
             };
             if (dlg.ShowDialog() == true)
             {
@@ -539,7 +541,8 @@ namespace ChatGptApiClientV2
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "Any Files|*.*"
+                Filter = "Any Files|*.*",
+                ClientGuid = new Guid("B8F42507-693B-4713-8671-A76F02ED5ADB"),
             };
             if (dlg.ShowDialog() == true)
             {
