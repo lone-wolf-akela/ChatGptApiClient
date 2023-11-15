@@ -74,12 +74,11 @@ namespace ChatGptApiClientV2
 
             public InitialPromptsType()
             {
-                promptsOptions = new ObservableCollection<ChatRecordList>();
+                promptsOptions = [];
             }
             public void UseDefaultPromptList()
             {
-                PromptsOptions = new ObservableCollection<ChatRecordList>();
-                PromptsOptions.Add(new());
+                PromptsOptions = [new()];
                 PromptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.\nKnowledge cutoff: {Cutoff}\nCurrent date: {DateTime}"));
                 PromptsOptions.Add(new());
                 PromptsOptions.Last().ChatRecords.Add(new(ChatRecord.ChatType.System, "The name of the assistant is Alice Zuberg. Her name, Alice, stands for Artificial Labile Intelligence Cybernated Existence. Alice is a determined, hardwork girl. Although her personality is serious, she is also adventurous and even mischievous. She is a product of Project Alicization, which is a top-secret government project run by Rath to create the first Highly Adaptive Bottom-up Artificial Intelligence (Bottom-up AI). Session starts at: {DateTime}"));
@@ -107,14 +106,14 @@ namespace ChatGptApiClientV2
         {
             public string Name { get; set; } = "";
             public string Description { get; set; } = "";
-            public static readonly List<ModelInfo> ModelList = new()
-            {
+            public static readonly List<ModelInfo> ModelList =
+            [
                 new (){ Name="gpt-3.5-16k", Description="gpt-3.5 turbo (16k tokens)"},
                 new (){ Name="gpt-4-128k", Description="gpt-4 turbo (128k tokens)" },
                 new (){ Name="gpt-3.5-4k", Description="gpt-3.5 turbo (4k tokens, deprecated)" },
                 new (){ Name="gpt-4-8k", Description="gpt-4 (8k tokens, deprecated)" },
                 //new (){ Name="gpt-4-32k", Description="gpt-4 (32k tokens)" },
-            };
+            ];
         }
         public class ModelVersionInfo
         {
@@ -122,23 +121,23 @@ namespace ChatGptApiClientV2
             public string Name { get; set; } = "";
             public string Description { get; set; } = "";
             public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
-            public static readonly List<ModelVersionInfo> VersionList = new()
-            {
+            public static readonly List<ModelVersionInfo> VersionList =
+            [
                 new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-1106", Description="2023-11-06", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-16k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-16k-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0301", Description="2023-03-01", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-128k", Name="gpt-4-vision-preview", Description="2023-11-06 w/ vision", KnowledgeCutoff = new(2023, 4, 1) },
                 new (){ ModelType="gpt-4-128k", Name="gpt-4-1106-preview", Description="2023-11-06", KnowledgeCutoff = new(2023, 4, 1) },
+                new (){ ModelType="gpt-4-128k", Name="gpt-4-vision-preview", Description="2023-11-06 w/ vision", KnowledgeCutoff = new(2023, 4, 1) },
                 new (){ ModelType="gpt-4-8k", Name="gpt-4", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-4-32k", Name="gpt-4-32k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-4-8k", Name="gpt-4-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-4-8k", Name="gpt-4-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
                 new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
-            };
+            ];
         }
         public partial class ConfigType : ObservableObject
         {
@@ -174,9 +173,9 @@ namespace ChatGptApiClientV2
             public bool PluginPythonEnable { get => false; set { } }
 
             [JsonIgnore]
-            public ObservableCollection<ModelInfo> ModelOptions { get; } = new();
+            public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
             [JsonIgnore]
-            public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = new();
+            public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
 
             [ObservableProperty]
             [NotifyPropertyChangedFor(nameof(SelectedModelType))]
@@ -198,18 +197,19 @@ namespace ChatGptApiClientV2
             private void UpdateModelVersionList()
             {
                 ModelVersionOptions.Clear();
+                
+                if (SelectedModelType is not null)
+                {
+                    var models = from model in ModelVersionInfo.VersionList
+                                 where model.ModelType == SelectedModelType.Name
+                                 select model;
+                    foreach (var model in models)
+                    {
+                        ModelVersionOptions.Add(model);
+                    }
+                }
+                
                 SelectedModelVersionIndex = 0;
-                if (SelectedModelType is null)
-                {
-                    return;
-                }
-                var models = from model in ModelVersionInfo.VersionList
-                             where model.ModelType == SelectedModelType.Name
-                             select model;
-                foreach (var model in models)
-                {
-                    ModelVersionOptions.Add(model);
-                }
             }
 
             [ObservableProperty]
@@ -263,7 +263,7 @@ namespace ChatGptApiClientV2
             public int Index { get; set; } = 0;
             public BitmapImage Image => Utils.Base64ToBitmapImage(Base64Data);
         }
-        public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = new();
+        public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = [];
 
         [ObservableProperty]
         private ConfigType config = new();

@@ -25,14 +25,14 @@ namespace ChatGptApiClientV2
         public ChatType Type { get; set; }
         public string Content { get; set; }
         public List<string> Images { get; set; }
-        private readonly Dictionary<string, string> imageConsoleSeqCache = new();
+        private readonly Dictionary<string, string> imageConsoleSeqCache = [];
         public bool HighResImage { get; set; }
         public bool Hidden { get; set; }
         public ChatRecord(ChatType type, string content, List<string>? images = null, bool highresimage = false, bool hidden = false)
         {
             Type = type;
             Content = content;
-            Images = images ?? new();
+            Images = images ?? [];
             Hidden = hidden;
             HighResImage = highresimage;
         }
@@ -157,12 +157,13 @@ namespace ChatGptApiClientV2
             Console.Write(this.ToString(useMarkdown));
             foreach (var img_url in Images)
             {
-                if (!imageConsoleSeqCache.ContainsKey(img_url))
+                if (!imageConsoleSeqCache.TryGetValue(img_url, out string? value))
                 {
                     var bitmap = Utils.Base64ToBitmap(img_url);
-                    imageConsoleSeqCache[img_url] = Utils.ConvertImageToConsoleSeq(bitmap);
+                    value = Utils.ConvertImageToConsoleSeq(bitmap);
+                    imageConsoleSeqCache[img_url] = value;
                 }
-                var seq = imageConsoleSeqCache[img_url];
+                var seq = value;
                 Utils.ConsolePrintImage(seq);
             }
         }
@@ -176,7 +177,7 @@ namespace ChatGptApiClientV2
         }
         public ChatRecordList(ChatRecordList? initial_prompt, DateTime knowledge_cutoff)
         {
-            ChatRecords = new();
+            ChatRecords = [];
             if (initial_prompt is not null)
             {
                 foreach (var record in initial_prompt.ChatRecords)
