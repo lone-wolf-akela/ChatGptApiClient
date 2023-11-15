@@ -974,7 +974,7 @@ __m256i bitmap2vecmask(int m) {
 }
 
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
-float sum8(__m256 x) {
+static float sum8(__m256 x) {
     // hiQuad = ( x7, x6, x5, x4 )
     const __m128 hiQuad = _mm256_extractf128_ps(x, 1);
     // loQuad = ( x3, x2, x1, x0 )
@@ -1001,18 +1001,18 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
     __m256 q_vec = _mm256_setzero_ps();
     for (int k = 0; k < CN; ++k) {
         unsigned gu = kGlyphs[g];
-        float bu = lb[k * BN + b];
-        float fu = lb[k * BN + f];
+        const float bu = lb[k * BN + b];
+        const float fu = lb[k * BN + f];
 
-        __m256 bu_vec = _mm256_set1_ps(bu);
-        __m256 fu_vec = _mm256_set1_ps(fu);
+        const __m256 bu_vec = _mm256_set1_ps(bu);
+        const __m256 fu_vec = _mm256_set1_ps(fu);
 
         for (int i = 0; i < BN; i += 8) {
-            __m256 lb_vec = _mm256_loadu_ps(&lb[k * BN + i]);
-            unsigned mask = (gu >> i) & 0xFF; // Calculate the mask for the next 8 bits
-            __m256i mask_vec = bitmap2vecmask(mask);
-            __m256 p_vec = _mm256_blendv_ps(bu_vec, fu_vec, _mm256_castsi256_ps(mask_vec));
-            __m256 diff_vec = _mm256_sub_ps(p_vec, lb_vec);
+            const __m256 lb_vec = _mm256_loadu_ps(&lb[k * BN + i]);
+            const unsigned mask = (gu >> i) & 0xFF; // Calculate the mask for the next 8 bits
+            const __m256i mask_vec = bitmap2vecmask(mask);
+            const __m256 p_vec = _mm256_blendv_ps(bu_vec, fu_vec, _mm256_castsi256_ps(mask_vec));
+            const __m256 diff_vec = _mm256_sub_ps(p_vec, lb_vec);
             q_vec = _mm256_fmadd_ps(diff_vec, diff_vec, q_vec);
         }
     }
