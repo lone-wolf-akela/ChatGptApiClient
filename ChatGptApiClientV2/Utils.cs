@@ -11,6 +11,8 @@ using System.Drawing.Imaging;
 using System.Windows.Media.Imaging;
 using System.Runtime.InteropServices;
 using System.Windows.Media.Media3D;
+using System.Buffers.Text;
+using System.Web;
 
 namespace ChatGptApiClientV2
 {
@@ -74,15 +76,37 @@ namespace ChatGptApiClientV2
 
         [GeneratedRegex("^data:(?<mime>[a-z]+\\/[a-z]+);base64,(?<data>.+)$")]
         private static partial Regex Base64UrlExtract();
-        public static BitmapImage Base64ToBitmapImage(string base64)
+        public static string AssertIsBase64Url(string s)
         {
             var r = Base64UrlExtract();
-            var match = r.Match(base64);
+            var match = r.Match(s);
             if (!match.Success)
             {
                 throw new ArgumentException("The string is not a base64 image.");
             }
-            var data = match.Groups["data"].Value;
+            return s;
+        }
+        public static string ExtractBase64FromUrl(string url_or_base64)
+        {
+            if (url_or_base64.StartsWith("data:"))
+            {
+                var r = Base64UrlExtract();
+                var match = r.Match(url_or_base64);
+                if (!match.Success)
+                {
+                    throw new ArgumentException("The string is not a base64 image.");
+                }
+                var data = match.Groups["data"].Value;
+                return data;
+            }
+            else
+            {
+                return url_or_base64;
+            }
+        }
+        public static BitmapImage Base64ToBitmapImage(string base64)
+        {
+            var data = ExtractBase64FromUrl(base64);
             var bytes = Convert.FromBase64String(data);
             using var ms = new MemoryStream(bytes);
             var bitmapImage = new BitmapImage();
@@ -96,13 +120,7 @@ namespace ChatGptApiClientV2
 
         public static Bitmap Base64ToBitmap(string base64)
         {
-            var r = Base64UrlExtract();
-            var match = r.Match(base64);
-            if (!match.Success)
-            {
-                throw new ArgumentException("The string is not a base64 image.");
-            }
-            var data = match.Groups["data"].Value;
+            var data = ExtractBase64FromUrl(base64);
             var bytes = Convert.FromBase64String(data);
             using var ms = new MemoryStream(bytes);
             var bitmap = new Bitmap(ms);

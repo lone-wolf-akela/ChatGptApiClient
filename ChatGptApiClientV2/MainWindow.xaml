@@ -8,11 +8,13 @@
         Title="ChatGPT" Height="600" Width="1000" Loaded="Window_Loaded">
     <Grid DataContext="{Binding ElementName=window, Mode=OneWay}">
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="15*"></ColumnDefinition>
+            <ColumnDefinition Width="2*"></ColumnDefinition>
             <ColumnDefinition Width="100*"></ColumnDefinition>
             <ColumnDefinition Width="2*"></ColumnDefinition>
             <ColumnDefinition Width="15*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Grid Margin="25,0,0,0">
+        <Grid Grid.Column="2" Margin="25,0,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="7*"></RowDefinition>
                 <RowDefinition Height="9*"></RowDefinition>
@@ -153,7 +155,7 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        <Grid Grid.Column="2" Margin="0,10,25,25">
+        <Grid Grid.Column="4" Margin="0,10,25,25">
             <Grid.RowDefinitions>
                 <RowDefinition Height="10*"/>
                 <RowDefinition Height="100*"/>

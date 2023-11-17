@@ -24,11 +24,16 @@ namespace ChatGptApiClientV2
         }
         public ChatType Type { get; set; }
         public string Content { get; set; }
-        public List<string> Images { get; set; }
+        public class ImageInfo
+        {
+            public string Data { get; set; } = "";
+            public bool UploadToBot { get; set; } = true;
+        }
+        public List<ImageInfo> Images { get; set; }
         private readonly Dictionary<string, string> imageConsoleSeqCache = [];
         public bool HighResImage { get; set; }
         public bool Hidden { get; set; }
-        public ChatRecord(ChatType type, string content, List<string>? images = null, bool highresimage = false, bool hidden = false)
+        public ChatRecord(ChatType type, string content, List<ImageInfo>? images = null, bool highresimage = false, bool hidden = false)
         {
             Type = type;
             Content = content;
@@ -38,7 +43,11 @@ namespace ChatGptApiClientV2
         }
         public void AddImageFromFile(string filename)
         {
-            Images.Add(Utils.ImageFileToBase64(filename));
+            Images.Add(new() { Data = Utils.ImageFileToBase64(filename), UploadToBot = true });
+        }
+        public void AddImageFromBase64(string base64url, bool upload_to_bot)
+        {
+            Images.Add(new() { Data = base64url, UploadToBot = upload_to_bot });
         }
         public JsonObject ToJson()
         {
@@ -52,12 +61,16 @@ namespace ChatGptApiClientV2
             };
             foreach(var img in Images)
             {
+                if (!img.UploadToBot)
+                {
+                    continue;
+                }
                 content.Add(new JsonObject
                 {
                     ["type"] = "image_url",
                     ["image_url"] = new JsonObject
                     {
-                        ["url"] = img,
+                        ["url"] = Utils.AssertIsBase64Url(img.Data),
                         ["detail"] = HighResImage ? "high" : "low"
                     }
                 });
@@ -157,11 +170,11 @@ namespace ChatGptApiClientV2
             Console.Write(this.ToString(useMarkdown));
             foreach (var img_url in Images)
             {
-                if (!imageConsoleSeqCache.TryGetValue(img_url, out string? value))
+                if (!imageConsoleSeqCache.TryGetValue(img_url.Data, out string? value))
                 {
-                    var bitmap = Utils.Base64ToBitmap(img_url);
+                    var bitmap = Utils.Base64ToBitmap(img_url.Data);
                     value = Utils.ConvertImageToConsoleSeq(bitmap);
-                    imageConsoleSeqCache[img_url] = value;
+                    imageConsoleSeqCache[img_url.Data] = value;
                 }
                 var seq = value;
                 Utils.ConsolePrintImage(seq);

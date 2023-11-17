@@ -102,43 +102,7 @@ namespace ChatGptApiClientV2
         }
 
         private ChatRecordList? current_session_record;
-        public class ModelInfo
-        {
-            public string Name { get; set; } = "";
-            public string Description { get; set; } = "";
-            public static readonly List<ModelInfo> ModelList =
-            [
-                new (){ Name="gpt-3.5-16k", Description="gpt-3.5 turbo (16k tokens)"},
-                new (){ Name="gpt-4-128k", Description="gpt-4 turbo (128k tokens)" },
-                new (){ Name="gpt-3.5-4k", Description="gpt-3.5 turbo (4k tokens, deprecated)" },
-                new (){ Name="gpt-4-8k", Description="gpt-4 (8k tokens, deprecated)" },
-                //new (){ Name="gpt-4-32k", Description="gpt-4 (32k tokens)" },
-            ];
-        }
-        public class ModelVersionInfo
-        {
-            public string ModelType { get; set; } = "";
-            public string Name { get; set; } = "";
-            public string Description { get; set; } = "";
-            public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
-            public static readonly List<ModelVersionInfo> VersionList =
-            [
-                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-1106", Description="2023-11-06", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-turbo-16k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-3.5-16k", Name="gpt-3.5-16k-turbo-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-3.5-4k", Name="gpt-3.5-turbo-0301", Description="2023-03-01", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-128k", Name="gpt-4-1106-preview", Description="2023-11-06", KnowledgeCutoff = new(2023, 4, 1) },
-                new (){ ModelType="gpt-4-128k", Name="gpt-4-vision-preview", Description="2023-11-06 w/ vision", KnowledgeCutoff = new(2023, 4, 1) },
-                new (){ ModelType="gpt-4-8k", Name="gpt-4", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k", Description="current (06-13)", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-8k", Name="gpt-4-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0613", Description="2023-06-13", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-8k", Name="gpt-4-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
-                new (){ ModelType="gpt-4-32k", Name="gpt-4-32k-0314", Description="2023-03-14", KnowledgeCutoff = new(2021, 9, 1) },
-            ];
-        }
+        
         public partial class ConfigType : ObservableObject
         {
             [ObservableProperty]
@@ -276,9 +240,9 @@ namespace ChatGptApiClientV2
             {
                 foreach (var record in current_session_record.ChatRecords)
                 {
-                    foreach (var img_base64 in record.Images)
+                    foreach (var img in record.Images)
                     {
-                        ChatHistoryImages.Add(new ImageInfo { Base64Data = img_base64, Index = ChatHistoryImages.Count });
+                        ChatHistoryImages.Add(new ImageInfo { Base64Data = img.Data, Index = ChatHistoryImages.Count });
                     }
                 }
 
