@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace ChatGptApiClientV2
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
-        public static readonly List<ModelInfo> ModelList =
+        public static readonly ImmutableArray<ModelInfo> ModelList =
         [
             new() { Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo (16k tokens)" },
             new() { Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)" },
@@ -26,7 +27,7 @@ namespace ChatGptApiClientV2
         public string Description { get; set; } = "";
         public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
         public bool FunctionCallSupported { get; set; } = false;
-        public static readonly List<ModelVersionInfo> VersionList =
+        public static readonly ImmutableArray<ModelVersionInfo> VersionList =
         [
             new() { ModelType = "gpt-3.5-16k", Name = "gpt-3.5-turbo-1106", Description = "2023-11-06", KnowledgeCutoff = new(2021, 9, 1), FunctionCallSupported = true },
             new() { ModelType = "gpt-3.5-4k", Name = "gpt-3.5-turbo", Description = "current (06-13)", KnowledgeCutoff = new(2021, 9, 1), FunctionCallSupported = true },

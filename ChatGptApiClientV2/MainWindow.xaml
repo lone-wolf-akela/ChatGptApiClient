@@ -99,7 +99,7 @@
                         <DockPanel Grid.Row="0">
                             <Label Content="Temperature" VerticalAlignment="Center" Width="85"/>
                             <Slider x:Name="slid_temp" Width="150" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" VerticalAlignment="Center"/>
-                            <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value}" InputScope="Number" VerticalAlignment="Center"/>
+                            <TextBox x:Name="txt_temp" TextWrapping="Wrap" Text="{Binding ElementName=slid_temp,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Grid.Row="1">
                             <Label DockPanel.Dock="Left" Content="Seed" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Right" Width="85"/>
@@ -133,7 +133,7 @@
                     <TextBlock TextAlignment="Center">添加<LineBreak/>文件</TextBlock>
                 </Button>
                 <Button Grid.Column="5" Click="Button_Click_5">
-                    <TextBlock TextAlignment="Center">删除<LineBreak/>选中的文件</TextBlock>
+                    <TextBlock TextAlignment="Center">删除选中<LineBreak/>的文件</TextBlock>
                 </Button>
             </Grid>
             <Grid Grid.Row="4" Margin="0,10,0,10">

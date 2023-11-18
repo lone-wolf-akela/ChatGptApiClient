@@ -1,220 +1,610 @@
 ﻿using Microsoft.PowerShell.MarkdownRender;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Converters;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using static Crayon.Output;
+using NJsonSchema;
+using Newtonsoft.Json.Serialization;
+using System.Windows.Interop;
+using Microsoft.VisualBasic;
+using System.Net.NetworkInformation;
 
 namespace ChatGptApiClientV2
 {
-    public class ChatRecord
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum RoleType
     {
-        public enum ChatType
+        [EnumMember(Value = "system")]
+        System,
+        [EnumMember(Value = "user")]
+        User,
+        [EnumMember(Value = "assistant")]
+        Assistant,
+        [EnumMember(Value = "tool")]
+        Tool
+    }
+    public static class RoleTypeExt
+    {
+        public static void DisplayHeader(this RoleType role)
         {
-            User,
-            Bot,
-            System,
-            Function,
-        }
-        public ChatType Type { get; set; }
-        public string Content { get; set; }
-        public JsonArray ToolCalls { get; set; }
-        public class ImageInfo
-        {
-            public string Data { get; set; } = "";
-            public bool UploadToBot { get; set; } = true;
-            public string Description { get; set; } = "";
-        }
-        public List<ImageInfo> Images { get; set; }
-        private readonly Dictionary<string, string> imageConsoleSeqCache = [];
-        public bool HighResImage { get; set; }
-        public bool Hidden { get; set; }
-        public ChatRecord(ChatType type, string content, List<ImageInfo>? images = null, bool highresimage = false, bool hidden = false, JsonArray? toolcalls = null)
-        {
-            Type = type;
-            Content = content;
-            Images = images ?? [];
-            Hidden = hidden;
-            HighResImage = highresimage;
-            ToolCalls = toolcalls ?? [];
-        }
-        public void AddImageFromFile(string filename, bool upload_to_bot = true, string description = "")
-        {
-            Images.Add(new() { Data = Utils.ImageFileToBase64(filename), UploadToBot = upload_to_bot, Description = description });
-        }
-        public JsonObject ToJson()
-        {
-            var content = new JsonArray
+            Console.WriteLine(new string('-', Console.WindowWidth));
+            switch (role)
             {
-                new JsonObject
-                {
-                    ["type"] = "text",
-                    ["text"] = Content
-                }
-            };
-            foreach(var img in Images)
-            {
-                if (!img.UploadToBot)
-                {
-                    continue;
-                }
-                content.Add(new JsonObject
-                {
-                    ["type"] = "image_url",
-                    ["image_url"] = new JsonObject
-                    {
-                        ["url"] = Utils.AssertIsBase64Url(img.Data),
-                        ["detail"] = HighResImage ? "high" : "low"
-                    }
-                });
-            }   
-            var jobj = new JsonObject
-            {
-                ["role"] =
-                    Type == ChatType.User ? "user" :
-                    Type == ChatType.Bot ? "assistant" :
-                    Type == ChatType.Function ? "function" :
-                    "system",
-                ["content"] = content,
-            };
-            if (ToolCalls.Count != 0)
-            {
-                jobj["tool_calls"] = ToolCalls;
-            }
-            return jobj;
-        }
-        public static ChatRecord FromJson(JsonObject jobj)
-        {
-            var type =
-                jobj["role"]?.ToString() == "user" ? ChatType.User :
-                jobj["role"]?.ToString() == "assistant" ? ChatType.Bot :
-                jobj["role"]?.ToString() == "function" ? ChatType.Function :
-                ChatType.System;
-            var content = jobj["content"]?.ToString();
-            return new ChatRecord(type, content ?? "[Error: Empty Content]");
-        }
-        public string GetHeader(bool advancedFormat = true)
-        {
-            StringBuilder sb = new();
-            if (advancedFormat)
-            {
-                switch (Type)
-                {
-                    case ChatType.User:
-                        sb.AppendLine(new string('-', Console.WindowWidth));
-                        sb.AppendLine(Bold().Green("用户："));
-                        break;
-                    case ChatType.Bot:
-                        sb.AppendLine(Bold().Yellow("助手："));
-                        break;
-                    case ChatType.Function:
-                        sb.AppendLine(Bold().Magenta("函数："));
-                        break;
-                    case ChatType.System:
-                        sb.AppendLine(Bold().Blue("系统："));
-                        break;
-                    default:
-                        throw new InvalidEnumArgumentException();
-                }
-            }
-            else
-            {
-                switch (Type)
-                {
-                    case ChatType.User:
-                        sb.AppendLine("用户：");
-                        break;
-                    case ChatType.Bot:
-                        sb.AppendLine("助手：");
-                        break;
-                    case ChatType.Function:
-                        sb.AppendLine("函数：");
-                        break;
-                    case ChatType.System:
-                        sb.AppendLine("系统：");
-                        break;
-                    default:
-                        throw new InvalidEnumArgumentException();
-                }
-            }
-            return sb.ToString();
-        }
-        public string ToString(bool useMarkdown, bool advancedFormat = true)
-        {
-            if (useMarkdown && !advancedFormat)
-            {
-                throw new ArgumentException("Markdown is not supported in simple format.");
-            }
-            StringBuilder sb = new();
-            sb.Append(GetHeader(advancedFormat));
-            if (useMarkdown)
-            {
-                var document = MarkdownConverter.Convert(Content, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
-                sb.Append(document.VT100EncodedString);
-            }
-            else
-            {
-                sb.AppendLine(Content);
-            }
-            return sb.ToString();
-        }
-        public void Display(bool useMarkdown)
-        {
-            if (Hidden)
-            {
-                return;
-            }
-            Console.Write(this.ToString(useMarkdown));
-            foreach (var img_url in Images)
-            {
-                if (!imageConsoleSeqCache.TryGetValue(img_url.Data, out string? value))
-                {
-                    var bitmap = Utils.Base64ToBitmap(img_url.Data);
-                    value = Utils.ConvertImageToConsoleSeq(bitmap);
-                    imageConsoleSeqCache[img_url.Data] = value;
-                }
-                var seq = value;
-                Utils.ConsolePrintImage(seq);
-                Console.WriteLine(img_url.Description);
-                Console.WriteLine();
+                case RoleType.User:
+                    Console.WriteLine(Bold().Green("用户："));
+                    break;
+                case RoleType.Assistant:
+                    Console.WriteLine(Bold().Yellow("助手："));
+                    break;
+                case RoleType.Tool:
+                    Console.WriteLine(Bold().Magenta("函数："));
+                    break;
+                case RoleType.System:
+                    Console.WriteLine(Bold().Blue("系统："));
+                    break;
+                default:
+                    throw new InvalidEnumArgumentException();
             }
         }
     }
-    public class ChatRecordList
+    
+    public class ToolCallType : ICloneable
     {
-        public List<ChatRecord> ChatRecords { get; set; }
-        [JsonConstructor]
-        public ChatRecordList() : this(null, DateTime.Now)
+        public class FunctionType : ICloneable
         {
-        }
-        public ChatRecordList(ChatRecordList? initial_prompt, DateTime knowledge_cutoff)
-        {
-            ChatRecords = [];
-            if (initial_prompt is not null)
+            /// <summary>
+            /// The name of the function to call.
+            /// </summary>
+            public string Name { get; set; } = "";
+            /// <summary>
+            /// The arguments to call the function with, as generated by the model in JSON format. 
+            /// Note that the model does not always generate valid JSON, and may hallucinate 
+            /// parameters not defined by your function schema. Validate the arguments in your code 
+            /// before calling your function.
+            /// </summary>
+            public string Arguments { get; set; } = "";
+            public object Clone() => new FunctionType
             {
-                foreach (var record in initial_prompt.ChatRecords)
+                Name = Name,
+                Arguments = Arguments,
+            };
+        }
+        public long Index { get; set; } = 0;
+        /// <summary>
+        /// The ID of the tool call.
+        /// </summary>
+        public string Id { get; set; } = "";
+        /// <summary>
+        /// The type of the tool. Currently, only `function` is supported.
+        /// </summary>
+        public string Type { get; set; } = "";
+        public FunctionType Function { get; set; } = new();
+        public object Clone() => new ToolCallType
+        {
+            Index = Index,
+            Id = Id,
+            Type = Type,
+            Function = (FunctionType)Function.Clone(),
+        };
+        public static List<ToolCallType> MergeList(IEnumerable<ToolCallType>? toolCallListA, IEnumerable<ToolCallType>? toolCallListB)
+        {
+            var mergedList = new List<ToolCallType>();
+            mergedList.AddRange(toolCallListA ?? []);
+            foreach(var toolcall in toolCallListB ?? [])
+            {
+                var existing_toolcall = mergedList.FirstOrDefault(t => t.Index == toolcall.Index);
+                if (existing_toolcall is null)
                 {
-                    string prompt = record.Content.Replace("{DateTime}", DateTime.Now.ToString("MMM dd yyy", CultureInfo.GetCultureInfo("en-US")));
-                    prompt = prompt.Replace("{Cutoff}", knowledge_cutoff.ToString("MMM yyyy", CultureInfo.GetCultureInfo("en-US")));
-                    ChatRecords.Add(new(record.Type, prompt));
+                    mergedList.Add(toolcall);
+                }
+                else
+                {
+                    existing_toolcall.Id = string.Join(string.Empty, existing_toolcall.Id, toolcall.Id);
+                    existing_toolcall.Type = string.Join(string.Empty, existing_toolcall.Type, toolcall.Type);
+                    existing_toolcall.Function.Name = string.Join(string.Empty, existing_toolcall.Function.Name, toolcall.Function.Name);
+                    existing_toolcall.Function.Arguments = string.Join(string.Empty, existing_toolcall.Function.Arguments, toolcall.Function.Arguments);
+                }
+            }
+            return mergedList;
+        }
+    }
+    public class ChatCompletionChunk
+    {
+        public class ChoiceType
+        {
+            public class DeltaType
+            {
+                /// <summary>
+                /// The contents of the chunk message.
+                /// </summary>
+                public string? Content { get; set; } = null;
+                /// <summary>
+                /// The role of the author of this message.
+                /// </summary>
+                public RoleType? Role { get; set; } = RoleType.System;
+                /// <summary>
+                /// list of called tools
+                /// </summary>
+                public List<ToolCallType> ToolCalls { get; set; } = [];
+            }
+
+            /// <summary>
+            /// The reason the model stopped generating tokens. Can be one of: `stop`, `length`, `content_filter`, `tool_calls`.
+            /// </summary>
+            public string? FinishReason { get; set; } = null;
+            /// <summary>
+            /// The index of the choice in the list of choices.
+            /// </summary>
+            public long Index { get; set; } = 0;
+            /// <summary>
+            /// A chat completion delta generated by streamed model responses.
+            /// </summary>
+            public DeltaType Delta { get; set; } = new();
+        }
+        /// <summary>
+        /// A unique identifier for the chat completion. Each chunk has the same ID.
+        /// </summary>
+        public string Id { get; set; } = "";
+        /// <summary>
+        /// The Unix timestamp (in seconds) of when the chat completion was created. Each chunk has the same timestamp.
+        /// </summary>
+        public long Created { get; set; } = 0;
+        /// <summary>
+        /// The model to generate the completion.
+        /// </summary>
+        public string Model { get; set; } = "";
+        /// <summary>
+        /// This fingerprint represents the backend configuration that the model runs with. 
+        /// Can be used in conjunction with the `seed` request parameter to understand when 
+        /// backend changes have been made that might impact determinism.
+        /// </summary>
+        public string SystemFingerprint { get; set; } = "";
+        /// <summary>
+        /// The object type, which is always chat.completion.chunk.
+        /// </summary>
+        public string Object { get; set; } = "";
+        /// <summary>
+        /// A list of chat completion choices. Can be more than one if `n` is greater than 1.
+        /// </summary>
+        public List<ChoiceType> Choices { get; set; } = [];
+    }
+
+    public class ChatCompletion
+    {
+        public class ChoiceType
+        {
+            public class MessageType
+            {
+                /// <summary>
+                /// The contents of the message.
+                /// </summary>
+                public string? Content { get; set; } = null;
+                /// <summary>
+                /// The role of the author of this message.
+                /// </summary>
+                public RoleType Role { get; set; } = RoleType.System;
+                /// <summary>
+                /// The tool calls generated by the model, such as function calls.
+                /// </summary>
+                public List<ToolCallType>? ToolCalls { get; set; } = [];
+            }
+            /// <summary>
+            /// The reason the model stopped generating tokens. Can be one of: `stop`, `length`, `content_filter`, `tool_calls`.
+            /// </summary>
+            public string? FinishReason { get; set; } = null;
+            /// <summary>
+            /// The index of the choice in the list of choices.
+            /// </summary>
+            public long Index { get; set; } = 0;
+            /// <summary>
+            /// A chat completion message generated by the model.
+            /// </summary>
+            public MessageType Message { get; set; } = new();
+        }
+        public class UsageType
+        {
+            /// <summary>
+            /// Number of tokens in the generated completion.
+            /// </summary>
+            public long CompletionTokens { get; set; } = 0;
+            /// <summary>
+            /// Number of tokens in the prompt.
+            /// </summary>
+            public long PromptTokens { get; set; } = 0;
+            /// <summary>
+            /// Total number of tokens used in the request (prompt + completion).
+            /// </summary>
+            public long TotalTokens { get; set; } = 0;
+        }
+        /// <summary>
+        /// A unique identifier for the chat completion.
+        /// </summary>
+        public string Id { get; set; } = "";
+        /// <summary>
+        /// The Unix timestamp (in seconds) of when the chat completion was created.
+        /// </summary>
+        public long Created { get; set; } = 0;
+        /// <summary>
+        /// The model used for the chat completion.
+        /// </summary>
+        public string Model { get; set; } = "";
+        /// <summary>
+        /// This fingerprint represents the backend configuration that the model runs with.
+        /// Can be used in conjunction with the `seed` request parameter to 
+        /// understand when backend changes have been made that might impact determinism.
+        /// </summary>
+        public string SystemFingerprint { get; set; } = "";
+        /// <summary>
+        /// The object type, which is always `chat.completion`.
+        /// </summary>
+        public string Object { get; set; } = "";
+        /// <summary>
+        /// Usage statistics for the completion request.
+        /// </summary>
+        public UsageType? Usage { get; set; } = null;
+        /// <summary>
+        /// A list of chat completion choices. Can be more than one if `n` is greater than 1.
+        /// </summary>
+        public List<ChoiceType> Choices { get; set; } = [];
+
+        public static ChatCompletion FromChunks(IEnumerable<ChatCompletionChunk> chunks)
+        {
+            var completion = new ChatCompletion
+            {
+                Id = new Guid().ToString(),
+                Created = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                Object = "chat.completion",
+                Usage = null,
+                Choices = []
+            };
+
+            // model, system_fingerprint, choices filled with chunks data
+            foreach(var chunk in chunks)
+            {
+                completion.Model = chunk.Model;
+                completion.SystemFingerprint = chunk.SystemFingerprint;
+                // merge choices with the same index
+                foreach(var choice in chunk.Choices)
+                {
+                    var existing_choice = completion.Choices.FirstOrDefault(c => c.Index == choice.Index);
+                    if (existing_choice is null)
+                    {
+                        ChoiceType newChoice = new()
+                        {
+                            FinishReason = choice.FinishReason,
+                            Index = choice.Index,
+                            Message = new()
+                            {
+                                Content = choice.Delta.Content,
+                                Role = choice.Delta.Role ?? RoleType.Assistant,
+                                ToolCalls = choice.Delta.ToolCalls
+                            }
+                        };
+                        completion.Choices.Add(newChoice);
+                    }
+                    else
+                    {
+                        existing_choice.FinishReason = choice.FinishReason;
+                        existing_choice.Message.Content = string.Join(string.Empty, existing_choice.Message.Content, choice.Delta.Content);
+                        if (choice.Delta.Role is not null)
+                        {
+                            existing_choice.Message.Role = choice.Delta.Role.Value;
+                        }
+                        existing_choice.Message.ToolCalls = ToolCallType.MergeList(existing_choice.Message.ToolCalls, choice.Delta.ToolCalls);
+                    }
+                }
+            }
+            foreach(var choice in completion.Choices)
+            {
+                choice.Message.ToolCalls = choice.Message.ToolCalls?.Count > 0 ? choice.Message.ToolCalls : null;
+            }
+            return completion;
+        }
+    }
+    public interface IMessage : ICloneable
+    {
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum ContentCategory
+        {
+            [EnumMember(Value = "text")]
+            Text,
+            [EnumMember(Value = "image_url")]
+            ImageUrl,
+        }
+        public interface IContent : ICloneable
+        {
+            public ContentCategory Type { get; }
+        }
+        public class TextContent : IContent
+        {
+            public ContentCategory Type => ContentCategory.Text;
+            public string Text { get; set; } = "";
+            public object Clone() => new TextContent
+            {
+                Text = Text,
+            };
+        }
+        public class ImageContent : IContent
+        {
+            public class ImageUrlType
+            {
+                [JsonConverter(typeof(StringEnumConverter))]
+                public enum ImageDetail
+                {
+                    [EnumMember(Value = "low")]
+                    Low,
+                    [EnumMember(Value = "high")]
+                    High,
+                }
+                public string Url { get; set; } = "";
+                public ImageDetail Detail { get; set; } = ImageDetail.Low;
+            }
+            public ContentCategory Type => ContentCategory.ImageUrl;
+            public ImageUrlType ImageUrl { get; set; } = new();
+            public object Clone() => new ImageContent
+            {
+                ImageUrl = new()
+                {
+                    Url = ImageUrl.Url,
+                    Detail = ImageUrl.Detail,
+                },
+            };
+        }
+        /// <summary>
+        /// The contents of the message.
+        /// </summary>
+        public IEnumerable<IContent> Content { get; set; }
+        /// <summary>
+        /// The role of the messages author
+        /// </summary>
+        public RoleType Role { get; }
+        /// <summary>
+        /// An optional name for the participant. Provides the model information to differentiate between participants of the same role.
+        /// </summary>
+        public string? Name { get; }
+        public bool IsSavingToDisk { set; }
+    }
+    public class SystemMessage : IMessage
+    {
+        public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
+        public RoleType Role=> RoleType.System;
+        public string? Name { get; set; } = null;
+        public bool IsSavingToDisk { set { } }
+
+        public object Clone() => new SystemMessage
+        {
+            Content = from c in Content select c.Clone() as IMessage.IContent,
+            Name = Name,
+        };
+    }
+    public class UserMessage : IMessage
+    {
+        public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
+        public RoleType Role => RoleType.User;
+        public string? Name { get; set; } = null;
+        public bool IsSavingToDisk { set { } }
+        public object Clone() => new UserMessage
+        {
+            Content = from c in Content select c.Clone() as IMessage.IContent,
+            Name = Name,
+        };
+    }
+    public class AssistantMessage : IMessage
+    {
+        public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
+        public RoleType Role => RoleType.Assistant;
+        public string? Name { get; set; } = null;
+        public List<ToolCallType>? ToolCalls { get; set; } = null;
+        public bool IsSavingToDisk { set { } }
+        public object Clone() => new AssistantMessage
+        {
+            Content = from c in Content select c.Clone() as IMessage.IContent,
+            Name = Name,
+            ToolCalls = (from tc in ToolCalls select tc.Clone() as ToolCallType).ToList()
+        };
+    }
+    public class ToolMessage : IMessage
+    {
+        public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
+        public RoleType Role => RoleType.Tool;
+        public string? Name => null;
+        public string ToolCallId { get; set; } = "";
+        public class GeneratedImage
+        {
+            public string ImageBase64Url { get; set; } = "";
+            public string Description { get; set; } = "";
+        }
+        public List<GeneratedImage> GeneratedImages { get; set; } = [];
+        private bool isSavingToDisk = false;
+        public bool IsSavingToDisk { set { isSavingToDisk = value; } }
+        public bool ShouldSerializeGeneratedImages()
+        {
+            return isSavingToDisk;
+        }
+        public object Clone() => new ToolMessage
+        {
+            Content = from c in Content select c.Clone() as IMessage.IContent,
+            ToolCallId = ToolCallId,
+            GeneratedImages = (from gi in GeneratedImages select new GeneratedImage
+            {
+                ImageBase64Url = gi.ImageBase64Url,
+                Description = gi.Description,
+            }).ToList()
+        };
+    }
+    public class ChatCompletionRequest
+    {
+        public class ToolType
+        {
+            public class FunctionType
+            {
+                public string? Description { get; set; } = null;
+                public string Name { get; set; } = "";
+                public JsonSchema Parameters { get; set; } = new();
+            }
+            public string Type => "function";
+            public FunctionType Function { get; set; } = new();
+        }
+        public List<IMessage> Messages { get; set; } = [];
+        public string Model { get; set; } = "";
+        // frequency_penalty
+        // logit_bias
+        public long? MaxTokens { get; set; } = null;
+        // n -> 1
+        // presence_penalty
+        // response_format
+        public long Seed { get; set; } = 0;
+        // stop
+        public bool Stream { get; set; } = true;
+        public double Temperature { get; set; } = 1.0;
+        // top_p
+        public List<ToolType>? Tools { get; set; } = null;
+        // tool_choice
+        // user
+
+        public string Save()
+        {
+            foreach(var msg in Messages)
+            {
+                msg.IsSavingToDisk = true;
+            }
+            var contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            };
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                Formatting = Formatting.Indented,
+                StringEscapeHandling = StringEscapeHandling.Default,
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+            };
+            var result = JsonConvert.SerializeObject(this, settings);
+            foreach (var msg in Messages)
+            {
+                msg.IsSavingToDisk = false;
+            }
+            return result;
+        }
+        public string GeneratePostRequest()
+        {
+            foreach (var msg in Messages)
+            {
+                msg.IsSavingToDisk = false;
+            }
+            var contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            };
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                Formatting = Formatting.None,
+                StringEscapeHandling = StringEscapeHandling.Default,
+                NullValueHandling = NullValueHandling.Ignore,
+            };
+            var result = JsonConvert.SerializeObject(this, settings);
+            return result;
+        }
+        private readonly Dictionary<string, string> imageConsoleSeqCache = [];
+        private void DisplayImage(string imageUrl)
+        {
+            if (!imageConsoleSeqCache.TryGetValue(imageUrl, out string? imagedata))
+            {
+                var bitmap = Utils.Base64ToBitmap(imageUrl);
+                imagedata = Utils.ConvertImageToConsoleSeq(bitmap);
+                imageConsoleSeqCache[imageUrl] = imagedata;
+            }
+            Utils.ConsolePrintImage(imagedata);
+            Console.WriteLine();
+        }
+        public void Display(bool useMarkdown)
+        {
+            foreach(var msg in Messages)
+            {
+                msg.Role.DisplayHeader();
+                foreach(var content in msg.Content)
+                {
+                    if (content is IMessage.TextContent textContent)
+                    {
+                        var text = textContent.Text;
+                        if (useMarkdown)
+                        {
+                            var document = MarkdownConverter.Convert(text, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
+                            text = document.VT100EncodedString;
+                        }
+                        Console.WriteLine(text);
+                    }
+                    else if (content is IMessage.ImageContent imgContent)
+                    {
+                        DisplayImage(imgContent.ImageUrl.Url);
+                    }
+                }
+                if (msg is ToolMessage toolMsg)
+                {
+                    foreach (var img in toolMsg.GeneratedImages)
+                    {
+                        Console.WriteLine(img.Description);
+                        DisplayImage(img.ImageBase64Url);
+                    }
                 }
             }
         }
-        public JsonArray ToJson()
+        public List<string> GetImageUrlList()
         {
-            var jarray = new JsonArray();
-            foreach (var record in ChatRecords)
+            var imageList = new List<string>();
+            foreach(var msg in Messages)
             {
-                jarray.Add(record.ToJson());
+                foreach(var content in msg.Content)
+                {
+                    if (content is IMessage.ImageContent imgContent)
+                    {
+                        imageList.Add(imgContent.ImageUrl.Url);
+                    }
+                }
+                if (msg is ToolMessage toolMsg)
+                {
+                    foreach(var img in toolMsg.GeneratedImages)
+                    {
+                        imageList.Add(img.ImageBase64Url);
+                    }
+                }
             }
-            return jarray;
+            return imageList;
         }
-        public string Text => string.Join(string.Empty, (from record in ChatRecords select record.ToString(false, false)));
+        public static ChatCompletionRequest BuildFromInitPrompts(IEnumerable<IMessage>? initPrompts, DateTime knowledge_cutoff)
+        {
+            var request = new ChatCompletionRequest();
+            var messages = (from p in initPrompts select p.Clone() as IMessage).ToList();
+            foreach (var msg in messages)
+            {
+                var contentList = msg.Content.ToList();
+                foreach(var content in contentList)
+                {
+                    if (content is IMessage.TextContent textContent)
+                    {
+                        string prompt = textContent.Text.Replace("{DateTime}", DateTime.Now.ToString("MMM dd yyy", CultureInfo.GetCultureInfo("en-US")));
+                        prompt = prompt.Replace("{Cutoff}", knowledge_cutoff.ToString("MMM yyyy", CultureInfo.GetCultureInfo("en-US")));
+                        textContent.Text = prompt;
+                    }
+                }
+                msg.Content = contentList;
+            }
+            request.Messages = messages;
+
+            return request;
+        }
     }
 }

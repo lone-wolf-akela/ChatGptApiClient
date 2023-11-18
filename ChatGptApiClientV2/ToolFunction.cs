@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 using NJsonSchema.Generation;
+using Newtonsoft.Json.Serialization;
 
 namespace ChatGptApiClientV2
 {
@@ -30,7 +31,7 @@ namespace ChatGptApiClientV2
         public string Name { get; }
         public string DisplayName { get; }
         public Type ArgsType { get; }
-        public string Parameters
+        public JsonSchema Parameters
         {
             get
             {
@@ -39,10 +40,15 @@ namespace ChatGptApiClientV2
                 var resolver = new JsonSchemaResolver(schema, settings);
                 var generator = new JsonSchemaGenerator(settings);
                 generator.Generate(schema, ArgsType, resolver);
-                return schema.ToJson().ToString();
+                return schema;
             }
         }
-        public Task Action(ConfigType config, NetStatusType netstatus, ChatRecord chatrecord, string args);
+        public Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string args);
+        public ChatCompletionRequest.ToolType GetToolRequest() => new() 
+        {
+            Function = new () { Name = Name, Parameters = Parameters, Description = Description }
+        };
+
     }
 
     public class DalleImageGen : IToolFunction
@@ -83,44 +89,81 @@ namespace ChatGptApiClientV2
         public string DisplayName => "DALL-E 图像生成";
         public Type ArgsType => typeof(Args);
 
-        private readonly HttpClient api_client = new();
-        private readonly HttpClient download_client = new();
-        public async Task Action(ConfigType config, NetStatusType netstatus, ChatRecord record, string argstr)
+        private readonly HttpClient apiClient = new();
+        private readonly HttpClient downloadClient = new();
+        private class Request
         {
+            public string Prompt { get; set; } = "";
+            public string Model { get; set; } = "dall-e-3";
+            public string Quality { get; set; } = "hd";
+            public string ResponseFormat { get; set; } = "url";
+            public ImageSize Size { get; set; } = ImageSize.Sqaure;
+            public string Style { get; set; } = "vivid";
+
+            public string GeneratePostRequest()
+            {
+                var contractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                };
+                var settings = new JsonSerializerSettings
+                {
+                    ContractResolver = contractResolver,
+                    Formatting = Formatting.None,
+                    StringEscapeHandling = StringEscapeHandling.Default,
+                    NullValueHandling = NullValueHandling.Ignore,
+                };
+                var result = JsonConvert.SerializeObject(this, settings);
+                return result;
+            }
+        }
+        public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
+        {
+            var msgContents = new List<IMessage.TextContent>();
+            var msg = new ToolMessage { Content = msgContents };
+            msgContents.Add(new() { Text = "" });
+
             var args_json = JToken.Parse(argstr);
             var args_reader = new JTokenReader(args_json);
             var args_serializer = new JsonSerializer();
-            var args = args_serializer.Deserialize<Args>(args_reader);
-            if (args is null)
+            Args args;
+            try
             {
-                record.Content += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
-                return;
+                var parsedArgs = args_serializer.Deserialize<Args>(args_reader);
+                if (parsedArgs is null)
+                {
+                    msgContents[0].Text += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
+                    return msg;
+                }
+                args = parsedArgs;
+            }
+            catch (JsonSerializationException e)
+            {
+                msgContents[0].Text += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
+                msgContents[0].Text += $"Exception: {e.Message}\n\n";
+                return msg;
             }
 
-            api_client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
+            apiClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
 
             Console.WriteLine($"Generating image with prompt: {args.Prompts}");
             Console.WriteLine();
 
-            var msg = new JObject
+            var requestbody = new Request
             {
-                ["prompt"] = args.Prompts, // $"DO NOT add any detail, just use it AS-IS: {args.Prompts}",
-                ["model"] = "dall-e-3",
-                ["quality"] = "hd",
-                ["response_format"] = "url",
-                ["size"] = args_json?["Size"] ?? "1024x1024",
-                ["style"] = "vivid", // or "natural"
+                Prompt = args.Prompts,
+                Size = args.Size,
             };
-
-            var post_content = new StringContent(msg.ToString(), Encoding.UTF8, "application/json");
+            var requestStr = requestbody.GeneratePostRequest();
+            var postContent = new StringContent(requestStr, Encoding.UTF8, "application/json");
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
                 RequestUri = new Uri("https://api.openai.com/v1/images/generations"),
-                Content = post_content
+                Content = postContent
             };
             netstatus.Status = NetStatusType.StatusEnum.Sending;
-            var response = await api_client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            var response = await apiClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             netstatus.Status = NetStatusType.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
@@ -131,14 +174,14 @@ namespace ChatGptApiClientV2
                 var errorJson = JToken.Parse(errorResponse);
                 if (errorJson?["error"] is not null)
                 {
-                    record.Content += $"Error: {errorJson?["error"]?["message"]?.ToString()}\n\n";
+                    msgContents[0].Text += $"Error: {errorJson?["error"]?["message"]?.ToString()}\n\n";
                 }
                 else
                 {
-                    record.Content += $"Error: {errorResponse}\n\n";
+                    msgContents[0].Text += $"Error: {errorResponse}\n\n";
                 }
                 netstatus.Status = NetStatusType.StatusEnum.Idle;
-                return;
+                return msg;
             }
 
             using var responseStream = await response.Content.ReadAsStreamAsync();
@@ -150,9 +193,9 @@ namespace ChatGptApiClientV2
 
             if (img_download_url is null)
             {
-                record.Content += "Error: no image download address generated.\n\n";
+                msgContents[0].Text += "Error: no image download address generated.\n\n";
                 netstatus.Status = NetStatusType.StatusEnum.Idle;
-                return;
+                return msg;
             }
 
             Console.WriteLine($"Downloading image from {img_download_url}");
@@ -167,24 +210,31 @@ namespace ChatGptApiClientV2
             var tmp_name = Path.GetTempFileName();
             using (var fs = File.Create(tmp_name))
             {
-                download_success = await download_client.DownloadAsync(img_download_url, fs, progress);
+                download_success = await downloadClient.DownloadAsync(img_download_url, fs, progress);
             }
 
             if (!download_success)
             {
-                record.Content += $"Error: failed to download image from {img_download_url}\n\n";
+                msgContents[0].Text += $"Error: failed to download image from {img_download_url}\n\n";
                 netstatus.Status = NetStatusType.StatusEnum.Idle;
-                return;
+                return msg;
             }
 
             var image_file_ext = Utils.GetFileExtensionFromUrl(img_download_url);
             var image_name = Path.ChangeExtension(tmp_name, image_file_ext);
             File.Move(tmp_name, image_name);
-            record.AddImageFromFile(image_name, false, $"Original Prompts: {args.Prompts}\n\nRevised Prompts: {response_data?["revised_prompt"]}\n\nDownload URL: {img_download_url}");
-            File.Delete(image_name);
+            var image_url = Utils.ImageFileToBase64(image_name);
+            var image_desc = 
+                @$"Original Prompts: {args.Prompts}
 
+Revised Prompts: {response_data?["revised_prompt"]}
+
+Download URL: {img_download_url}";
+            msg.GeneratedImages.Add(new() { ImageBase64Url = image_url, Description = image_desc });
+            File.Delete(image_name);
+            msgContents[0].Text += $"Image generated successfully and is now displaying on the screen.\n\n";
             netstatus.Status = NetStatusType.StatusEnum.Idle;
-            return;
+            return msg;
         }
     }
 
