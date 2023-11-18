@@ -1073,6 +1073,10 @@ static char* RenderImage(char* vt, const unsigned char* rgb, unsigned yn,
     for (y = 0; y < yn; ++y) {
         if (y) {
             while (v > vt && v[-1] == ' ') --v;
+            *v++ = 033;
+            *v++ = '[';
+            *v++ = '0';
+            *v++ = 'm';
             *v++ = '\r';
             *v++ = '\n';
         }
@@ -1106,7 +1110,7 @@ std::string PrintImage(void* rgb, unsigned yn, unsigned xn) {
 
     char* v, * vt;
     constexpr size_t pagesize = 4096;
-    vt = (char*)_aligned_malloc(yn * (xn * (32 + (2 + (1 + 3) * 3) * 2 + 1 + 3)) * 1 + 5 + 1, pagesize);
+    vt = (char*)_aligned_malloc(yn * (xn * (32 + (2 + (1 + 3) * 3) * 2 + 1 + 3) + 6) * 1 + 5 + 1, pagesize);
     v = RenderImage(vt, (unsigned char*)rgb, yn, xn);
     *v++ = '\r';
     *v++ = 033;

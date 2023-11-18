@@ -13,6 +13,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Media.Media3D;
 using System.Buffers.Text;
 using System.Web;
+using System.Net.Http;
+using System.Threading;
 
 namespace ChatGptApiClientV2
 {
@@ -86,23 +88,16 @@ namespace ChatGptApiClientV2
             }
             return s;
         }
-        public static string ExtractBase64FromUrl(string url_or_base64)
+        public static string ExtractBase64FromUrl(string url)
         {
-            if (url_or_base64.StartsWith("data:"))
+            var r = Base64UrlExtract();
+            var match = r.Match(url);
+            if (!match.Success)
             {
-                var r = Base64UrlExtract();
-                var match = r.Match(url_or_base64);
-                if (!match.Success)
-                {
-                    throw new ArgumentException("The string is not a base64 image.");
-                }
-                var data = match.Groups["data"].Value;
-                return data;
+                throw new ArgumentException("The string is not a base64 image.");
             }
-            else
-            {
-                return url_or_base64;
-            }
+            var data = match.Groups["data"].Value;
+            return data;
         }
         public static BitmapImage Base64ToBitmapImage(string base64)
         {
@@ -221,8 +216,14 @@ namespace ChatGptApiClientV2
         {
             ConsoleEnableVTSeq();
             ConsoleDisableWrap();
-            Console.WriteLine(img);
+            Console.Write(img);
             ConsoleEnableWrap();
+        }
+        public static string GetFileExtensionFromUrl(string url)
+        {
+            url = url.Split('?')[0];
+            url = url.Split('/').Last();
+            return url.Contains('.') ? url[url.LastIndexOf('.')..] : "";
         }
     }
 }

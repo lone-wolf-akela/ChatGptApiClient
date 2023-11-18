@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Win32;
+using Microsoft.Windows.Themes;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -99,10 +100,27 @@ namespace ChatGptApiClientV2
             JSerializerOptions.IgnoreReadOnlyFields = true;
             JSerializerOptions.IgnoreReadOnlyProperties = true;
             JSerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+
+            foreach(var plugin in ToolFunction.FunctionList)
+            {
+                Plugins.Add(new(plugin));
+                pluginLookUpTable[plugin.Name] = plugin;
+            }
         }
 
         private ChatRecordList? current_session_record;
-        
+        public partial class PluginInfo(IToolFunction p) : ObservableObject
+        {
+            [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(Name))]
+            private IToolFunction plugin = p;
+            public string Name => Plugin.DisplayName;
+            [ObservableProperty]
+            private bool isEnabled = false;
+        }
+        public ObservableCollection<PluginInfo> Plugins { get; set; } = [];
+        private readonly Dictionary<string, IToolFunction> pluginLookUpTable = [];
+
         public partial class ConfigType : ObservableObject
         {
             [ObservableProperty]
@@ -143,6 +161,8 @@ namespace ChatGptApiClientV2
 
             [ObservableProperty]
             [NotifyPropertyChangedFor(nameof(SelectedModelType))]
+            [NotifyPropertyChangedFor(nameof(SelectedModel))]
+            [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
             private int selectedModelIndex;
             partial void OnSelectedModelIndexChanged(int value)
             {
@@ -177,6 +197,8 @@ namespace ChatGptApiClientV2
             }
 
             [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(SelectedModel))]
+            [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
             private int selectedModelVersionIndex;
             partial void OnSelectedModelVersionIndexChanged(int value)
             {
@@ -198,7 +220,7 @@ namespace ChatGptApiClientV2
             public ModelVersionInfo? SelectedModel => 
                 (SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count) ? 
                 ModelVersionOptions[SelectedModelVersionIndex] : null;
-
+            public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
             public ConfigType()
             {
                 _API_KEY = "";
@@ -221,10 +243,13 @@ namespace ChatGptApiClientV2
             }
         }
 
-        public class ImageInfo
+        public partial class ImageInfo : ObservableObject
         {
-            public string Base64Data { get; set; } = "";
-            public int Index { get; set; } = 0;
+            [ObservableProperty]
+            [NotifyPropertyChangedFor(nameof(Image))]
+            private string base64Data = "";
+            [ObservableProperty]
+            private int index = 0;
             public BitmapImage Image => Utils.Base64ToBitmapImage(Base64Data);
         }
         public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = [];
@@ -287,6 +312,28 @@ namespace ChatGptApiClientV2
                 ["stream"] = true,
                 ["seed"] = Config.Seed,
             };
+            var enabled_plugins = from plugin in Plugins
+                                 where plugin.IsEnabled
+                                 select plugin.Plugin;
+            if (Config.SelectedModel.FunctionCallSupported && enabled_plugins.Any())
+            {
+                var tool_list = new JsonArray();
+                foreach (var plugin in enabled_plugins)
+                {
+                    var tool = new JsonObject
+                    {
+                        ["type"] = "function",
+                        ["function"] = new JsonObject
+                        {
+                            ["description"] = plugin.Description,
+                            ["name"] = plugin.Name,
+                            ["parameters"] = JsonNode.Parse(plugin.Parameters),
+                        },
+                    };
+                    tool_list.Add(tool);
+                }
+                msg["tools"] = tool_list;
+            }
 
             if (Config.SelectedModel.Name.Contains("vision"))
             {
@@ -304,6 +351,9 @@ namespace ChatGptApiClientV2
             var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             NetStatus.Status = NetStatusType.StatusEnum.Receiving;
             StringBuilder response_sb = new();
+
+            Dictionary<int, JsonObject> function_call_records = []; 
+
             ChatRecord response_record = new(ChatRecord.ChatType.Bot, "");
             Console.Write(response_record.GetHeader());
             if (response.IsSuccessStatusCode)
@@ -321,30 +371,61 @@ namespace ChatGptApiClientV2
                     {
                         break; // 结束聊天响应数据接收
                     }
-                    if (line.StartsWith("data: "))
+                    if (!line.StartsWith("data: "))
                     {
-                        var chatResponse = line["data: ".Length..];
-                        var responseJson = JsonNode.Parse(chatResponse);
-                        if (responseJson?["object"]?.ToString() != "chat.completion.chunk")
-                        {
-                            Console.WriteLine(responseJson?.ToString());
-                            return;
-                        }
-                        string? ch = responseJson?["choices"]?[0]?["delta"]?["content"]?.ToString();
-                        if (ch is not null)
-                        {
-                            response_sb.Append(ch);
-                            Console.Write(ch);
-                            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
-                        }
-                        string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
-                        if (role is not null && role != "assistant")
-                        {
-                            throw new InvalidDataException($"Wrong reply role: {{{role}}}");
-                        }
-                        string? system_fingerprint = responseJson?["system_fingerprint"]?.ToString();
-                        NetStatus.SystemFingerprint = system_fingerprint ?? "";
+                        continue;
                     }
+                    var chatResponse = line["data: ".Length..];
+                    var responseJson = JsonNode.Parse(chatResponse);
+
+                    var choice_0 = responseJson?["choices"]?[0];
+
+                    string? ch = choice_0?["delta"]?["content"]?.ToString();
+                    if (ch is not null)
+                    {
+                        response_sb.Append(ch);
+                        Console.Write(ch);
+                    }
+
+                    JsonArray? tool_calls = choice_0?["delta"]?["tool_calls"] as JsonArray;
+                    if (tool_calls is not null)
+                    {
+                        foreach (var call_node in tool_calls)
+                        {
+                            var tool_call = call_node as JsonObject ?? throw new InvalidDataException($"tool_call is not JsonObject");
+                            int? index = tool_call["index"]?.GetValue<int>() ?? throw new InvalidDataException($"tool_call without index: {tool_call}");
+                            var function_obj = tool_call["function"] as JsonObject ?? throw new InvalidDataException($"function_obj is not JsonObject: {tool_call}");
+                            // combine tool_call_obj with obj already saved in function_call_records
+                            if (function_call_records.TryGetValue(index.Value, out JsonObject? stored_obj))
+                            {
+                                foreach (var (key, value) in function_obj)
+                                {
+                                    if (stored_obj.TryGetPropertyValue(key, out JsonNode? old_value))
+                                    {
+                                        stored_obj[key] = string.Concat(old_value?.ToString(), value?.ToString());
+                                    }
+                                    else
+                                    {
+                                        stored_obj[key] = value;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                function_call_records[index.Value] = function_obj.DeepClone() as JsonObject ?? throw new InvalidDataException($"function_obj is not JsonObject: {function_obj}");
+                            }
+                        }
+                    }
+
+                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
+
+                    string? role = responseJson?["choices"]?[0]?["delta"]?["role"]?.ToString();
+                    if (role is not null && role != "assistant")
+                    {
+                        throw new InvalidDataException($"Wrong reply role: {{{role}}}");
+                    }
+                    string? system_fingerprint = responseJson?["system_fingerprint"]?.ToString();
+                    NetStatus.SystemFingerprint = system_fingerprint ?? "";
                 }
             }
             else
@@ -364,7 +445,19 @@ namespace ChatGptApiClientV2
             }
             Console.WriteLine();
             response_record.Content = response_sb.ToString();
+            
+            foreach(var (index, function_call) in function_call_records)
+            {
+                response_record.ToolCalls.Add(function_call);
+
+                string? plugin_name = function_call?["name"]?.ToString() ?? throw new InvalidDataException($"plugin_name is null: {function_call}");
+                var plugin = pluginLookUpTable[plugin_name] ?? throw new InvalidDataException($"plugin not found: {plugin_name}");
+                var args = function_call?["arguments"]?.ToString() ?? throw new InvalidDataException($"args is null: {function_call}");
+                await plugin.Action(Config, NetStatus, response_record, args);
+            }
+
             current_session_record.ChatRecords.Add(response_record);
+
             NetStatus.Status = NetStatusType.StatusEnum.Idle;
         }
         private async void Button_Click(object sender, RoutedEventArgs e)

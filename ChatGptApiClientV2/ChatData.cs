@@ -24,30 +24,29 @@ namespace ChatGptApiClientV2
         }
         public ChatType Type { get; set; }
         public string Content { get; set; }
+        public JsonArray ToolCalls { get; set; }
         public class ImageInfo
         {
             public string Data { get; set; } = "";
             public bool UploadToBot { get; set; } = true;
+            public string Description { get; set; } = "";
         }
         public List<ImageInfo> Images { get; set; }
         private readonly Dictionary<string, string> imageConsoleSeqCache = [];
         public bool HighResImage { get; set; }
         public bool Hidden { get; set; }
-        public ChatRecord(ChatType type, string content, List<ImageInfo>? images = null, bool highresimage = false, bool hidden = false)
+        public ChatRecord(ChatType type, string content, List<ImageInfo>? images = null, bool highresimage = false, bool hidden = false, JsonArray? toolcalls = null)
         {
             Type = type;
             Content = content;
             Images = images ?? [];
             Hidden = hidden;
             HighResImage = highresimage;
+            ToolCalls = toolcalls ?? [];
         }
-        public void AddImageFromFile(string filename)
+        public void AddImageFromFile(string filename, bool upload_to_bot = true, string description = "")
         {
-            Images.Add(new() { Data = Utils.ImageFileToBase64(filename), UploadToBot = true });
-        }
-        public void AddImageFromBase64(string base64url, bool upload_to_bot)
-        {
-            Images.Add(new() { Data = base64url, UploadToBot = upload_to_bot });
+            Images.Add(new() { Data = Utils.ImageFileToBase64(filename), UploadToBot = upload_to_bot, Description = description });
         }
         public JsonObject ToJson()
         {
@@ -82,8 +81,12 @@ namespace ChatGptApiClientV2
                     Type == ChatType.Bot ? "assistant" :
                     Type == ChatType.Function ? "function" :
                     "system",
-                ["content"] = content
+                ["content"] = content,
             };
+            if (ToolCalls.Count != 0)
+            {
+                jobj["tool_calls"] = ToolCalls;
+            }
             return jobj;
         }
         public static ChatRecord FromJson(JsonObject jobj)
@@ -178,6 +181,8 @@ namespace ChatGptApiClientV2
                 }
                 var seq = value;
                 Utils.ConsolePrintImage(seq);
+                Console.WriteLine(img_url.Description);
+                Console.WriteLine();
             }
         }
     }

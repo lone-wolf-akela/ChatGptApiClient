@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,6 +27,23 @@ namespace ChatGptApiClientV2
         public void ShowImage(BitmapImage img)
         {
             imgbox.Source = img;
+        }
+        private void btn_saveimg_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog
+            {
+                FileName = "image",
+                DefaultExt = ".png",
+                Filter = "PNG images|*.png",
+                ClientGuid = new Guid("A1DF5042-ADCE-48EA-9275-32A4E877B2F9"),
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imgbox.Source));
+                using var stream = dlg.OpenFile();
+                encoder.Save(stream);
+            }
         }
     }
 }
