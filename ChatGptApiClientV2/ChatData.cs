@@ -266,14 +266,18 @@ namespace ChatGptApiClientV2
                 Created = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 Object = "chat.completion",
                 Usage = null,
-                Choices = []
+                SystemFingerprint = "",
+                Choices = [],
             };
 
             // model, system_fingerprint, choices filled with chunks data
             foreach(var chunk in chunks)
             {
                 completion.Model = chunk.Model;
-                completion.SystemFingerprint = chunk.SystemFingerprint;
+                if (!string.IsNullOrEmpty(chunk.SystemFingerprint))
+                {
+                    completion.SystemFingerprint = chunk.SystemFingerprint;
+                }
                 // merge choices with the same index
                 foreach(var choice in chunk.Choices)
                 {
@@ -295,7 +299,7 @@ namespace ChatGptApiClientV2
                     }
                     else
                     {
-                        existing_choice.FinishReason = choice.FinishReason;
+                        existing_choice.FinishReason = string.Join(string.Empty, existing_choice.FinishReason, choice.FinishReason);
                         existing_choice.Message.Content = string.Join(string.Empty, existing_choice.Message.Content, choice.Delta.Content);
                         if (choice.Delta.Role is not null)
                         {

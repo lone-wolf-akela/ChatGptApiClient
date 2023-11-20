@@ -15,9 +15,54 @@ using System.Buffers.Text;
 using System.Web;
 using System.Net.Http;
 using System.Threading;
+using System.Globalization;
+using System.Windows.Data;
+using System.Windows.Controls;
 
 namespace ChatGptApiClientV2
 {
+    public class RegexValidationRule : ValidationRule
+    {
+        private string pattern;
+        private Regex regex;
+        public string ErrorMessage { get; set; }
+
+        public string Pattern
+        {
+            get => pattern;
+            set
+            {
+                pattern = value;
+                regex = new(pattern);
+            }
+        }
+
+        public RegexValidationRule()
+        {
+            pattern = "";
+            regex = new("");
+            ErrorMessage = "";
+        }
+
+        public override ValidationResult Validate(object value, CultureInfo ultureInfo)
+        {
+            if (!regex.Match(value.ToString() ?? "").Success)
+            {
+                return new ValidationResult(false, ErrorMessage);
+            }
+            else
+            {
+                return new ValidationResult(true, null);
+            }
+        }
+    }
+
+    [ValueConversion(typeof(bool), typeof(bool))]
+    public class InvertBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
+    }
     partial class Utils
     {
         [Flags]

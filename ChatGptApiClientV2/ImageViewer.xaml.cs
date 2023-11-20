@@ -20,12 +20,9 @@ namespace ChatGptApiClientV2
     /// </summary>
     public partial class ImageViewer : Window
     {
-        public ImageViewer()
+        public ImageViewer(BitmapImage img)
         {
             InitializeComponent();
-        }
-        public void ShowImage(BitmapImage img)
-        {
             imgbox.Source = img;
         }
         private void btn_saveimg_Click(object sender, RoutedEventArgs e)

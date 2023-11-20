@@ -20,9 +20,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using static System.Net.Mime.MediaTypeNames;
-using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using System.Globalization;
+using System.Windows.Controls;
 
 namespace ChatGptApiClientV2
 {
@@ -34,6 +34,7 @@ namespace ChatGptApiClientV2
     {
         private const char Esc = (char)0x1B;
         private readonly HttpClient client = new();
+        private static readonly Random random = new();
 
         public partial class NetStatusType : ObservableObject
         {
@@ -157,6 +158,8 @@ namespace ChatGptApiClientV2
                 Plugins.Add(new(plugin));
                 pluginLookUpTable[plugin.Name] = plugin;
             }
+
+            Config = ConfigType.LoadConfig();
         }
 
         private ChatCompletionRequest? currentSession;
@@ -172,134 +175,6 @@ namespace ChatGptApiClientV2
         public ObservableCollection<PluginInfo> Plugins { get; set; } = [];
         private readonly Dictionary<string, IToolFunction> pluginLookUpTable = [];
 
-        public partial class ConfigType : ObservableObject
-        {
-            [ObservableProperty]
-            private string _API_KEY;
-            partial void OnAPI_KEYChanged(string value)
-            {
-                SaveConfig();
-            }
-
-            [ObservableProperty]
-            private double temperature;
-            partial void OnTemperatureChanged(double value)
-            {
-                SaveConfig();
-            }
-
-            [ObservableProperty]
-            private int seed;
-            partial void OnSeedChanged(int value)
-            {
-                SaveConfig();
-            }
-
-            [ObservableProperty]
-            private bool enableMarkdown;
-            partial void OnEnableMarkdownChanged(bool value)
-            {
-                SaveConfig();
-            }
-
-            [JsonIgnore]
-            public static ImmutableArray<ModelInfo> ModelOptions => ModelInfo.ModelList;
-            [JsonIgnore]
-            public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
-
-            [ObservableProperty]
-            [NotifyPropertyChangedFor(nameof(SelectedModelType))]
-            [NotifyPropertyChangedFor(nameof(SelectedModel))]
-            [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
-            private int selectedModelIndex;
-            partial void OnSelectedModelIndexChanged(int value)
-            {
-                if (ModelOptions.Count() == 0)
-                {
-                    SelectedModelIndex = -1;
-                }
-                else if (value < 0 || value >= ModelOptions.Count())
-                {
-                    SelectedModelIndex = 0;
-                }
-
-                SaveConfig();
-                UpdateModelVersionList();
-            }
-            private void UpdateModelVersionList()
-            {
-                ModelVersionOptions.Clear();
-                
-                if (SelectedModelType is not null)
-                {
-                    var models = from model in ModelVersionInfo.VersionList
-                                 where model.ModelType == SelectedModelType.Name
-                                 select model;
-                    foreach (var model in models)
-                    {
-                        ModelVersionOptions.Add(model);
-                    }
-                }
-                
-                SelectedModelVersionIndex = 0;
-            }
-
-            [ObservableProperty]
-            [NotifyPropertyChangedFor(nameof(SelectedModel))]
-            [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
-            private int selectedModelVersionIndex;
-            partial void OnSelectedModelVersionIndexChanged(int value)
-            {
-                if (ModelVersionOptions.Count == 0)
-                {
-                    SelectedModelVersionIndex = -1;
-                }
-                else if (value < 0 || value >= ModelVersionOptions.Count)
-                {
-                    SelectedModelVersionIndex = 0;
-                }
-                SaveConfig();
-            }
-            [JsonIgnore]
-            public ModelInfo? SelectedModelType => 
-                (SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count()) ?
-                ModelOptions[SelectedModelIndex] : null;
-            [JsonIgnore]
-            public ModelVersionInfo? SelectedModel => 
-                (SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count) ? 
-                ModelVersionOptions[SelectedModelVersionIndex] : null;
-            [JsonIgnore]
-            public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
-            public ConfigType()
-            {
-                _API_KEY = "";
-                temperature = 1.0;
-                seed = 0;
-                enableMarkdown = false;
-                selectedModelIndex = 0;
-                selectedModelVersionIndex = 0;
-
-                UpdateModelVersionList();
-            }
-            private void SaveConfig()
-            {
-                var contractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new SnakeCaseNamingStrategy()
-                };
-                var settings = new JsonSerializerSettings
-                {
-                    ContractResolver = contractResolver,
-                    Formatting = Formatting.Indented,
-                    StringEscapeHandling = StringEscapeHandling.Default,
-                    NullValueHandling = NullValueHandling.Ignore,
-                    TypeNameHandling = TypeNameHandling.Auto,
-                };
-                var result = JsonConvert.SerializeObject(this, settings);
-                File.WriteAllText("config.json", result);
-            }
-        }
-
         public partial class ImageInfo : ObservableObject
         {
             [ObservableProperty]
@@ -312,7 +187,7 @@ namespace ChatGptApiClientV2
         public ObservableCollection<ImageInfo> ChatHistoryImages { get; set; } = [];
 
         [ObservableProperty]
-        private ConfigType config = new();
+        private ConfigType config;
         private bool first_input = true;
 
         private void ResetChatHistoryImages()
@@ -335,7 +210,7 @@ namespace ChatGptApiClientV2
                 ChatHistoryImages.Add(new ImageInfo { Base64Data = base64, Index = ChatHistoryImages.Count });
             }
         }
-        private void ResetSession(ChatCompletionRequest? loadedSession = null)
+        private ChatCompletionRequest ResetSession(ChatCompletionRequest? loadedSession = null)
         {
             Console.Write(string.Concat(Esc, "[3J")); // need this to clear whole screen in the new windows terminal, until https://github.com/dotnet/runtime/issues/28355 get fixed
             Console.Clear();
@@ -345,6 +220,7 @@ namespace ChatGptApiClientV2
             Console.WriteLine(new string('=', Console.WindowWidth));
             currentSession.Display(Config.EnableMarkdown);
             ResetChatHistoryImages();
+            return currentSession;
         }
         private async Task Send()
         {
@@ -399,19 +275,11 @@ namespace ChatGptApiClientV2
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
-                    if (string.IsNullOrEmpty(line))
-                    {
-                        continue;
-                    }
-                    if (line == "data: [DONE]")
-                    {
-                        break; // 结束聊天响应数据接收
-                    }
-                    if (!line.StartsWith("data: "))
-                    {
-                        continue;
-                    }
+                    if (string.IsNullOrEmpty(line)) { continue; }
+                    if (!line.StartsWith("data: ")) { continue; }
+
                     var chatResponse = line["data: ".Length..];
+                    if (chatResponse == "[DONE]") { break; }
                     try
                     {
                         var contractResolver = new DefaultContractResolver
@@ -439,7 +307,11 @@ namespace ChatGptApiClientV2
                     }
                     System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
 
-                    NetStatus.SystemFingerprint = chunk?.SystemFingerprint ?? "";
+                    var fingerprint = chunk?.SystemFingerprint;
+                    if (!string.IsNullOrEmpty(fingerprint))
+                    {
+                        NetStatus.SystemFingerprint = chunk?.SystemFingerprint ?? "";
+                    }
                 }
             }
             else
@@ -458,9 +330,10 @@ namespace ChatGptApiClientV2
                 }
             }
             Console.WriteLine();
-            NetStatus.Status = NetStatusType.StatusEnum.Idle;
-
             var chatCompletion = ChatCompletion.FromChunks(chatChunks);
+            NetStatus.Status = NetStatusType.StatusEnum.Idle;
+            NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
+
             var choice_0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
             var newAssistantMsg = new AssistantMessage
             {
@@ -491,9 +364,11 @@ namespace ChatGptApiClientV2
         }
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (currentSession is null)
+            currentSession ??= ResetSession();
+
+            if (Config.UseRandomSeed)
             {
-                ResetSession();
+                Config.Seed = random.Next();
             }
 
             StringBuilder input_txt = new();
@@ -536,7 +411,11 @@ namespace ChatGptApiClientV2
                 contentList.Add(imgContent);
             }
 
-            var userMsg = new UserMessage { Content = contentList };
+            var userMsg = new UserMessage
+            {
+                Content = contentList,
+                Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName
+            };
             var msgList = new List<IMessage> { userMsg };
 
             currentSession!.Messages.Add(userMsg);
@@ -560,33 +439,6 @@ namespace ChatGptApiClientV2
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // setup config
-            if (File.Exists("config.json"))
-            {
-                string saved_config = File.ReadAllText("config.json");
-                try
-                {
-                    var contractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    };
-                    var settings = new JsonSerializerSettings
-                    {
-                        ContractResolver = contractResolver,
-                        TypeNameHandling = TypeNameHandling.Auto,
-                    };
-                    var parsed_config = JsonConvert.DeserializeObject<ConfigType>(saved_config, settings);
-                    if (parsed_config is not null)
-                    {
-                        Config = parsed_config;
-                    }
-                }
-                catch (JsonSerializationException exception)
-                {
-                    MessageBox.Show($"Error: Invalid config file: {exception.Message}");
-                }
-            }
-
             // setup initial prompts
             if (File.Exists("initial_prompts.json"))
             {
@@ -610,7 +462,7 @@ namespace ChatGptApiClientV2
                 }
                 catch (JsonSerializationException exception)
                 {
-                    MessageBox.Show($"Error: Invalid initial prompts file: {exception.Message}");
+                    HandyControl.Controls.MessageBox.Show($"Error: Invalid initial prompts file: {exception.Message}");
                 }
             }
             if (InitialPrompts is null || !InitialPrompts.PromptsOptions.Any())
@@ -679,14 +531,14 @@ namespace ChatGptApiClientV2
                     var loadedSession = JsonConvert.DeserializeObject<ChatCompletionRequest>(savedJson, settings);
                     if (loadedSession is null)
                     {
-                        MessageBox.Show("Error: Invalid session file.");
+                        HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
                         return;
                     }
                     ResetSession(loadedSession);
                 }
                 catch (JsonSerializationException exception)
                 {
-                    MessageBox.Show($"Error: Invalid session file: {exception.Message}");
+                    HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
                     return;
                 }
             }
@@ -725,15 +577,15 @@ namespace ChatGptApiClientV2
         private void ContentControl_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var img = ChatHistoryImages[lst_images.SelectedIndex].Image;
-            var img_viewer = new ImageViewer();
-            img_viewer.ShowImage(img);
-            img_viewer.Show();
+            var imgViewer = new ImageViewer(img);
+            imgViewer.Show();
+            imgViewer.Focus();
         }
 
-        private static readonly Random random = new();
         private void Button_Click_6(object sender, RoutedEventArgs e)
         {
-            Config.Seed = random.Next();
+            var settingsDialog = new Settings(Config);
+            settingsDialog.ShowDialog();
         }
     }
 }
