@@ -963,7 +963,7 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
     return r;
 }
 #else
-__m256i bitmap2vecmask(int m) {
+static __m256i bitmap2vecmask(int m) {
     const __m256i vshift_count = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
     __m256i bcast = _mm256_set1_epi32(m);
     __m256i shifted = _mm256_sllv_epi32(bcast, vshift_count);  // high bit of each element = corresponding bit of the mask
@@ -1008,7 +1008,8 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
         const __m256 fu_vec = _mm256_set1_ps(fu);
 
         for (int i = 0; i < BN; i += 8) {
-            const __m256 lb_vec = _mm256_loadu_ps(&lb[k * BN + i]);
+            // lb is aligned to __m256 in adjudicate(), so use _mm256_load_ps instead of _mm256_loadu_ps
+            const __m256 lb_vec = _mm256_load_ps(&lb[k * BN + i]);
             const unsigned mask = (gu >> i) & 0xFF; // Calculate the mask for the next 8 bits
             const __m256i mask_vec = bitmap2vecmask(mask);
             const __m256 p_vec = _mm256_blendv_ps(bu_vec, fu_vec, _mm256_castsi256_ps(mask_vec));
@@ -1025,7 +1026,8 @@ static FLOAT adjudicate(unsigned b, unsigned f, unsigned g,
  */
 static struct Cell derasterize(unsigned char block[CN * BN]) {
     struct Cell cell;
-    FLOAT r, best, lb[CN * BN];
+    FLOAT r, best;
+    alignas(__m256) FLOAT lb[CN * BN]; // align to 256 for AVX2
     unsigned i, n, b, f, g;
     unsigned char bf[1u << MC][2];
     rgb2lin(lb, block);
