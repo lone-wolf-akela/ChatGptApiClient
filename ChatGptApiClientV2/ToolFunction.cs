@@ -211,6 +211,7 @@ namespace ChatGptApiClientV2
             using (var fs = File.Create(tmp_name))
             {
                 download_success = await downloadClient.DownloadAsync(img_download_url, fs, progress);
+                Console.WriteLine();
             }
 
             if (!download_success)
