@@ -11,12 +11,18 @@
         <DockPanel Margin="20,20,20,25">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
             <StackPanel>
-                <Grid>
-                    <DockPanel Margin="0,0,0,5">
-                        <Label DockPanel.Dock="Left" MinWidth="100" Content="API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}"/>
-                        <TextBox x:Name="txtbx_apikey" TextWrapping="Wrap" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center"/>
-                    </DockPanel>
-                </Grid>
+                <DockPanel Margin="0,0,0,5">
+                    <Label DockPanel.Dock="Left" MinWidth="170" Content="API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                    <TextBox x:Name="txtbx_apikey" TextWrapping="Wrap" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Margin="0,0,0,5">
+                    <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                    <TextBox x:Name="txtbx_googlesearch_engineid" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Margin="0,0,0,5">
+                    <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                    <TextBox x:Name="txtbx_googlesearch_key" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
+                </DockPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>

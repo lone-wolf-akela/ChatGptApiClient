@@ -26,6 +26,15 @@ namespace ChatGptApiClientV2
         private string _API_KEY;
         partial void OnAPI_KEYChanged(string value) => SaveConfig();
 
+        /* Google Search Plugin Config */
+        [ObservableProperty]
+        private string googleSearchEngineID;
+        partial void OnGoogleSearchEngineIDChanged(string value) => SaveConfig();
+        [ObservableProperty]
+        private string googleSearchAPIKey;
+        partial void OnGoogleSearchAPIKeyChanged(string value) => SaveConfig();
+        /*******************************/
+
         [ObservableProperty]
         private double temperature;
         partial void OnTemperatureChanged(double value) => SaveConfig();
@@ -114,6 +123,8 @@ namespace ChatGptApiClientV2
         {
             userNickName = string.Empty;
             _API_KEY = "";
+            googleSearchAPIKey = "";
+            googleSearchEngineID = "";
             temperature = 1.0;
             seed = 0;
             enableMarkdown = false;

@@ -153,21 +153,24 @@ namespace ChatGptApiClientV2
             Icon = BitmapFrame.Create(info.Stream);
             Console.OutputEncoding = Encoding.UTF8;
 
-            foreach(var plugin in ToolFunction.FunctionList)
+            foreach(var plugin in AllToolCollections.ToolList)
             {
                 Plugins.Add(new(plugin));
-                pluginLookUpTable[plugin.Name] = plugin;
+                foreach(var func in plugin.Funcs)
+                {
+                    pluginLookUpTable[func.Name] = func;
+                }    
             }
 
             Config = ConfigType.LoadConfig();
         }
 
         private ChatCompletionRequest? currentSession;
-        public partial class PluginInfo(IToolFunction p) : ObservableObject
+        public partial class PluginInfo(IToolCollection p) : ObservableObject
         {
             [ObservableProperty]
             [NotifyPropertyChangedFor(nameof(Name))]
-            private IToolFunction plugin = p;
+            private IToolCollection plugin = p;
             public string Name => Plugin.DisplayName;
             [ObservableProperty]
             private bool isEnabled = false;
@@ -241,7 +244,10 @@ namespace ChatGptApiClientV2
                 chatRequest.Tools = [];
                 foreach (var plugin in enabled_plugins)
                 {
-                    chatRequest.Tools.Add(plugin.GetToolRequest());
+                    foreach (var func in plugin.Funcs)
+                    {
+                        chatRequest.Tools.Add(func.GetToolRequest());
+                    }
                 }
             }
             else
@@ -291,7 +297,10 @@ namespace ChatGptApiClientV2
                             ContractResolver = contractResolver
                         };
                         var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
-                        chatChunks.Add(chatChunk);
+                        if (chatChunk is not null)
+                        {
+                            chatChunks.Add(chatChunk);
+                        }
                     }
                     catch (JsonSerializationException exception)
                     {

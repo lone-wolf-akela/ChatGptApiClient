@@ -377,15 +377,19 @@ namespace ChatGptApiClientV2
         /// An optional name for the participant. Provides the model information to differentiate between participants of the same role.
         /// </summary>
         public string? Name { get; }
-        public bool IsSavingToDisk { set; }
+        [JsonIgnore]
+        public bool IsSavingToDisk { get; set; }
+        public bool Hidden { get; }
+        public bool ShouldSerializeHidden();
     }
     public class SystemMessage : IMessage
     {
         public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
-        public RoleType Role=> RoleType.System;
+        public RoleType Role => RoleType.System;
         public string? Name { get; set; } = null;
-        public bool IsSavingToDisk { set { } }
-
+        public bool IsSavingToDisk { get; set; } = false;
+        public bool Hidden => false;
+        public bool ShouldSerializeHidden() => IsSavingToDisk;
         public object Clone() => new SystemMessage
         {
             Content = from c in Content select c.Clone() as IMessage.IContent,
@@ -397,7 +401,9 @@ namespace ChatGptApiClientV2
         public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
         public RoleType Role => RoleType.User;
         public string? Name { get; set; } = null;
-        public bool IsSavingToDisk { set { } }
+        public bool IsSavingToDisk { get; set; } = false;
+        public bool Hidden => false;
+        public bool ShouldSerializeHidden() => IsSavingToDisk;
         public object Clone() => new UserMessage
         {
             Content = from c in Content select c.Clone() as IMessage.IContent,
@@ -410,7 +416,9 @@ namespace ChatGptApiClientV2
         public RoleType Role => RoleType.Assistant;
         public string? Name { get; set; } = null;
         public List<ToolCallType>? ToolCalls { get; set; } = null;
-        public bool IsSavingToDisk { set { } }
+        public bool IsSavingToDisk { get; set; } = false;
+        public bool Hidden => false;
+        public bool ShouldSerializeHidden() => IsSavingToDisk;
         public object Clone() => new AssistantMessage
         {
             Content = from c in Content select c.Clone() as IMessage.IContent,
@@ -430,16 +438,15 @@ namespace ChatGptApiClientV2
             public string Description { get; set; } = "";
         }
         public List<GeneratedImage> GeneratedImages { get; set; } = [];
-        private bool isSavingToDisk = false;
-        public bool IsSavingToDisk { set { isSavingToDisk = value; } }
-        public bool ShouldSerializeGeneratedImages()
-        {
-            return isSavingToDisk;
-        }
+        public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
+        public bool IsSavingToDisk { get; set; } = false;
+        public bool Hidden { get; set; } = false;
+        public bool ShouldSerializeHidden() => IsSavingToDisk;
         public object Clone() => new ToolMessage
         {
             Content = from c in Content select c.Clone() as IMessage.IContent,
             ToolCallId = ToolCallId,
+            Hidden = Hidden,
             GeneratedImages = (from gi in GeneratedImages select new GeneratedImage
             {
                 ImageBase64Url = gi.ImageBase64Url,
@@ -538,6 +545,10 @@ namespace ChatGptApiClientV2
         {
             foreach(var msg in Messages)
             {
+                if (msg.Hidden)
+                {
+                    continue;
+                }
                 msg.Role.DisplayHeader();
                 foreach(var content in msg.Content)
                 {
