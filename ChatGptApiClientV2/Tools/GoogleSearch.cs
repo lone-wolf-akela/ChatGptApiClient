@@ -40,7 +40,7 @@ namespace ChatGptApiClientV2.Tools
         public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
-            var msg = new ToolMessage { Content = msgContents, Hidden = true };
+            var msg = new ToolMessage { Content = msgContents};
             msgContents.Add(new() { Text = "" });
 
             var args_json = JToken.Parse(argstr);
@@ -80,7 +80,7 @@ namespace ChatGptApiClientV2.Tools
                 where p.Value is not null 
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-            Console.WriteLine($"Searching: {args.Query}");
+            Console.WriteLine($"Google Searching: {args.Query}");
 
             var request = new HttpRequestMessage
             {
@@ -107,6 +107,7 @@ namespace ChatGptApiClientV2.Tools
             string responseStr = await reader.ReadToEndAsync();
             msgContents[0].Text += $"Results: {responseStr}\n\n";
             netstatus.Status = NetStatusType.StatusEnum.Idle;
+            msg.Hidden = true; // Hide success results from user
             return msg;
         }
     }
@@ -125,7 +126,7 @@ namespace ChatGptApiClientV2.Tools
         public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
-            var msg = new ToolMessage { Content = msgContents, Hidden = true };
+            var msg = new ToolMessage { Content = msgContents };
             msgContents.Add(new() { Text = "" });
 
             var args_json = JToken.Parse(argstr);
@@ -152,30 +153,40 @@ namespace ChatGptApiClientV2.Tools
             Console.WriteLine($"Accessing: {args.URL}");
             netstatus.Status = NetStatusType.StatusEnum.Receiving;
 
-            var installed = await new BrowserFetcher(SupportedBrowser.Firefox).DownloadAsync();
-            var browser = await Puppeteer.LaunchAsync(
-                new LaunchOptions
-                {
-                    Headless = true,
-                    Browser = installed.Browser,
-                    ExecutablePath = installed.GetExecutablePath()
-                });
-            var page = await browser.NewPageAsync();
-            await page.GoToAsync(args.URL);
-            var pageHeaderHandle = await page.QuerySelectorAsync("*");
-            var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
-            var innerText = await innerTextHandle.JsonValueAsync();
-            var content = innerText.ToString() ?? "";
-            if (content.Length > contentPageLimit)
+            try
             {
-                contentRemained = content[contentPageLimit..];
-                content = content[..contentPageLimit];
-                content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained]";
+                var installed = await new BrowserFetcher(SupportedBrowser.Firefox).DownloadAsync();
+                var browser = await Puppeteer.LaunchAsync(
+                    new LaunchOptions
+                    {
+                        Headless = true,
+                        Browser = installed.Browser,
+                        ExecutablePath = installed.GetExecutablePath()
+                    });
+                var page = await browser.NewPageAsync();
+                await page.GoToAsync(args.URL);
+                var pageHeaderHandle = await page.QuerySelectorAsync("*");
+                var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
+                var innerText = await innerTextHandle.JsonValueAsync();
+                var content = innerText.ToString() ?? "";
+                if (content.Length > contentPageLimit)
+                {
+                    contentRemained = content[contentPageLimit..];
+                    content = content[..contentPageLimit];
+                    content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained]";
+                }
+                msgContents[0].Text += $"Content: {content}";
+                await browser.CloseAsync();
             }
-            msgContents[0].Text += $"Content: {content}";
-            await browser.CloseAsync();
+            catch(Exception e)
+            {
+                msgContents[0].Text += $"Error: {e.Message}\n\n";
+                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                return msg;
+            }
 
             netstatus.Status = NetStatusType.StatusEnum.Idle;
+            msg.Hidden = true; // Hide success results from user
             return msg;
         }
     }
@@ -195,7 +206,7 @@ namespace ChatGptApiClientV2.Tools
         public Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string args)
         {
             var msgContents = new List<IMessage.TextContent>();
-            var msg = new ToolMessage { Content = msgContents, Hidden = true };
+            var msg = new ToolMessage { Content = msgContents };
             msgContents.Add(new() { Text = "" });
 
             Console.WriteLine("Accessing the next page...");
@@ -218,6 +229,7 @@ namespace ChatGptApiClientV2.Tools
                 WebsiteAccessFunc.contentRemained = "";
             }
             msgContents[0].Text += $"Content: {content}";
+            msg.Hidden = true; // Hide success results from user
             return Task.FromResult(msg);
         }
     }

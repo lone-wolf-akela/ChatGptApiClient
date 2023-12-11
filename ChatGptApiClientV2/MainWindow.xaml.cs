@@ -241,12 +241,18 @@ namespace ChatGptApiClientV2
                                  select plugin.Plugin;
             if (Config.SelectedModel.FunctionCallSupported && enabled_plugins.Any())
             {
+                HashSet<string> addedTools = [];
+
                 chatRequest.Tools = [];
                 foreach (var plugin in enabled_plugins)
                 {
                     foreach (var func in plugin.Funcs)
                     {
-                        chatRequest.Tools.Add(func.GetToolRequest());
+                        if (!addedTools.Contains(func.Name)) 
+                        {
+                            chatRequest.Tools.Add(func.GetToolRequest());
+                            addedTools.Add(func.Name);
+                        }   
                     }
                 }
             }

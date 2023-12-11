@@ -34,6 +34,11 @@ namespace ChatGptApiClientV2
         private string googleSearchAPIKey;
         partial void OnGoogleSearchAPIKeyChanged(string value) => SaveConfig();
         /*******************************/
+        /* Bing Search Plugin Config */
+        [ObservableProperty]
+        private string bingSearchAPIKey;
+        partial void OnBingSearchAPIKeyChanged(string value) => SaveConfig();
+        /*****************************/
 
         [ObservableProperty]
         private double temperature;
@@ -125,6 +130,7 @@ namespace ChatGptApiClientV2
             _API_KEY = "";
             googleSearchAPIKey = "";
             googleSearchEngineID = "";
+            bingSearchAPIKey = "";
             temperature = 1.0;
             seed = 0;
             enableMarkdown = false;
