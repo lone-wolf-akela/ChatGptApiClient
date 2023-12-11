@@ -19,6 +19,7 @@ namespace ChatGptApiClientV2.Tools
         [
             new GoogleSearchFunc(),
             new WebsiteAccessFunc(),
+            new WebsiteNextPageFunc(),
         ];
         public string DisplayName => "Google 搜索";
     }
@@ -26,17 +27,13 @@ namespace ChatGptApiClientV2.Tools
     {
         public class Args
         {
-            [System.ComponentModel.Description(@"The search query.")]
-            public string? Query { get; set; } = null;
-            [System.ComponentModel.Description(@"A phrase that all documents in the search results must contain.")]
-            public string? ExactTerms { get; set; } = null;
-            [System.ComponentModel.Description(@"A word or phrase that should not appear in any documents in the search results.")]
-            public string? ExcludeTerms { get; set; } = null;
+            [System.ComponentModel.Description(@"The search query. Non-ASCII characters are supported. You MUST NOT use unicode escape sequence such as '\uxxxx' in the query.")]
+            public string Query { get; set; } = "";
             [System.ComponentModel.Description(@"The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
             public uint StartIndex { get; set; } = 1;
         }
-        public string Description => @"Look for info on the Internet using Google search. All query or terms fields support non-ascii characters. You MUST NOT use unicode escape sequence such as '\u1234' in them.";
-        public string Name => "google_seach";
+        public string Description => @"Look for info on the Internet using Google search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
+        public string Name => "google_search";
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
@@ -72,8 +69,6 @@ namespace ChatGptApiClientV2.Tools
                 {"cx",              config.GoogleSearchEngineID},
                 {"key",             config.GoogleSearchAPIKey},
                 {"q",               args.Query },
-                {"exactTerms",      args.ExactTerms},
-                {"excludeTerms",    args.ExcludeTerms},
                 {"start",           args.StartIndex.ToString()},
                 {"fields",          @"queries(request(count,startIndex),nextPage(count,startIndex)),items(title,link,snippet)"},
             };
@@ -85,10 +80,7 @@ namespace ChatGptApiClientV2.Tools
                 where p.Value is not null 
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-            Console.WriteLine("Searching: ");
-            Console.WriteLine("\tQuery: " + (args.Query ?? ""));
-            Console.WriteLine("\tExactTerms: " + (args.ExactTerms ?? ""));
-            Console.WriteLine("\tExcludeTerms: " + (args.ExcludeTerms ?? ""));
+            Console.WriteLine($"Searching: {args.Query}");
 
             var request = new HttpRequestMessage
             {
@@ -120,12 +112,14 @@ namespace ChatGptApiClientV2.Tools
     }
     public class WebsiteAccessFunc : IToolFunction
     {
+        public static string contentRemained = "";
+        const int contentPageLimit = 2048;
         public class Args
         {
             [System.ComponentModel.Description(@"The URL of the website to access.")]
             public string URL { get; set; } = "";
         }
-        public string Description => "Access a website.";
+        public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
         public string Name => "website_access";
         public Type ArgsType => typeof(Args);
         public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
@@ -172,18 +166,59 @@ namespace ChatGptApiClientV2.Tools
             var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
             var innerText = await innerTextHandle.JsonValueAsync();
             var content = innerText.ToString() ?? "";
-            // limite content characters
-            const int contentLimit = 2048;
-            if (content.Length > contentLimit)
+            if (content.Length > contentPageLimit)
             {
-                content = content[..contentLimit];
-                content += "\n\n[Content truncated]";
+                contentRemained = content[contentPageLimit..];
+                content = content[..contentPageLimit];
+                content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained]";
             }
             msgContents[0].Text += $"Content: {content}";
             await browser.CloseAsync();
 
             netstatus.Status = NetStatusType.StatusEnum.Idle;
             return msg;
+        }
+    }
+    public class WebsiteNextPageFunc : IToolFunction
+    {
+        const int contentPageLimit = 2048;
+        public string? Description => @"Get the next page of content from the last call to website_access. The content will be truncated if it's too long. If so, call website_nextpage again to get the remaining content when needed.";
+
+        public string Name => "website_nextpage";
+        public class Args
+        {
+            [System.ComponentModel.Description(@"Unused Parameter. Reserved for future use.")]
+            public string? ID { get; set; } = null;
+        }
+        public Type ArgsType => typeof(Args);
+
+        public Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string args)
+        {
+            var msgContents = new List<IMessage.TextContent>();
+            var msg = new ToolMessage { Content = msgContents, Hidden = true };
+            msgContents.Add(new() { Text = "" });
+
+            Console.WriteLine("Accessing the next page...");
+
+            if (string.IsNullOrEmpty(WebsiteAccessFunc.contentRemained))
+            {
+                msgContents[0].Text += $"Error: No content remained from the last call to website_access.\n\n";
+                return Task.FromResult(msg);
+            }
+
+            var content = WebsiteAccessFunc.contentRemained;
+            if (content.Length > contentPageLimit)
+            {
+                WebsiteAccessFunc.contentRemained = content[contentPageLimit..];
+                content = content[..contentPageLimit];
+                content += $"\n\n[Content truncated due to length limit; {WebsiteAccessFunc.contentRemained.Length} characters remained]";
+            }
+            else
+            {
+                WebsiteAccessFunc.contentRemained = "";
+            }
+            msgContents[0].Text += $"Content: {content}";
+            return Task.FromResult(msg);
         }
     }
 }

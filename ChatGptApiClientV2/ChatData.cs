@@ -567,6 +567,13 @@ namespace ChatGptApiClientV2
                         DisplayImage(imgContent.ImageUrl.Url);
                     }
                 }
+                if (msg is AssistantMessage assistantMsg)
+                {
+                    foreach(var toolcall in assistantMsg.ToolCalls ?? [])
+                    {
+                        Console.WriteLine($"调用函数：{toolcall.Function.Name}");
+                    }
+                }
                 if (msg is ToolMessage toolMsg)
                 {
                     foreach (var img in toolMsg.GeneratedImages)
