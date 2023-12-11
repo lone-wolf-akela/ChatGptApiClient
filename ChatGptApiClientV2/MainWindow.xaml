@@ -52,7 +52,7 @@
                             <TextBox.Text>
                                 <Binding Path="Config.UserNickName" Mode="TwoWay">
                                     <Binding.ValidationRules>
-                                        <local:RegexValidationRule Pattern="^[a-zA-Z0-9_-]{1,64}$" ErrorMessage="用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）"/>
+                                        <local:RegexValidationRule Pattern="^[a-zA-Z0-9_-]{0,64}$" ErrorMessage="用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）"/>
                                     </Binding.ValidationRules>
                                 </Binding>
                             </TextBox.Text>
