@@ -26,6 +26,7 @@ namespace ChatGptApiClientV2
             new DalleImageGen(),
             new GoogleSearch(),
             new BingSearch(),
+            new WolframAlpha(),
         ];
     }
     public interface IToolCollection

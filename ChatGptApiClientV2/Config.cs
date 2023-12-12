@@ -39,6 +39,11 @@ namespace ChatGptApiClientV2
         private string bingSearchAPIKey;
         partial void OnBingSearchAPIKeyChanged(string value) => SaveConfig();
         /*****************************/
+        /* Wolfram Alpha Plugin Config*/
+        [ObservableProperty]
+        private string wolframAlphaAppid;
+        partial void OnWolframAlphaAppidChanged(string value) => SaveConfig();
+        /******************************/
 
         [ObservableProperty]
         private double temperature;
@@ -131,6 +136,7 @@ namespace ChatGptApiClientV2
             googleSearchAPIKey = "";
             googleSearchEngineID = "";
             bingSearchAPIKey = "";
+            wolframAlphaAppid = "";
             temperature = 1.0;
             seed = 0;
             enableMarkdown = false;
