@@ -23,6 +23,7 @@ using Newtonsoft.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Windows.Controls;
+using Flurl;
 
 namespace ChatGptApiClientV2
 {
@@ -227,7 +228,11 @@ namespace ChatGptApiClientV2
         }
         private async Task Send()
         {
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY);
+            client.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
+            {
+                ConfigType.ServiceProviderType.Azure => null,
+                _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY),
+            };
             var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
             var chatRequest = currentSession ?? throw new ArgumentNullException(nameof(currentSession));
             chatRequest.Model = Config.SelectedModel.Name;
@@ -270,12 +275,16 @@ namespace ChatGptApiClientV2
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri("https://api.openai.com/v1/chat/completions"),
+                RequestUri = new Uri(Config.OpenAIChatServiceURL),
                 Content = post_content
             };
+            if (Config.ServiceProvider == ConfigType.ServiceProviderType.Azure)
+            {
+                request.Headers.Add("api-key", Config.AzureAPIKey);
+            }
             NetStatus.Status = NetStatusType.StatusEnum.Sending;
             var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            NetStatus.Status = NetStatusType.StatusEnum.Receiving;;
+            NetStatus.Status = NetStatusType.StatusEnum.Receiving;
 
             List<ChatCompletionChunk> chatChunks = [];
             RoleType.Assistant.DisplayHeader();
@@ -315,12 +324,16 @@ namespace ChatGptApiClientV2
                     }
                     
                     var chunk = chatChunks.Last();
-                    string? ch = chunk?.Choices[0].Delta.Content;
-                    if (ch is not null)
+                    var choices = chunk?.Choices;
+                    if (choices?.Count > 0)
                     {
-                        Console.Write(ch);
+                        string? ch = choices[0].Delta.Content;
+                        if (ch is not null)
+                        {
+                            Console.Write(ch);
+                        }
                     }
-                    System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
+                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
 
                     var fingerprint = chunk?.SystemFingerprint;
                     if (!string.IsNullOrEmpty(fingerprint))
@@ -334,12 +347,19 @@ namespace ChatGptApiClientV2
                 using var responseStream = await response.Content.ReadAsStreamAsync();
                 using var reader = new StreamReader(responseStream);
                 var chatResponse = await reader.ReadToEndAsync();
-                var responseJson = JToken.Parse(chatResponse);
-                if (responseJson?["error"] is not null)
+                try
                 {
-                    errorMsg = $"Error: {responseJson?["error"]?["message"]?.ToString()}";
+                    var responseJson = JToken.Parse(chatResponse);
+                    if (responseJson?["error"] is not null)
+                    {
+                        errorMsg = $"Error: {responseJson?["error"]?["message"]?.ToString()}";
+                    }
+                    else
+                    {
+                        errorMsg = $"Error: {chatResponse}";
+                    }
                 }
-                else
+                catch (JsonReaderException)
                 {
                     errorMsg = $"Error: {chatResponse}";
                 }
@@ -494,7 +514,7 @@ namespace ChatGptApiClientV2
                     ContractResolver = contractResolver,
                     Formatting = Formatting.Indented,
                     StringEscapeHandling = StringEscapeHandling.Default,
-                    NullValueHandling = NullValueHandling.Ignore,
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
                     TypeNameHandling = TypeNameHandling.Auto,
                 };
                 var promptsJson = JsonConvert.SerializeObject(InitialPrompts, settings);

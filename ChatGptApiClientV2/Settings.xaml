@@ -6,14 +6,75 @@
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="800">
+        Title="Settings" Height="600" Width="800"
+        Unloaded="Window_Unloaded">
     <Grid DataContext="{Binding ElementName=window, Mode=OneWay}">
         <DockPanel Margin="20,20,20,25">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
             <StackPanel>
-                <DockPanel Margin="0,0,0,5">
-                    <Label DockPanel.Dock="Left" MinWidth="170" Content="API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_apikey" TextWrapping="Wrap" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" VerticalAlignment="Center"/>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="7*"/>
+                        <ColumnDefinition Width="10*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Column="0" Margin="0,0,5,0">
+                        <Label DockPanel.Dock="Left" MinWidth="100" Content="OpenAI 服务源" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                        <ComboBox ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Description"
+                              SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}"/>  
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,0" Grid.Column="1" Visibility="{Binding Path=IsNotAzure, Converter={local:BoolToVisibilityConverter}}">
+                        <Label DockPanel.Dock="Left" MinWidth="100" Content="OpenAI Service URL" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                        <TextBox x:Name="txtbx_serviceurl" TextWrapping="Wrap" VerticalAlignment="Center" IsEnabled="{Binding Path=Config.ServiceURLEditable}">
+                            <TextBox.Text>
+                                <Binding Path="Config.ServiceURL" Mode="TwoWay">
+                                    <Binding.ValidationRules>
+                                        <local:UrlValidationRule ErrorMessage="必须为合法的 Http 或 Https 地址"/>
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </DockPanel>
+                    <DockPanel Margin="0,0,0,0" Grid.Column="1"  Visibility="{Binding Path=IsAzure, Converter={local:BoolToVisibilityConverter}}">
+                        <Label DockPanel.Dock="Left" MinWidth="100" Content="Azure Endpoint" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                        <TextBox x:Name="txtbx_azureendpoint" TextWrapping="Wrap" VerticalAlignment="Center">
+                            <TextBox.Text>
+                                <Binding Path="Config.AzureEndpoint" Mode="TwoWay">
+                                    <Binding.ValidationRules>
+                                        <local:UrlValidationRule ErrorMessage="必须为合法的 Http 或 Https 地址"/>
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </DockPanel>
+                </Grid>
+                <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsNotAzure, Converter={local:BoolToVisibilityConverter}}">
+                    <Label DockPanel.Dock="Left" MinWidth="170" Content="OpenAI API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                    <TextBox x:Name="txtbx_apikey" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+                <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="3" BorderBrush="LightGray" BorderThickness="1" Visibility="{Binding Path=IsAzure, Converter={local:BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <Label Content="Azure Deployment ID"  VerticalAlignment="Stretch" BorderBrush="{x:Null}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
+                        <ListView x:Name="lst_azure_deployment_ids" Margin="0,0,0,5" MinHeight="100" MaxHeight="150" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="White">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                    <Setter Property="Padding" Value="5,0,5,0"/>
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                        <DockPanel>
+                            <Button x:Name="btn_del_azure_deployment_id" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="btn_del_azure_deployment_id_Click"/>
+                            <Button x:Name="btn_add_azure_deployment_id" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="btn_add_azure_deployment_id_Click"/>
+                            <TextBox x:Name="txtbx_add_azure_deployment_id"  Margin="0,0,5,0" />
+                        </DockPanel>
+                    
+                    </StackPanel>
+                </Border>
+                <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={local:BoolToVisibilityConverter}}">
+                    <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                    <TextBox x:Name="txtbx_azure_apikey" Text="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Margin="0,0,0,5">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>

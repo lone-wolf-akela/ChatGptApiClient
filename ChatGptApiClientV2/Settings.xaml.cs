@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,16 +23,47 @@ namespace ChatGptApiClientV2
     public partial class Settings : Window
     {
         [ObservableProperty]
-        public ConfigType config;
-        public Settings(ConfigType config)
+        private ConfigType config;
+        private void ConfigServiceProviderPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(Config.ServiceProvider))
+            {
+                OnPropertyChanged(nameof(IsAzure));
+                OnPropertyChanged(nameof(IsNotAzure));
+            }
+        }
+        public bool IsAzure => Config.ServiceProvider == ConfigType.ServiceProviderType.Azure;
+        public bool IsNotAzure => !IsAzure;
+
+        public Settings(ConfigType conf)
+        {
+            config = conf;
+            Config.PropertyChanged += ConfigServiceProviderPropertyChanged;
             InitializeComponent();
-            Config = config;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void Window_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Config.PropertyChanged -= ConfigServiceProviderPropertyChanged;
+        }
+
+        private void btn_add_azure_deployment_id_Click(object sender, RoutedEventArgs e)
+        {
+            Config.AzureDeploymentList.Add(txtbx_add_azure_deployment_id.Text);
+            txtbx_add_azure_deployment_id.Text = "";
+        }
+
+        private void btn_del_azure_deployment_id_Click(object sender, RoutedEventArgs e)
+        {
+            if (lst_azure_deployment_ids.SelectedItem is string id)
+            {
+                Config.AzureDeploymentList.Remove(id);
+            }
         }
     }
 }

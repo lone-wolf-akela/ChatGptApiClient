@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows;
+using System.ComponentModel;
+using Flurl;
 
 namespace ChatGptApiClientV2
 {
@@ -22,9 +24,88 @@ namespace ChatGptApiClientV2
         private string userNickName;
         partial void OnUserNickNameChanged(string value) => SaveConfig();
 
+        public enum ServiceProviderType
+        {
+            [Description("Artonelico OpenAI 代理")]
+            ArtonelicoOpenAIProxy,
+            [Description("OpenAI 官方接口（需科学上网）")]
+            OpenAI,
+            [Description("Microsoft Azure")]
+            Azure,
+            [Description("其他")]
+            Others,
+        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ServiceURL))]
+        [NotifyPropertyChangedFor(nameof(ServiceURLEditable))]
+        [NotifyPropertyChangedFor(nameof(ModelOptions))]
+        [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
+        private ServiceProviderType serviceProvider;
+        partial void OnServiceProviderChanged(ServiceProviderType value)
+        {
+            UpdateModelOptionList();
+            UpdateModelVersionList();
+            SaveConfig();
+        }
+
+        private string serviceURL;
+        public string ServiceURL
+        {
+            get => ServiceProvider switch
+            {
+                ServiceProviderType.ArtonelicoOpenAIProxy => "https://www.artonelico.top/openai-proxy",
+                ServiceProviderType.OpenAI => "https://api.openai.com",
+                _ => serviceURL,
+            };
+            set
+            {
+                if (SetProperty(ref serviceURL, value, nameof(ServiceURL)))
+                {
+                    SaveConfig();
+                }
+            }
+        }
+        [ObservableProperty]
+        private string azureEndpoint;
+
+        [JsonIgnore]
+        public string OpenAIChatServiceURL => ServiceProvider switch
+        {
+            ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{SelectedModel?.Name}/chat/completions?api-version=2023-12-01-preview"),
+            _ => Url.Combine(ServiceURL, "v1/chat/completions")
+        };
+        [JsonIgnore]
+        public string DalleImageGenServiceURL => ServiceProvider switch
+        {
+            ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/dall-e-3/images/generations?api-version=2023-12-01-preview"),
+            _ => Url.Combine(ServiceURL, "v1/images/generations")
+        };
+        [JsonIgnore]
+        public bool ServiceURLEditable => ServiceProvider switch
+        {
+            ServiceProviderType.ArtonelicoOpenAIProxy => false,
+            ServiceProviderType.OpenAI => false,
+            ServiceProviderType.Azure => true,
+            ServiceProviderType.Others => true,
+            _ => throw new NotImplementedException(),
+        };
+
         [ObservableProperty]
         private string _API_KEY;
         partial void OnAPI_KEYChanged(string value) => SaveConfig();
+
+        [ObservableProperty]
+        private string azureAPIKey;
+        partial void OnAzureAPIKeyChanged(string value) => SaveConfig();
+        public ObservableCollection<string> AzureDeploymentList { get; } = [];
+
+        public void AzureDeploymentListCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (ServiceProvider == ServiceProviderType.Azure)
+            {
+                UpdateModelVersionList();
+            }
+        }
 
         /* Google Search Plugin Config */
         [ObservableProperty]
@@ -62,7 +143,24 @@ namespace ChatGptApiClientV2
         partial void OnEnableMarkdownChanged(bool value) => SaveConfig();
 
         [JsonIgnore]
-        public static ImmutableArray<ModelInfo> ModelOptions => ModelInfo.ModelList;
+        public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
+        private void UpdateModelOptionList()
+        {
+            ModelOptions.Clear();
+            if (ServiceProvider == ServiceProviderType.Azure)
+            {
+                ModelOptions.Add(new ModelInfo { Name = "azure", Description = "Azure OpenAI Service" });
+            }
+            else
+            {
+                foreach(var model in ModelInfo.ModelList)
+                {
+                    ModelOptions.Add(model);
+                }
+            }
+            SelectedModelIndex = 0;
+        }
+
         [JsonIgnore]
         public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
 
@@ -88,8 +186,28 @@ namespace ChatGptApiClientV2
         private void UpdateModelVersionList()
         {
             ModelVersionOptions.Clear();
+            if (SelectedModelType is null)
+            {
+                SelectedModelVersionIndex = -1;
+                return;
+            }
 
-            if (SelectedModelType is not null)
+            if (ServiceProvider == ServiceProviderType.Azure)
+            {
+                foreach(var id in AzureDeploymentList)
+                {
+                    DateTime knowledgeCutoff = (id.Contains("gpt-4") && id.Contains("1106")) ? new(2023, 4, 1) : new(2021, 9, 1);
+                    ModelVersionOptions.Add(new ModelVersionInfo
+                    {
+                        ModelType = "azure",
+                        Name = id,
+                        Description = id,
+                        KnowledgeCutoff = knowledgeCutoff,
+                        FunctionCallSupported = true,
+                    });
+                }
+            }
+            else 
             {
                 var models = from model in ModelVersionInfo.VersionList
                              where model.ModelType == SelectedModelType.Name
@@ -99,7 +217,6 @@ namespace ChatGptApiClientV2
                     ModelVersionOptions.Add(model);
                 }
             }
-
             SelectedModelVersionIndex = 0;
         }
 
@@ -132,7 +249,11 @@ namespace ChatGptApiClientV2
         public ConfigType()
         {
             userNickName = string.Empty;
+            serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
+            serviceURL = "";
+            azureEndpoint = "";
             _API_KEY = "";
+            azureAPIKey = "";
             googleSearchAPIKey = "";
             googleSearchEngineID = "";
             bingSearchAPIKey = "";
@@ -144,8 +265,12 @@ namespace ChatGptApiClientV2
             selectedModelVersionIndex = 0;
             useRandomSeed = true;
 
+            AzureDeploymentList.CollectionChanged += AzureDeploymentListCollectionChanged;
+
+            UpdateModelOptionList();
             UpdateModelVersionList();
         }
+
         private void SaveConfig()
         {
             var contractResolver = new DefaultContractResolver
@@ -157,7 +282,7 @@ namespace ChatGptApiClientV2
                 ContractResolver = contractResolver,
                 Formatting = Formatting.Indented,
                 StringEscapeHandling = StringEscapeHandling.Default,
-                NullValueHandling = NullValueHandling.Ignore,
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
             };
             var result = JsonConvert.SerializeObject(this, settings);

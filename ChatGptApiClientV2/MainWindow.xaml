@@ -7,9 +7,6 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         mc:Ignorable="d"
         Title="ChatGPT" Height="600" Width="1000" Loaded="Window_Loaded">
-    <Window.Resources>
-        <local:InvertBooleanConverter  x:Key="boolNegConvert"/>
-    </Window.Resources>
     <Grid DataContext="{Binding ElementName=window, Mode=OneWay}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="15*" MinWidth="175"></ColumnDefinition>
@@ -82,7 +79,7 @@
                     <DockPanel Grid.Column="1" Grid.Row="1" Margin="0,0,0,5">
                         <Label MinWidth="100" DockPanel.Dock="Left" Content="Seed" BorderBrush="{x:Null}" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <CheckBox DockPanel.Dock="Right" Width="70" Content="随机种子" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
-                        <TextBox x:Name="txt_seed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource boolNegConvert}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txt_seed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={local:InvertBooleanConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
                     <DockPanel Grid.Column="1" Grid.Row="2">
                         <Label MinWidth="100" DockPanel.Dock="Left" Content="Temperature" BorderBrush="{x:Null}" Width="85" Margin="0,0,5,0"/>

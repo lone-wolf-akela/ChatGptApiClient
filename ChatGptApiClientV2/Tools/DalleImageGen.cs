@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static ChatGptApiClientV2.MainWindow;
+using Flurl;
 
 namespace ChatGptApiClientV2.Tools
 {
@@ -82,7 +83,7 @@ namespace ChatGptApiClientV2.Tools
                     ContractResolver = contractResolver,
                     Formatting = Formatting.None,
                     StringEscapeHandling = StringEscapeHandling.Default,
-                    NullValueHandling = NullValueHandling.Ignore,
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
                 };
                 var result = JsonConvert.SerializeObject(this, settings);
                 return result;
@@ -115,7 +116,11 @@ namespace ChatGptApiClientV2.Tools
                 return msg;
             }
 
-            apiClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY);
+            apiClient.DefaultRequestHeaders.Authorization = config.ServiceProvider switch
+            {
+                ConfigType.ServiceProviderType.Azure => null,
+                _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY),
+            };
 
             Console.WriteLine($"Generating image with prompt: {args.Prompts}");
             Console.WriteLine();
@@ -130,9 +135,13 @@ namespace ChatGptApiClientV2.Tools
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri("https://api.openai.com/v1/images/generations"),
+                RequestUri = new Uri(config.DalleImageGenServiceURL),
                 Content = postContent
             };
+            if (config.ServiceProvider == ConfigType.ServiceProviderType.Azure)
+            {
+                request.Headers.Add("api-key", config.AzureAPIKey);
+            }
             netstatus.Status = NetStatusType.StatusEnum.Sending;
             var response = await apiClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             netstatus.Status = NetStatusType.StatusEnum.Receiving;

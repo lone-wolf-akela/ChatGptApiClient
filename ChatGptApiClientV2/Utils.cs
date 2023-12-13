@@ -18,14 +18,71 @@ using System.Threading;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Controls;
+using System.ComponentModel;
+using System.Windows.Markup;
+using static ChatGptApiClientV2.EnumHelper;
 
 namespace ChatGptApiClientV2
 {
+    // from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
+    public static class EnumHelper
+    {
+        public static string Description(this Enum value)
+        {
+            var attributes = value?.GetType()?.GetField(value.ToString())?.GetCustomAttributes(typeof(DescriptionAttribute), false);
+            if (attributes is not null && attributes.Length != 0)
+            {
+                return ((DescriptionAttribute)attributes.First()).Description;
+            }
+            // If no description is found, the least we can do is replace underscores with spaces
+            // You can add your own custom default formatting logic here
+            // TextInfo ti = CultureInfo.CurrentCulture.TextInfo;
+            // return ti.ToTitleCase(ti.ToLower(value.ToString().Replace("_", " ")));
+            return value?.ToString() ?? "?";
+        }
+        public class EnumValueDescription(Enum value, string desc)
+        {
+            public Enum Value { get; set; } = value;
+            public string Description { get; set; } = desc;
+        }
+        public static IEnumerable<EnumValueDescription> GetAllValuesAndDescriptions(Type t)
+        {
+            if (!t.IsEnum)
+            {
+                throw new ArgumentException($"{nameof(t)} must be an enum type");
+            }
+            return Enum.GetValues(t)
+                       .Cast<Enum>()
+                       .Select((e) => new EnumValueDescription(e, e.Description()))
+                       .ToList();
+        }
+    }
+    [ValueConversion(typeof(Enum), typeof(IEnumerable<EnumValueDescription>))]
+    public class EnumToCollectionConverter : MarkupExtension, IValueConverter
+    {
+        private readonly Dictionary<Type, IEnumerable<EnumValueDescription>> cache = [];
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            // => GetAllValuesAndDescriptions(value.GetType());
+            if(cache.TryGetValue (value.GetType(), out var cached))
+            {
+                return cached;
+            }
+            else
+            {
+                var result = GetAllValuesAndDescriptions(value.GetType());
+                cache[value.GetType()] = result;
+                return result;
+            }
+        }
+        public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
+        public override object ProvideValue(IServiceProvider serviceProvider) => this;
+    }
     public class RegexValidationRule : ValidationRule
     {
-        private string pattern;
-        private Regex regex;
-        public string ErrorMessage { get; set; }
+        private string pattern = "";
+        private Regex regex = new("");
+        public string ErrorMessage { get; set; } = "";
 
         public string Pattern
         {
@@ -35,13 +92,6 @@ namespace ChatGptApiClientV2
                 pattern = value;
                 regex = new(pattern);
             }
-        }
-
-        public RegexValidationRule()
-        {
-            pattern = "";
-            regex = new("");
-            ErrorMessage = "";
         }
 
         public override ValidationResult Validate(object value, CultureInfo ultureInfo)
@@ -57,11 +107,43 @@ namespace ChatGptApiClientV2
         }
     }
 
+    public class UrlValidationRule : ValidationRule
+    {
+        public string ErrorMessage { get; set; } = "";
+
+        public override ValidationResult Validate(object value, CultureInfo ultureInfo)
+        {
+            var url = value.ToString() ?? "";
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uriResult) 
+                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                return new ValidationResult(true, null);
+            }
+            else
+            {
+                return new ValidationResult(false, ErrorMessage);
+            }
+
+        }
+    }
+
     [ValueConversion(typeof(bool), typeof(bool))]
-    public class InvertBooleanConverter : IValueConverter
+    public class InvertBooleanConverter : MarkupExtension, IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
+        public override object ProvideValue(IServiceProvider serviceProvider) => this;
+    }
+    [ValueConversion(typeof(bool), typeof(System.Windows.Visibility))]
+    public class BoolToVisibilityConverter : MarkupExtension, IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => (bool)value ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => (System.Windows.Visibility)value == System.Windows.Visibility.Visible;
+
+        public override object ProvideValue(IServiceProvider serviceProvider) => this;
     }
     partial class Utils
     {
