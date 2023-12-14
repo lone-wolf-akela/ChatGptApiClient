@@ -1,0 +1,69 @@
+﻿<Window x:Name="window" x:Class="ChatGptApiClientV2.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:hc="https://handyorg.github.io/handycontrol"
+        xmlns:local="clr-namespace:ChatGptApiClientV2"
+        mc:Ignorable="d"
+        Title="ChatWindow" Height="600" Width="1000">
+    <Window.Resources>
+        <local:ContainerWidthConverter x:Key="ContainerWidthConverter" />
+    </Window.Resources>
+    <Grid Margin="10,10,10,10" DataContext="{Binding ElementName=window, Mode=OneWay}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="100"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="100" MinHeight="55"/>
+        </Grid.RowDefinitions>
+        <GridSplitter Grid.Row="1" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <DockPanel Grid.Row="2" Margin="0,5,0,0">
+            <Button DockPanel.Dock="Right" Content="发送" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100"/>
+            <TextBox Margin="0,0,5,0" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True"/>
+        </DockPanel>
+        <ListView Grid.Row="0" ScrollViewer.CanContentScroll="False" Background="White" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Focusable" Value="false"/>
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                <ContentPresenter />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListView}}, Converter={StaticResource ContainerWidthConverter}}">
+                            <Image x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
+                            <Image x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <Image x:Name="AvatarRight" Visibility="{Binding Path=ShowRightAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" Source="{Binding Avatar}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top"/>
+                            <Image x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <Border CornerRadius="5" Background="{Binding BackgroundColor}">
+                                <FlowDocumentScrollViewer Style="{x:Null}" 
+                                                          Document="{Binding Path=RenderedMessage}" 
+                                                          IsToolBarVisible="False" 
+                                                          VerticalScrollBarVisibility="Hidden"
+                                                          PreviewMouseWheel="SmoothScrollProcecssor">
+                                </FlowDocumentScrollViewer>
+                            </Border>
+                        </DockPanel>
+                    </Grid>
+                </DataTemplate>
+                
+            </ListView.ItemTemplate>
+            <d:ListView.ItemsSource>
+                <x:Array Type="{x:Type local:ChatWindowMessage}">
+                    <local:ChatWindowMessage Role="User" Message="# User Messages 1"/>
+                    <local:ChatWindowMessage Role="System" Message="System Messages 2"/>
+                    <local:ChatWindowMessage Role="Tool" Message="Tool Messages 1"/>
+                    <local:ChatWindowMessage Role="Assistant" Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
+                </x:Array>
+            </d:ListView.ItemsSource>
+        </ListView>
+    </Grid>
+</Window>

@@ -10,14 +10,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="chatgpt-icon.ico" />
+    <None Remove="images\chatgpt-icon.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="chatgpt-icon.ico" />
+    <Resource Include="images\chatgpt-icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Coltr.Markdig.Wpf.ColorCode" Version="1.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="Crayon" Version="2.0.69" />
     <PackageReference Include="Flurl" Version="3.0.7" />
     <PackageReference Include="HandyControl" Version="3.4.0" />
+    <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
     <PackageReference Include="NJsonSchema" Version="10.9.0" />
     <PackageReference Include="PuppeteerSharp" Version="13.0.2" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />

@@ -21,6 +21,8 @@ using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows.Markup;
 using static ChatGptApiClientV2.EnumHelper;
+using System.Windows;
+using System.Windows.Documents;
 
 namespace ChatGptApiClientV2
 {
@@ -309,7 +311,7 @@ namespace ChatGptApiClientV2
                 throw new Exception($"SetConsoleMode failed: {error}");
             }
         }
-        public static Bitmap ResizeImage(Bitmap imgToResize, Size size, PixelFormat format)
+        public static Bitmap ResizeImage(Bitmap imgToResize, System.Drawing.Size size, PixelFormat format)
         {
             try
             {
@@ -335,7 +337,7 @@ namespace ChatGptApiClientV2
             int width = (int)Math.Ceiling(float_width / 4) * 4;
             int height = (int)Math.Ceiling(float_height / 8) * 8;
 
-            var resized = ResizeImage(img, new Size(width, height), PixelFormat.Format24bppRgb);
+            var resized = ResizeImage(img, new System.Drawing.Size(width, height), PixelFormat.Format24bppRgb);
             string converted = Derasterize.ConvertImageToString(resized);
             return converted;
         }

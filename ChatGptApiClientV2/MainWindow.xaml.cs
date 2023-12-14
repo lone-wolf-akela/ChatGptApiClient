@@ -471,7 +471,7 @@ namespace ChatGptApiClientV2
                 txtbx_input.Text = "";
             }
         }
-
+        private ChatWindow? chatWindow = null;
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // setup initial prompts
@@ -522,6 +522,9 @@ namespace ChatGptApiClientV2
                 File.WriteAllText("initial_prompts.json", promptsJson);
             }
             InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
+
+            chatWindow = new();
+            chatWindow.Show();
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
