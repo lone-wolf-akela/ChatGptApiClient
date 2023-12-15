@@ -24,52 +24,83 @@
             <RowDefinition Height="150" MinHeight="100"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="0,0,0,5" Orientation="Horizontal">
-            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" Orientation="Horizontal">
-                <Label MinWidth="50" Content="模型" BorderBrush="{x:Null}" Margin="0,0,0,0"/>
-                <ComboBox x:Name="cbx_model" MinWidth="200" ItemsSource="{Binding Config.ModelOptions}" SelectedIndex="{Binding Config.SelectedModelIndex, Mode=TwoWay}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Description}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,30,0" Orientation="Horizontal">
-                <Label MinWidth="50" Content="版本" BorderBrush="{x:Null}" Grid.Row="2" Grid.Column="0" Margin="0,0,0,0"/>
-                <ComboBox x:Name="cbx_model_version" MinWidth="200" ItemsSource="{Binding Config.ModelVersionOptions}" SelectedIndex="{Binding Config.SelectedModelVersionIndex, Mode=TwoWay}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Description}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-            </StackPanel>
-            <ToggleButton x:Name="tggl_plugin">
-                <StackPanel>
-                    <TextBlock Text="选择插件"/>
-                    <Popup IsOpen="{Binding IsChecked, ElementName=tggl_plugin}" AllowsTransparency="True" >
-                        <Border CornerRadius="5" BorderThickness="1" BorderBrush="White" Background="White" Margin="0,0,8,8" Padding="5">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
-                            </Border.Effect>
-                            <ListView x:Name="lst_plugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=Plugins, Mode=OneWay}" IsEnabled="{Binding Config.SelectedModelSupportTools}">
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                                        <Setter Property="Padding" Value="3,3,3,3"/>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </Border>
-                    </Popup>
+        <DockPanel Grid.Row="0" Margin="0,0,0,5">
+            <Button x:Name="btn_settings" DockPanel.Dock="Right" Content="其他设置" MinWidth="100" Click="btn_settings_Click"/>
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" Orientation="Horizontal">
+                    <Label MinWidth="50" Content="模型" BorderBrush="{x:Null}" Margin="0,0,0,0"/>
+                    <ComboBox x:Name="cbx_model" MinWidth="200" ItemsSource="{Binding State.Config.ModelOptions}" SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Description}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
-            </ToggleButton>
-        </StackPanel>
+                <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,25,0" Orientation="Horizontal">
+                    <Label MinWidth="50" Content="版本" BorderBrush="{x:Null}" Grid.Row="2" Grid.Column="0" Margin="0,0,0,0"/>
+                    <ComboBox x:Name="cbx_model_version" MinWidth="200" ItemsSource="{Binding State.Config.ModelVersionOptions}" SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Description}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <ToggleButton x:Name="tggl_plugin" Margin="0,0,15,0">
+                    <StackPanel>
+                        <TextBlock Text="选择插件"/>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=tggl_plugin}" AllowsTransparency="True" StaysOpen="False">
+                            <Border CornerRadius="5" BorderThickness="1" BorderBrush="White" Background="White" Margin="0,0,8,8" Padding="5">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
+                                </Border.Effect>
+                                <ListView x:Name="lst_plugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                            <Setter Property="Padding" Value="3,3,3,3"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Border>
+                        </Popup>
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton x:Name="tggl_prompt" Margin="0,0,15,0">
+                    <StackPanel>
+                        <TextBlock Text="初始提示词"/>
+                        <Popup IsOpen="{Binding IsChecked, ElementName=tggl_prompt}" AllowsTransparency="True" StaysOpen="False">
+                            <Border CornerRadius="5" BorderThickness="1" BorderBrush="White" Background="White" Margin="0,0,8,8" Padding="5">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
+                                </Border.Effect>
+                                <ListBox x:Name="lst_prompt" 
+                                          Background="Transparent" 
+                                          ItemsSource="{Binding State.InitialPrompts.PromptsOptions}"
+                                          SelectedItem="{Binding State.InitialPrompts.SelectedOption}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" Width="700" Text="{Binding Text}"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </StackPanel>
+                </ToggleButton>
+                <CheckBox x:Name="chk_markdown" IsChecked="{Binding State.Config.EnableMarkdown}" Content="Markdown格式化" Click="chk_markdown_Click"/>
+            </StackPanel>
+        </DockPanel>
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
@@ -80,7 +111,42 @@
                 </UniformGrid>
                 <Button x:Name="btn_send" Content="发送" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="btn_send_Click"/>
             </StackPanel>
-            <TextBox x:Name="txt_input" Margin="0,0,5,0" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" GotFocus="txt_input_GotFocus"/>
+            <DockPanel Margin="0,0,5,0">
+                <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding IsFileAttachmentsNotEmpty, Converter={local:BoolToVisibilityConverter}}">
+                    <ListView x:Name="lst_files"  Background="Transparent" ItemsSource="{Binding FileAttachments}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                <Setter Property="Focusable" Value="false"/>
+                                <Setter Property="Padding" Value="3,3,3,3"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Image Source="{Binding Icon}" Height="32" Width="32" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,3,3,0"/>
+                                    <ContentControl x:Name="btn_removefile" MouseLeftButtonUp="btn_removefile_MouseLeftButtonUp">
+                                        <Grid Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListViewItem}}, Converter={local:BoolToVisibilityConverter}}">
+                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
+                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
+                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
+                                        </Grid>
+                                    </ContentControl>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0"/>
+                </StackPanel>
+                <Grid>
+                    <TextBox x:Name="txt_input" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" GotFocus="txt_input_GotFocus" VerticalScrollBarVisibility="Auto"/>
+                    <Button x:Name="btn_addfile" FontFamily="Segoe MDL2 Assets" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" VerticalAlignment="Bottom" Margin="0,0,5,5" HorizontalAlignment="Right" Height="30" Width="30" Click="btn_addfile_Click"/>
+                </Grid>
+            </DockPanel>
         </DockPanel>
         <ListView Grid.Row="1" x:Name="lst_msg" ScrollViewer.CanContentScroll="False" Background="White" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListView.ItemContainerStyle>
@@ -128,12 +194,12 @@
                 </x:Array>
             </d:ListView.ItemsSource>
         </ListView>
-        <StatusBar Grid.Row="4">
+        <StatusBar Grid.Row="4" Margin="0,5,0,0">
             <StatusBarItem Content="状态："/>
-            <StatusBarItem Content="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}" MinWidth="200"/>
+            <StatusBarItem Content="{Binding Path=State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="200"/>
             <Separator/>
             <StatusBarItem Content="系统指纹："/>
-            <StatusBarItem Content="{Binding Path=NetStatus.SystemFingerprint}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
+            <StatusBarItem Content="{Binding Path=State.NetStatus.SystemFingerprint}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
         </StatusBar>
     </Grid>
 </Window>

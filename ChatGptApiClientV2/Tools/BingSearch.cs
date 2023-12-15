@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
-using static ChatGptApiClientV2.MainWindow;
 using System.Net.Http;
 using System.IO;
 using PuppeteerSharp;
@@ -37,7 +36,7 @@ namespace ChatGptApiClientV2.Tools
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
-        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
+        public async Task<ToolMessage> Action(SystemState state, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -78,7 +77,8 @@ namespace ChatGptApiClientV2.Tools
                 where p.Value is not null 
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-            Console.WriteLine($"Bing Searching: {args.Query}");
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Bing Searching: {args.Query}\n");
 
             var request = new HttpRequestMessage
             {
@@ -86,13 +86,13 @@ namespace ChatGptApiClientV2.Tools
                 RequestUri = new Uri($"{serviceURL}?{query}"),
                 Headers =
                 {
-                    { "Ocp-Apim-Subscription-Key", config.BingSearchAPIKey },
+                    { "Ocp-Apim-Subscription-Key", state.Config.BingSearchAPIKey },
                 },
             };
 
-            netstatus.Status = NetStatus.StatusEnum.Sending;
+            state.NetStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatus.StatusEnum.Receiving;
+            state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -100,7 +100,7 @@ namespace ChatGptApiClientV2.Tools
                 using var errorReader = new StreamReader(errorResponseStream);
                 var errorResponse = await errorReader.ReadToEndAsync();
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -112,7 +112,7 @@ namespace ChatGptApiClientV2.Tools
             if (responsePages is null)
             {
                 msgContents[0].Text += $"Error: {responseStr}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -131,7 +131,7 @@ namespace ChatGptApiClientV2.Tools
             filteredResponse["webPages"] = filteredPages;
 
             msgContents[0].Text += $"Results: {filteredResponse.ToString(Formatting.Indented)}\n\n";
-            netstatus.Status = NetStatus.StatusEnum.Idle;
+            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }

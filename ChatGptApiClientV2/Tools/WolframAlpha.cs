@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
-using static ChatGptApiClientV2.MainWindow;
 using System.Net.Http;
 using System.IO;
 using PuppeteerSharp;
@@ -34,7 +33,7 @@ It can only answer one question at a time. If you have a complex question, think
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
-        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
+        public async Task<ToolMessage> Action(SystemState state, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -66,7 +65,7 @@ It can only answer one question at a time. If you have a complex question, think
                 {"input",   args.Query },
                 {"format",  "plaintext"},
                 {"output",  "JSON"},
-                {"appid",   config.WolframAlphaAppid},
+                {"appid",   state.Config.WolframAlphaAppid},
             };
 
             const string serviceURL = @"https://api.wolframalpha.com/v2/query";
@@ -76,7 +75,8 @@ It can only answer one question at a time. If you have a complex question, think
                 where p.Value is not null 
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-            Console.WriteLine($"Asking Wolfram|Alpha: {args.Query}");
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Wolfram|Alpha: {args.Query}\n");
 
             var request = new HttpRequestMessage
             {
@@ -84,9 +84,9 @@ It can only answer one question at a time. If you have a complex question, think
                 RequestUri = new Uri($"{serviceURL}?{query}"),
             };
 
-            netstatus.Status = NetStatus.StatusEnum.Sending;
+            state.NetStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatus.StatusEnum.Receiving;
+            state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -94,7 +94,7 @@ It can only answer one question at a time. If you have a complex question, think
                 using var errorReader = new StreamReader(errorResponseStream);
                 var errorResponse = await errorReader.ReadToEndAsync();
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -107,19 +107,19 @@ It can only answer one question at a time. If you have a complex question, think
             if (success != true)
             {
                 msgContents[0].Text += $"Error: {responseStr}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
             var pods = queryresult?["pods"];
             if (pods is null)
             {
                 msgContents[0].Text += $"Error: {responseStr}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
             msgContents[0].Text += $"Results: {pods.ToString(Formatting.Indented)}\n\n";
-            netstatus.Status = NetStatus.StatusEnum.Idle;
+            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }

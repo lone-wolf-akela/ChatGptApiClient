@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using static ChatGptApiClientV2.MainWindow;
 using System.Windows.Threading;
 using System.Threading;
 using Newtonsoft.Json;
@@ -51,7 +50,7 @@ namespace ChatGptApiClientV2
                 return schema;
             }
         }
-        public Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string args);
+        public Task<ToolMessage> Action(SystemState state, string args);
         public ChatCompletionRequest.ToolType GetToolRequest() => new() 
         {
             Function = new () { Name = Name, Parameters = Parameters, Description = Description }

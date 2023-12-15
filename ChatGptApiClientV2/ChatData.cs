@@ -1,5 +1,4 @@
-﻿using Microsoft.PowerShell.MarkdownRender;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,7 +12,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
-using static Crayon.Output;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
 using System.Windows.Interop;
@@ -33,30 +31,6 @@ namespace ChatGptApiClientV2
         Assistant,
         [EnumMember(Value = "tool")]
         Tool
-    }
-    public static class RoleTypeExt
-    {
-        public static void DisplayHeader(this RoleType role)
-        {
-            Console.WriteLine(new string('-', Console.WindowWidth));
-            switch (role)
-            {
-                case RoleType.User:
-                    Console.WriteLine(Bold().Green("用户："));
-                    break;
-                case RoleType.Assistant:
-                    Console.WriteLine(Bold().Yellow("助手："));
-                    break;
-                case RoleType.Tool:
-                    Console.WriteLine(Bold().Magenta("函数："));
-                    break;
-                case RoleType.System:
-                    Console.WriteLine(Bold().Blue("系统："));
-                    break;
-                default:
-                    throw new InvalidEnumArgumentException();
-            }
-        }
     }
     
     public class ToolCallType : ICloneable
@@ -528,61 +502,6 @@ namespace ChatGptApiClientV2
             };
             var result = JsonConvert.SerializeObject(this, settings);
             return result;
-        }
-        private readonly Dictionary<string, string> imageConsoleSeqCache = [];
-        private void DisplayImage(string imageUrl)
-        {
-            if (!imageConsoleSeqCache.TryGetValue(imageUrl, out string? imagedata))
-            {
-                var bitmap = Utils.Base64ToBitmap(imageUrl);
-                imagedata = Utils.ConvertImageToConsoleSeq(bitmap);
-                imageConsoleSeqCache[imageUrl] = imagedata;
-            }
-            Utils.ConsolePrintImage(imagedata);
-            Console.WriteLine();
-        }
-        public void Display(bool useMarkdown)
-        {
-            foreach(var msg in Messages)
-            {
-                if (msg.Hidden)
-                {
-                    continue;
-                }
-                msg.Role.DisplayHeader();
-                foreach(var content in msg.Content)
-                {
-                    if (content is IMessage.TextContent textContent)
-                    {
-                        var text = textContent.Text;
-                        if (useMarkdown)
-                        {
-                            var document = MarkdownConverter.Convert(text, MarkdownConversionType.VT100, new PSMarkdownOptionInfo());
-                            text = document.VT100EncodedString;
-                        }
-                        Console.WriteLine(text);
-                    }
-                    else if (content is IMessage.ImageContent imgContent)
-                    {
-                        DisplayImage(imgContent.ImageUrl.Url);
-                    }
-                }
-                if (msg is AssistantMessage assistantMsg)
-                {
-                    foreach(var toolcall in assistantMsg.ToolCalls ?? [])
-                    {
-                        Console.WriteLine($"调用函数：{toolcall.Function.Name}");
-                    }
-                }
-                if (msg is ToolMessage toolMsg)
-                {
-                    foreach (var img in toolMsg.GeneratedImages)
-                    {
-                        Console.WriteLine(img.Description);
-                        DisplayImage(img.ImageBase64Url);
-                    }
-                }
-            }
         }
         public List<string> GetImageUrlList()
         {

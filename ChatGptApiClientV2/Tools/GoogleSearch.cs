@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Interop;
-using static ChatGptApiClientV2.MainWindow;
 using System.Net.Http;
 using System.IO;
 using PuppeteerSharp;
@@ -37,7 +36,7 @@ namespace ChatGptApiClientV2.Tools
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
-        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
+        public async Task<ToolMessage> Action(SystemState state, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents};
@@ -66,8 +65,8 @@ namespace ChatGptApiClientV2.Tools
 
             var parameters = new Dictionary<string, string?>
             {
-                {"cx",              config.GoogleSearchEngineID},
-                {"key",             config.GoogleSearchAPIKey},
+                {"cx",              state.Config.GoogleSearchEngineID},
+                {"key",             state.Config.GoogleSearchAPIKey},
                 {"q",               args.Query },
                 {"start",           args.StartIndex.ToString()},
                 {"fields",          @"queries(request(count,startIndex),nextPage(count,startIndex)),items(title,link,snippet)"},
@@ -80,7 +79,8 @@ namespace ChatGptApiClientV2.Tools
                 where p.Value is not null 
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-            Console.WriteLine($"Google Searching: {args.Query}");
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Google Searching: {args.Query}\n");
 
             var request = new HttpRequestMessage
             {
@@ -88,9 +88,9 @@ namespace ChatGptApiClientV2.Tools
                 RequestUri = new Uri($"{serviceURL}?{query}")
             };
 
-            netstatus.Status = NetStatus.StatusEnum.Sending;
+            state.NetStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatus.StatusEnum.Receiving;
+            state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -98,7 +98,7 @@ namespace ChatGptApiClientV2.Tools
                 using var errorReader = new StreamReader(errorResponseStream);
                 var errorResponse = await errorReader.ReadToEndAsync();
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -106,7 +106,7 @@ namespace ChatGptApiClientV2.Tools
             using var reader = new StreamReader(responseStream);
             string responseStr = await reader.ReadToEndAsync();
             msgContents[0].Text += $"Results: {responseStr}\n\n";
-            netstatus.Status = NetStatus.StatusEnum.Idle;
+            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }
@@ -123,7 +123,7 @@ namespace ChatGptApiClientV2.Tools
         public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
         public string Name => "website_access";
         public Type ArgsType => typeof(Args);
-        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
+        public async Task<ToolMessage> Action(SystemState state, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -150,12 +150,17 @@ namespace ChatGptApiClientV2.Tools
                 return msg;
             }
 
-            Console.WriteLine($"Accessing: {args.URL}");
-            netstatus.Status = NetStatus.StatusEnum.Receiving;
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Accessing: {args.URL}\n");
+            state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             try
             {
-                var installed = await new BrowserFetcher(SupportedBrowser.Firefox).DownloadAsync();
+                var installed = await new BrowserFetcher(new BrowserFetcherOptions
+                {
+                    Browser = SupportedBrowser.Firefox,
+                    Path = "./browser"
+                }).DownloadAsync();
                 var browser = await Puppeteer.LaunchAsync(
                     new LaunchOptions
                     {
@@ -181,11 +186,11 @@ namespace ChatGptApiClientV2.Tools
             catch(Exception e)
             {
                 msgContents[0].Text += $"Error: {e.Message}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
-            netstatus.Status = NetStatus.StatusEnum.Idle;
+            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }
@@ -203,13 +208,14 @@ namespace ChatGptApiClientV2.Tools
         }
         public Type ArgsType => typeof(Args);
 
-        public Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string args)
+        public Task<ToolMessage> Action(SystemState state, string args)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
             msgContents.Add(new() { Text = "" });
 
-            Console.WriteLine("Accessing the next page...");
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Accessing the next page...\n");
 
             if (string.IsNullOrEmpty(WebsiteAccessFunc.contentRemained))
             {

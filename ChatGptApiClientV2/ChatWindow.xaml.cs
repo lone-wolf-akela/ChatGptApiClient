@@ -17,14 +17,15 @@ using Markdig;
 using Markdig.Wpf;
 using Markdig.Wpf.ColorCode;
 using System.Diagnostics;
-using Microsoft.PowerShell.MarkdownRender;
 using HandyControl.Data;
 using static ChatGptApiClientV2.IMessage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Jdenticon;
 using System.Security.Principal;
 using SharpVectors;
-using static ChatGptApiClientV2.MainWindow;
+using System.Windows.Interop;
+using Microsoft.Win32;
+using System.Windows.Resources;
 
 namespace ChatGptApiClientV2
 {
@@ -41,6 +42,28 @@ namespace ChatGptApiClientV2
         {
             throw new NotSupportedException();
         }
+    }
+    public class FileAttachmentInfo
+    {
+        public FileAttachmentInfo(string path)
+        {
+            Path = path;
+            var icon = System.Drawing.Icon.ExtractAssociatedIcon(Path);
+            if (icon is not null)
+            {
+                Icon = Imaging.CreateBitmapSourceFromHIcon(
+                    icon.Handle,
+                    new Int32Rect(0, 0, icon.Width, icon.Height),
+                    BitmapSizeOptions.FromEmptyOptions()
+                    );
+            }
+            else
+            {
+                Icon = null;
+            }
+        }
+        public string Path { get; private set; }
+        public ImageSource? Icon { get; private set; }
     }
     public class ChatWindowMessage : ObservableObject
     {
@@ -240,22 +263,12 @@ namespace ChatGptApiClientV2
     [INotifyPropertyChanged]
     public partial class ChatWindow : Window
     {
-        public delegate Task SendMessage(string text);
-        public delegate Task ResetSession();
-        public delegate Task LoadSession();
-        public delegate Task SaveSession();
-        public SendMessage? SendMessageCallback { get; set; } = null;
-        public ResetSession? ResetSessionCallback { get; set; } = null;
-        public LoadSession? LoadSessionCallback { get; set; } = null;
-        public SaveSession? SaveSessionCallback { get; set; } = null;
+        [ObservableProperty]
+        private SystemState state;
+        public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
+        public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
+        public bool IsFileAttachmentsNotEmpty => FileAttachments.Count != 0;
 
-        [ObservableProperty]
-        private NetStatus? netStatus = null;
-        [ObservableProperty]
-        private ConfigType? config = null;
-        [ObservableProperty]
-        public ObservableCollection<PluginInfo>? plugins = null;
-        public ObservableCollection<ChatWindowMessage> Messages { get; set; } = [];
         private bool firstInput = true;
         private void SmoothScrollProcecssor(object sender, MouseWheelEventArgs e)
         {
@@ -283,6 +296,18 @@ namespace ChatGptApiClientV2
         public ChatWindow()
         {
             InitializeComponent();
+            State = new();
+            State.ChatSessionChangedEvent += (session) =>
+            {
+                SyncChatSession(session, State.Config.EnableMarkdown);
+            };
+            State.NewMessageEvent += AddMessage;
+            State.StreamTextEvent += AddStreamText;
+
+            FileAttachments.CollectionChanged += (sender, e) =>
+            {
+                OnPropertyChanged(nameof(IsFileAttachmentsNotEmpty));
+            };
         }
         private static ScrollViewer? GetScrollViewer(DependencyObject o)
         {
@@ -383,35 +408,24 @@ namespace ChatGptApiClientV2
 
         private async void btn_send_Click(object sender, RoutedEventArgs e)
         {
-            if (SendMessageCallback is not null)
-            {
-                await SendMessageCallback(txt_input.Text);
-                txt_input.Text = "";
-            }
+            await State.UserSendText(txt_input.Text, from fileinfo in FileAttachments select fileinfo.Path);
+            txt_input.Text = "";
+            FileAttachments.Clear();
         }
 
-        private async void btn_reset_Click(object sender, RoutedEventArgs e)
+        private void btn_reset_Click(object sender, RoutedEventArgs e)
         {
-            if (ResetSessionCallback is not null)
-            {
-                await ResetSessionCallback();
-            }
+            State.ClearSession();
         }
 
-        private async void btn_save_Click(object sender, RoutedEventArgs e)
+        private void btn_save_Click(object sender, RoutedEventArgs e)
         {
-            if (SaveSessionCallback is not null)
-            {
-                await SaveSessionCallback();
-            }
+            State.SaveSession();
         }
 
-        private async void btn_load_Click(object sender, RoutedEventArgs e)
+        private void btn_load_Click(object sender, RoutedEventArgs e)
         {
-            if (LoadSessionCallback is not null)
-            {
-                await LoadSessionCallback();
-            }
+            State.LoadSession();
         }
 
         private void txt_input_GotFocus(object sender, RoutedEventArgs e)
@@ -421,6 +435,41 @@ namespace ChatGptApiClientV2
                 txt_input.Text = "";
                 firstInput = false;
             }
+        }
+
+        private void btn_addfile_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Any Files|*.*",
+                ClientGuid = new Guid("B8F42507-693B-4713-8671-A76F02ED5ADB"),
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                FileAttachments.Add(new(dlg.FileName));
+            }
+        }
+
+        private void btn_removefile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var fileAttachmentInfo = (FileAttachmentInfo)((ContentControl)sender).DataContext;
+            FileAttachments.Remove(fileAttachmentInfo);
+        }
+
+        private void ClosePromptPopup(object sender, MouseButtonEventArgs e)
+        {
+            tggl_prompt.IsChecked = false;
+        }
+
+        private void chk_markdown_Click(object sender, RoutedEventArgs e)
+        {
+            State.RefreshSession();
+        }
+
+        private void btn_settings_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsDialog = new Settings(State.Config);
+            settingsDialog.ShowDialog();
         }
     }
 }

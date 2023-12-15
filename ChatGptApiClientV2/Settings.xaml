@@ -9,10 +9,47 @@
         Title="Settings" Height="600" Width="800"
         Unloaded="Window_Unloaded">
     <Grid DataContext="{Binding ElementName=window, Mode=OneWay}">
-        <DockPanel Margin="20,20,20,25">
+        <DockPanel Margin="10,10,10,10">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
             <StackPanel>
                 <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Column="0" Margin="0,0,5,0">
+                        <Label MinWidth="75" BorderBrush="{x:Null}" Content="你的昵称" DockPanel.Dock="Left" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
+                        <TextBox>
+                            <TextBox.Text>
+                                <Binding Path="Config.UserNickName" Mode="TwoWay">
+                                    <Binding.ValidationRules>
+                                        <local:RegexValidationRule Pattern="^[a-zA-Z0-9_-]{0,64}$" ErrorMessage="用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）"/>
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </TextBox.Text>
+                        </TextBox>
+                    </DockPanel>
+                </Grid>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <DockPanel Grid.Column="0" Margin="0,0,5,0">
+                        <Label MinWidth="75" DockPanel.Dock="Left" Content="Seed" BorderBrush="{x:Null}" Grid.Row="1" VerticalAlignment="Center"  HorizontalContentAlignment="Left"/>
+                        <CheckBox DockPanel.Dock="Right" Width="70" Content="随机种子" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
+                        <TextBox x:Name="txt_seed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={local:InvertBooleanConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Rectangle Grid.Column="1" VerticalAlignment="Stretch" Width="1" Margin="2" Stroke="LightGray" />
+                    <DockPanel Grid.Column="2">
+                        <Label MinWidth="100" DockPanel.Dock="Left" Content="Temperature" BorderBrush="{x:Null}" Width="85"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="txt_temp" Text="{Binding ElementName=slid_temp,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
+                        <Slider x:Name="slid_temp" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Grid>
+                <Separator/>
+                <Grid Margin="0,5,0,5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="7*"/>
                         <ColumnDefinition Width="10*"/>
@@ -56,7 +93,7 @@
                 <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="3" BorderBrush="LightGray" BorderThickness="1" Visibility="{Binding Path=IsAzure, Converter={local:BoolToVisibilityConverter}}">
                     <StackPanel>
                         <Label Content="Azure Deployment ID"  VerticalAlignment="Stretch" BorderBrush="{x:Null}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
-                        <ListView x:Name="lst_azure_deployment_ids" Margin="0,0,0,5" MinHeight="100" MaxHeight="150" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="White">
+                        <ListView x:Name="lst_azure_deployment_ids" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="White">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                     <Setter Property="Padding" Value="5,0,5,0"/>

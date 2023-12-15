@@ -23,7 +23,7 @@ namespace ChatGptApiClientV2
     public partial class Settings : Window
     {
         [ObservableProperty]
-        private ConfigType config;
+        private Config config;
         private void ConfigServiceProviderPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Config.ServiceProvider))
@@ -32,10 +32,10 @@ namespace ChatGptApiClientV2
                 OnPropertyChanged(nameof(IsNotAzure));
             }
         }
-        public bool IsAzure => Config.ServiceProvider == ConfigType.ServiceProviderType.Azure;
+        public bool IsAzure => Config.ServiceProvider == Config.ServiceProviderType.Azure;
         public bool IsNotAzure => !IsAzure;
 
-        public Settings(ConfigType conf)
+        public Settings(Config conf)
         {
             config = conf;
             Config.PropertyChanged += ConfigServiceProviderPropertyChanged;

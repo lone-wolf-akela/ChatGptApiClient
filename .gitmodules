@@ -1,6 +1,0 @@
-[submodule "MarkdownRender"]
-	path = MarkdownRender
-	url = git@github.com:lone-wolf-akela/MarkdownRender.git
-[submodule "ColorCode.Console"]
-	path = ColorCode.Console
-	url = git@github.com:lone-wolf-akela/ColorCode.Console.git

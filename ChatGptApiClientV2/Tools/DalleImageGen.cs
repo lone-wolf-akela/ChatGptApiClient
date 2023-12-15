@@ -11,7 +11,6 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static ChatGptApiClientV2.MainWindow;
 using Flurl;
 
 namespace ChatGptApiClientV2.Tools
@@ -89,7 +88,7 @@ namespace ChatGptApiClientV2.Tools
                 return result;
             }
         }
-        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
+        public async Task<ToolMessage> Action(SystemState state, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -116,14 +115,14 @@ namespace ChatGptApiClientV2.Tools
                 return msg;
             }
 
-            apiClient.DefaultRequestHeaders.Authorization = config.ServiceProvider switch
+            apiClient.DefaultRequestHeaders.Authorization = state.Config.ServiceProvider switch
             {
-                ConfigType.ServiceProviderType.Azure => null,
-                _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.API_KEY),
+                Config.ServiceProviderType.Azure => null,
+                _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY),
             };
 
-            Console.WriteLine($"Generating image with prompt: {args.Prompts}");
-            Console.WriteLine();
+            state.NewMessage(RoleType.Tool);
+            state.StreamText($"Generating image with prompt: {args.Prompts}\n");
 
             var requestbody = new Request
             {
@@ -135,16 +134,16 @@ namespace ChatGptApiClientV2.Tools
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(config.DalleImageGenServiceURL),
+                RequestUri = new Uri(state.Config.DalleImageGenServiceURL),
                 Content = postContent
             };
-            if (config.ServiceProvider == ConfigType.ServiceProviderType.Azure)
+            if (state.Config.ServiceProvider == Config.ServiceProviderType.Azure)
             {
-                request.Headers.Add("api-key", config.AzureAPIKey);
+                request.Headers.Add("api-key", state.Config.AzureAPIKey);
             }
-            netstatus.Status = NetStatus.StatusEnum.Sending;
+            state.NetStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await apiClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatus.StatusEnum.Receiving;
+            state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -160,7 +159,7 @@ namespace ChatGptApiClientV2.Tools
                 {
                     msgContents[0].Text += $"Error: {errorResponse}\n\n";
                 }
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -174,16 +173,15 @@ namespace ChatGptApiClientV2.Tools
             if (img_download_url is null)
             {
                 msgContents[0].Text += "Error: no image download address generated.\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
-            Console.WriteLine($"Downloading image from {img_download_url}");
-            Console.WriteLine();
+            state.StreamText($"Downloading image from {img_download_url}\n");
 
             var progress = new Progress<HttpDownloadProgressData>(Progress =>
             {
-                Console.Write($"\rDownloading image: {Progress.Percent * 100:0.00}% ({Progress.Current}/{Progress.Total} Bytes)");
+                //Console.Write($"\rDownloading image: {Progress.Percent * 100:0.00}% ({Progress.Current}/{Progress.Total} Bytes)");
             });
 
             bool download_success;
@@ -191,13 +189,12 @@ namespace ChatGptApiClientV2.Tools
             using (var fs = File.Create(tmp_name))
             {
                 download_success = await downloadClient.DownloadAsync(img_download_url, fs, progress);
-                Console.WriteLine();
             }
 
             if (!download_success)
             {
                 msgContents[0].Text += $"Error: failed to download image from {img_download_url}\n\n";
-                netstatus.Status = NetStatus.StatusEnum.Idle;
+                state.NetStatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -214,7 +211,7 @@ Download URL: {img_download_url}";
             msg.GeneratedImages.Add(new() { ImageBase64Url = image_url, Description = image_desc });
             File.Delete(image_name);
             msgContents[0].Text += $"Image generated successfully and is now displaying on the screen.\n\n";
-            netstatus.Status = NetStatus.StatusEnum.Idle;
+            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             return msg;
         }
     }

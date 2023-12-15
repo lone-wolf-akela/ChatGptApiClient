@@ -15,7 +15,7 @@ using Flurl;
 
 namespace ChatGptApiClientV2
 {
-    public partial class ConfigType : ObservableObject
+    public partial class Config : ObservableObject
     {
         [JsonIgnore]
         public static string ConfigPath => "config.json";
@@ -142,6 +142,10 @@ namespace ChatGptApiClientV2
         private bool enableMarkdown;
         partial void OnEnableMarkdownChanged(bool value) => SaveConfig();
 
+        [ObservableProperty]
+        private bool uploadHiresImage;
+        partial void OnUploadHiresImageChanged(bool value) => SaveConfig();
+
         [JsonIgnore]
         public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
         private void UpdateModelOptionList()
@@ -246,7 +250,7 @@ namespace ChatGptApiClientV2
             ModelVersionOptions[SelectedModelVersionIndex] : null;
         [JsonIgnore]
         public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
-        public ConfigType()
+        public Config()
         {
             userNickName = string.Empty;
             serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
@@ -264,6 +268,7 @@ namespace ChatGptApiClientV2
             selectedModelIndex = 0;
             selectedModelVersionIndex = 0;
             useRandomSeed = true;
+            uploadHiresImage = false;
 
             AzureDeploymentList.CollectionChanged += AzureDeploymentListCollectionChanged;
 
@@ -288,7 +293,7 @@ namespace ChatGptApiClientV2
             var result = JsonConvert.SerializeObject(this, settings);
             File.WriteAllText(ConfigPath, result);
         }
-        public static ConfigType LoadConfig()
+        public static Config LoadConfig()
         {
             if (!File.Exists(ConfigPath))
             {
@@ -307,7 +312,7 @@ namespace ChatGptApiClientV2
                     ContractResolver = contractResolver,
                     TypeNameHandling = TypeNameHandling.Auto,
                 };
-                var parsed_config = JsonConvert.DeserializeObject<ConfigType>(saved_config, settings);
+                var parsed_config = JsonConvert.DeserializeObject<Config>(saved_config, settings);
                 return parsed_config ?? new();
             }
             catch (JsonSerializationException exception)
