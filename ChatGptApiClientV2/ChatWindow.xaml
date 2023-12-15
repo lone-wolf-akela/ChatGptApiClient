@@ -5,23 +5,84 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:ChatGptApiClientV2"
+        xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
+        xmlns:jd="clr-namespace:Jdenticon.Wpf;assembly=Jdenticon.Wpf"
+        xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
         Title="ChatWindow" Height="600" Width="1000">
     <Window.Resources>
         <local:ContainerWidthConverter x:Key="ContainerWidthConverter" />
     </Window.Resources>
-    <Grid Margin="10,10,10,10" DataContext="{Binding ElementName=window, Mode=OneWay}">
+    <FrameworkElement.CommandBindings>
+        <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
+    </FrameworkElement.CommandBindings>
+    <Grid Margin="10,10,10,0" DataContext="{Binding ElementName=window, Mode=OneWay}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*" MinHeight="100"/>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="100" MinHeight="55"/>
+            <RowDefinition Height="150" MinHeight="100"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <GridSplitter Grid.Row="1" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <DockPanel Grid.Row="2" Margin="0,5,0,0">
-            <Button DockPanel.Dock="Right" Content="发送" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100"/>
-            <TextBox Margin="0,0,5,0" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,5" Orientation="Horizontal">
+            <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" Orientation="Horizontal">
+                <Label MinWidth="50" Content="模型" BorderBrush="{x:Null}" Margin="0,0,0,0"/>
+                <ComboBox x:Name="cbx_model" MinWidth="200" ItemsSource="{Binding Config.ModelOptions}" SelectedIndex="{Binding Config.SelectedModelIndex, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Description}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,30,0" Orientation="Horizontal">
+                <Label MinWidth="50" Content="版本" BorderBrush="{x:Null}" Grid.Row="2" Grid.Column="0" Margin="0,0,0,0"/>
+                <ComboBox x:Name="cbx_model_version" MinWidth="200" ItemsSource="{Binding Config.ModelVersionOptions}" SelectedIndex="{Binding Config.SelectedModelVersionIndex, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Description}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <ToggleButton x:Name="tggl_plugin">
+                <StackPanel>
+                    <TextBlock Text="选择插件"/>
+                    <Popup IsOpen="{Binding IsChecked, ElementName=tggl_plugin}" AllowsTransparency="True" >
+                        <Border CornerRadius="5" BorderThickness="1" BorderBrush="White" Background="White" Margin="0,0,8,8" Padding="5">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
+                            </Border.Effect>
+                            <ListView x:Name="lst_plugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=Plugins, Mode=OneWay}" IsEnabled="{Binding Config.SelectedModelSupportTools}">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                        <Setter Property="Padding" Value="3,3,3,3"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+            </ToggleButton>
+        </StackPanel>
+        <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <DockPanel Grid.Row="3" Margin="0,5,0,0">
+            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
+                <UniformGrid Columns="3" Rows="1" Margin="0,0,0,10">
+                    <Button x:Name="btn_reset" Click="btn_reset_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Margin="0,0,5,0" Height="30" Width="30" Padding="0"/>
+                    <Button x:Name="btn_save"  Click="btn_save_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE74E;" ToolTip="保存对话历史" Margin="0,0,5,0" Height="30" Width="30" Padding="0"/>
+                    <Button x:Name="btn_load"  Click="btn_load_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE8E5;" ToolTip="载入对话历史" Margin="0,0,0,0" Height="30" Width="30" Padding="0"/>
+                </UniformGrid>
+                <Button x:Name="btn_send" Content="发送" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="btn_send_Click"/>
+            </StackPanel>
+            <TextBox x:Name="txt_input" Margin="0,0,5,0" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" GotFocus="txt_input_GotFocus"/>
         </DockPanel>
-        <ListView Grid.Row="0" ScrollViewer.CanContentScroll="False" Background="White" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+        <ListView Grid.Row="1" x:Name="lst_msg" ScrollViewer.CanContentScroll="False" Background="White" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="false"/>
@@ -39,10 +100,12 @@
                 <DataTemplate>
                     <Grid>
                         <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListView}}, Converter={StaticResource ContainerWidthConverter}}">
-                            <Image x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
-                            <Image x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
-                            <Image x:Name="AvatarRight" Visibility="{Binding Path=ShowRightAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" Source="{Binding Avatar}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top"/>
-                            <Image x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
+                            <Grid x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <Border BorderBrush="LightGray" CornerRadius="5" BorderThickness="1" Visibility="{Binding Path=ShowRightAvatar, Converter={local:BoolToVisibilityConverter}}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="10,0,0,0" >
+                                <jd:IdenticonElement x:Name="AvatarRight" Value="{Binding UserAvatarSource}" Background="Transparent"/>
+                            </Border>
+                            <Grid x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
                             <Border CornerRadius="5" Background="{Binding BackgroundColor}">
                                 <FlowDocumentScrollViewer Style="{x:Null}" 
                                                           Document="{Binding Path=RenderedMessage}" 
@@ -65,5 +128,12 @@
                 </x:Array>
             </d:ListView.ItemsSource>
         </ListView>
+        <StatusBar Grid.Row="4">
+            <StatusBarItem Content="状态："/>
+            <StatusBarItem Content="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}" MinWidth="200"/>
+            <Separator/>
+            <StatusBarItem Content="系统指纹："/>
+            <StatusBarItem Content="{Binding Path=NetStatus.SystemFingerprint}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
+        </StatusBar>
     </Grid>
 </Window>

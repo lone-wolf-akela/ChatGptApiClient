@@ -51,7 +51,7 @@ namespace ChatGptApiClientV2
                 return schema;
             }
         }
-        public Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string args);
+        public Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string args);
         public ChatCompletionRequest.ToolType GetToolRequest() => new() 
         {
             Function = new () { Name = Name, Parameters = Parameters, Description = Description }

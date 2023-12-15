@@ -37,7 +37,7 @@ namespace ChatGptApiClientV2.Tools
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
-        public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
+        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents};
@@ -88,9 +88,9 @@ namespace ChatGptApiClientV2.Tools
                 RequestUri = new Uri($"{serviceURL}?{query}")
             };
 
-            netstatus.Status = NetStatusType.StatusEnum.Sending;
+            netstatus.Status = NetStatus.StatusEnum.Sending;
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatusType.StatusEnum.Receiving;
+            netstatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -98,7 +98,7 @@ namespace ChatGptApiClientV2.Tools
                 using var errorReader = new StreamReader(errorResponseStream);
                 var errorResponse = await errorReader.ReadToEndAsync();
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -106,7 +106,7 @@ namespace ChatGptApiClientV2.Tools
             using var reader = new StreamReader(responseStream);
             string responseStr = await reader.ReadToEndAsync();
             msgContents[0].Text += $"Results: {responseStr}\n\n";
-            netstatus.Status = NetStatusType.StatusEnum.Idle;
+            netstatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }
@@ -123,7 +123,7 @@ namespace ChatGptApiClientV2.Tools
         public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
         public string Name => "website_access";
         public Type ArgsType => typeof(Args);
-        public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
+        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -151,7 +151,7 @@ namespace ChatGptApiClientV2.Tools
             }
 
             Console.WriteLine($"Accessing: {args.URL}");
-            netstatus.Status = NetStatusType.StatusEnum.Receiving;
+            netstatus.Status = NetStatus.StatusEnum.Receiving;
 
             try
             {
@@ -181,11 +181,11 @@ namespace ChatGptApiClientV2.Tools
             catch(Exception e)
             {
                 msgContents[0].Text += $"Error: {e.Message}\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
-            netstatus.Status = NetStatusType.StatusEnum.Idle;
+            netstatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }
@@ -203,7 +203,7 @@ namespace ChatGptApiClientV2.Tools
         }
         public Type ArgsType => typeof(Args);
 
-        public Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string args)
+        public Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string args)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };

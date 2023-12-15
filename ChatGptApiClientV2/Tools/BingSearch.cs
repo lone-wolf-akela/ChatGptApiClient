@@ -37,7 +37,7 @@ namespace ChatGptApiClientV2.Tools
         public Type ArgsType => typeof(Args);
 
         private readonly HttpClient httpClient = new();
-        public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
+        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -90,9 +90,9 @@ namespace ChatGptApiClientV2.Tools
                 },
             };
 
-            netstatus.Status = NetStatusType.StatusEnum.Sending;
+            netstatus.Status = NetStatus.StatusEnum.Sending;
             var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatusType.StatusEnum.Receiving;
+            netstatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -100,7 +100,7 @@ namespace ChatGptApiClientV2.Tools
                 using var errorReader = new StreamReader(errorResponseStream);
                 var errorResponse = await errorReader.ReadToEndAsync();
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -112,7 +112,7 @@ namespace ChatGptApiClientV2.Tools
             if (responsePages is null)
             {
                 msgContents[0].Text += $"Error: {responseStr}\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -131,7 +131,7 @@ namespace ChatGptApiClientV2.Tools
             filteredResponse["webPages"] = filteredPages;
 
             msgContents[0].Text += $"Results: {filteredResponse.ToString(Formatting.Indented)}\n\n";
-            netstatus.Status = NetStatusType.StatusEnum.Idle;
+            netstatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
         }

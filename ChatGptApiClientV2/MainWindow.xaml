@@ -13,24 +13,6 @@
             <ColumnDefinition Width="100*"></ColumnDefinition>
             <ColumnDefinition Width="15*" MinWidth="140"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Column="0" Margin="10,0,10,25">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Margin="0,10,0,10">选择插件：</TextBlock>
-                <ListView x:Name="lst_plugin" Background="White" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=Plugins, Mode=OneWay}" IsEnabled="{Binding Config.SelectedModelSupportTools}">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                            <Setter Property="Padding" Value="3,3,3,3"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </DockPanel>
-            
-        </Grid>
         <DockPanel Grid.Column="1" Margin="0,10,0,0">
             <StackPanel DockPanel.Dock="Top" Grid.Row="0" Margin="0,0,0,10">
                 <Grid Margin="0,0,0,5">
@@ -56,26 +38,6 @@
                         </TextBox>
                     </DockPanel>
                     <Button Grid.Column="1" Grid.Row="0" Content="其他设置" MinWidth="200" Margin="0,0,0,5" Click="Button_Click_6"/>
-                    <DockPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,5">
-                        <Label MinWidth="50" DockPanel.Dock="Left" Content="模型" BorderBrush="{x:Null}" Margin="0,0,5,0"/>
-                        <ComboBox x:Name="cbx_model" ItemsSource="{Binding Config.ModelOptions}" SelectedIndex="{Binding Config.SelectedModelIndex, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Description}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </DockPanel>
-                    <DockPanel Grid.Column="0" Grid.Row="2" Margin="0,0,10,0">
-                        <Label MinWidth="50" DockPanel.Dock="Left" Content="版本" BorderBrush="{x:Null}" Grid.Row="2" Grid.Column="0" Margin="0,0,5,0"/>
-                        <ComboBox x:Name="cbx_model_version"  Grid.Row="2" Grid.Column="1"  ItemsSource="{Binding Config.ModelVersionOptions}" SelectedIndex="{Binding Config.SelectedModelVersionIndex, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Description}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </DockPanel>
                     <DockPanel Grid.Column="1" Grid.Row="1" Margin="0,0,0,5">
                         <Label MinWidth="100" DockPanel.Dock="Left" Content="Seed" BorderBrush="{x:Null}" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <CheckBox DockPanel.Dock="Right" Width="70" Content="随机种子" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
@@ -123,41 +85,9 @@
                         </ListView.ItemContainerStyle>
                     </ListView>
                 </DockPanel>
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Button MinHeight="50" Content="保存对话历史" Click="Button_Click_1" HorizontalAlignment="Stretch"/>
-                    <Button MinHeight="50" Content="载入对话历史" Click="Button_Click_2" Grid.Column="2" HorizontalAlignment="Stretch"/>
-                    <Button MinHeight="50" Grid.Column="4" Click="Button_Click_3" HorizontalAlignment="Stretch">
-                        <TextBlock TextAlignment="Center">重置对话<LineBreak/>（清空当前对话历史）</TextBlock>
-                    </Button>
-                    <Button MinHeight="50" Content="发送" Click="Button_Click" Grid.Column="6" HorizontalAlignment="Stretch"/>
-                </Grid>
-                <Grid MinHeight="25">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock>状态：</TextBlock>
-                        <TextBlock x:Name="lbl_status" Text="{Binding Path=NetStatus.StatusText}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock>系统指纹：</TextBlock>
-                        <TextBlock x:Name="lbl_fingerprint" Text="{Binding Path=NetStatus.SystemFingerprint}" Foreground="{Binding Path=NetStatus.StatusColor}"/>
-                    </StackPanel>
-                </Grid>
             </StackPanel>
             <DockPanel Margin="0,0,0,10">
                 <CheckBox DockPanel.Dock="Bottom" Content="使用Markdown渲染对话文本（勾选后开启代码语法高亮和其他高级格式化效果，但可能造成部分简单内容显示格式偏差）" IsChecked="{Binding Path=Config.EnableMarkdown, Mode=TwoWay}" Click="CheckBox_Click" Margin="0,0,0,0"/>
-                <TextBox x:Name="txtbx_input" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" Text="在此输入对话内容" GotFocus="txtbx_input_GotFocus" AcceptsReturn="True" AcceptsTab="True" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
             </DockPanel>
         </DockPanel>
         <Grid Grid.Column="2" Margin="10,0,10,25">

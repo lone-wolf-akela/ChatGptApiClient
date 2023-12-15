@@ -16,6 +16,15 @@ using System.Windows.Shapes;
 using Markdig;
 using Markdig.Wpf;
 using Markdig.Wpf.ColorCode;
+using System.Diagnostics;
+using Microsoft.PowerShell.MarkdownRender;
+using HandyControl.Data;
+using static ChatGptApiClientV2.IMessage;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Jdenticon;
+using System.Security.Principal;
+using SharpVectors;
+using static ChatGptApiClientV2.MainWindow;
 
 namespace ChatGptApiClientV2
 {
@@ -33,55 +42,148 @@ namespace ChatGptApiClientV2
             throw new NotSupportedException();
         }
     }
-    public class ChatWindowMessage
+    public class ChatWindowMessage : ObservableObject
     {
-        public static bool EnableMarkdown { get; set; } = true;
-        static ChatWindowMessage()
+        public string Message
         {
-
+            init
+            {
+                messageList.Clear();
+                messageList.Add(new RichMessage
+                {
+                    Type = RichMessage.RichMessageType.Text,
+                    Text = value
+                });
+            }
         }
-        public enum RoleType
+        internal class RichMessage
         {
-            User,
-            Assistant,
-            System,
-            Tool
+            public enum RichMessageType
+            {
+                Text,
+                Image
+            }
+            public RichMessageType Type { get; set; } = RichMessageType.Text;
+            /**** Text Type ****/
+            public string? Text { get; set; } = null;
+            public bool EnableMarkdown { get; set; } = true;
+            /*******************/
+            /**** Image Type ****/
+            public BitmapImage? Image { get; set; } = null;
+            public string? ImageTooltip { get; set; } = null;
+            /********************/
         }
-        public string? Message { get; set; }
+        public void AddText(string text, bool enableMarkdown)
+        {
+            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
+            OnPropertyChanged(nameof(RenderedMessage));
+        }
+        public void AddImage(BitmapImage image, string? tooltip)
+        {
+            messageList.Add(new RichMessage 
+            { 
+                Type = RichMessage.RichMessageType.Image, 
+                Image = image, 
+                ImageTooltip = tooltip 
+            });
+            OnPropertyChanged(nameof(RenderedMessage));
+        }
+        public void AddImage(string base64url, string? tooltip)
+        {
+            var bitmap = Utils.Base64ToBitmapImage(base64url);
+            AddImage(bitmap, tooltip);
+        }
+        private readonly List<RichMessage> messageList = [];
+        private StringBuilder? streamMessage = null;
+        public void AddStreamText(string text)
+        {
+            streamMessage ??= new StringBuilder();
+            streamMessage.Append(text);
+            OnPropertyChanged(nameof(RenderedMessage));
+        }
         public FlowDocument RenderedMessage
         {
             get
             {
-                FlowDocument doc;
-                if (EnableMarkdown)
+                FlowDocument doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
+                foreach (var msg in messageList)
                 {
-                    doc = Markdig.Wpf.Markdown.ToFlowDocument(Message ?? "", 
-                        new MarkdownPipelineBuilder()
-                        .UseAdvancedExtensions()
-                        .UseColorCodeWpf()
-                        .UseTaskLists()
-                        .UseGridTables()
-                        .UsePipeTables()
-                        .UseEmphasisExtras()
-                        .Build());
+                    if (msg.Type == RichMessage.RichMessageType.Text)
+                    {
+                        if (msg.EnableMarkdown)
+                        {
+                            var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(msg.Text ?? "",
+                                new MarkdownPipelineBuilder()
+                                .UseAdvancedExtensions()
+                                .UseColorCodeWpf()
+                                .UseTaskLists()
+                                .UseGridTables()
+                                .UsePipeTables()
+                                .UseEmphasisExtras()
+                                .UseAutoLinks()
+                                .Build());
+                            doc.Blocks.AddRange(newDoc.Blocks.ToList());
+                        }
+                        else
+                        {
+                            doc.Blocks.Add(new Paragraph(new Run(msg.Text)));
+                        }
+                    }
+                    else if (msg.Type == RichMessage.RichMessageType.Image)
+                    {
+                        var image = new Image 
+                        { 
+                            Source = msg.Image,
+                            Stretch = Stretch.Uniform,
+                            MaxHeight = 300,
+                            Margin = new Thickness(0, 0, 10, 0)
+                        };
+                        if (msg.ImageTooltip is not null)
+                        {
+                            image.ToolTip = new ToolTip 
+                            { 
+                                Content = new TextBlock
+                                {
+                                    Text = msg.ImageTooltip,
+                                    MaxWidth = 600,
+                                    TextWrapping = TextWrapping.Wrap
+                                }
+                            };
+                        }
+                        var btn = new Button
+                        {
+                            Content = "在单独窗口中打开",
+                            VerticalAlignment = VerticalAlignment.Bottom
+                        };
+                        btn.Click += (sender, e) =>
+                        {
+                            var viewer = new ImageViewer(msg.Image!);
+                            viewer.ShowDialog();
+                        };
+                        var stackpanel = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Children = { image, btn }
+                        };
+                        doc.Blocks.Add(new BlockUIContainer(stackpanel));
+                    }
                 }
-                else
+                if (streamMessage is not null)
                 {
-                    doc = new FlowDocument();
-                    doc.Blocks.Add(new Paragraph(new Run(Message)));
+                    doc.Blocks.Add(new Paragraph(new Run(streamMessage.ToString())));
                 }
                 doc.Foreground = ForegroundColor;
                 return doc;
             }
         }
         public RoleType Role { get; set; }
-        public ImageSource Avatar => Role switch
+        public static string UserAvatarSource => Environment.UserName;
+
+        public Uri Avatar => Role switch
         {
-            RoleType.User => new BitmapImage(new Uri("pack://application:,,,/images/chatgpt-icon.png")),
-            RoleType.System => new BitmapImage(new Uri("pack://application:,,,/images/chatgpt-icon.png")),
-            RoleType.Assistant => new BitmapImage(new Uri("pack://application:,,,/images/chatgpt-icon.png")),
-            RoleType.Tool => new BitmapImage(new Uri("pack://application:,,,/images/chatgpt-icon.png")),
-            _ => throw new NotImplementedException()
+            RoleType.Assistant => new Uri("pack://application:,,,/images/chatgpt-icon.svg"),
+            RoleType.Tool => new Uri("pack://application:,,,/images/set-up-svgrepo-com.svg"),
+            _ => new Uri("pack://application:,,,/images/chatgpt-icon.svg")
         };
         public Brush ForegroundColor => Role switch
         {
@@ -135,9 +237,26 @@ namespace ChatGptApiClientV2
     /// <summary>
     /// ChatWindow.xaml 的交互逻辑
     /// </summary>
+    [INotifyPropertyChanged]
     public partial class ChatWindow : Window
     {
+        public delegate Task SendMessage(string text);
+        public delegate Task ResetSession();
+        public delegate Task LoadSession();
+        public delegate Task SaveSession();
+        public SendMessage? SendMessageCallback { get; set; } = null;
+        public ResetSession? ResetSessionCallback { get; set; } = null;
+        public LoadSession? LoadSessionCallback { get; set; } = null;
+        public SaveSession? SaveSessionCallback { get; set; } = null;
+
+        [ObservableProperty]
+        private NetStatus? netStatus = null;
+        [ObservableProperty]
+        private ConfigType? config = null;
+        [ObservableProperty]
+        public ObservableCollection<PluginInfo>? plugins = null;
         public ObservableCollection<ChatWindowMessage> Messages { get; set; } = [];
+        private bool firstInput = true;
         private void SmoothScrollProcecssor(object sender, MouseWheelEventArgs e)
         {
             if (!e.Handled)
@@ -153,9 +272,10 @@ namespace ChatGptApiClientV2
 
                 // 找到ListView控件并将事件手动传递给其
                 var parent = (UIElement)VisualTreeHelper.GetParent((DependencyObject)sender);
-                while (parent != null && !(parent is ScrollViewer))
+                while (parent is not null && parent is not ScrollViewer)
+                {
                     parent = (UIElement)VisualTreeHelper.GetParent(parent);
-
+                }
                 // 确认找到ListView控件并触发事件
                 parent?.RaiseEvent(eventArg);
             }
@@ -163,262 +283,144 @@ namespace ChatGptApiClientV2
         public ChatWindow()
         {
             InitializeComponent();
-
-            Messages.Add(new ChatWindowMessage
+        }
+        private static ScrollViewer? GetScrollViewer(DependencyObject o)
+        {
+            // Return the DependencyObject if it is a ScrollViewer
+            if (o is ScrollViewer s) 
+            { 
+                return s; 
+            }
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
             {
-                Message = @"# Header 1
+                var child = VisualTreeHelper.GetChild(o, i);
+                var result = GetScrollViewer(child);
+                if (result is null) 
+                { 
+                    continue; 
+                }
+                else 
+                { 
+                    return result; 
+                }
+            }
+            return null;
+        }
+        private void ScrollToEnd()
+        {
+            var scrollViewer = GetScrollViewer(lst_msg);
+            scrollViewer?.Dispatcher.Invoke(() =>
+                {
+                    scrollViewer.ScrollToEnd();
+                });
+        }
 
-## Header 2 你好
+        public void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
+        {
+            Messages.Clear();
 
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-### Header 3
-
-AAAA BBBBB 你好
-
-#### Header 4
-
-CCCC
-
-*Italic*
-
-**Bold**
-
-***Bold and Italic***
-
-~~Strikethrough~~
-
-> Blockquote
-
-` Inline code `
-
-```cpp
-public class Test
-{
-    public string TestString { get; set; }
-}
-```
-
-[Link](https://www.google.com)
-
-- List item 1
-    - List item 1.1
-    - List item 1.2
-- List item 2
-- List item 3
-
-1. Numbered list item 1
-2. Numbered list item 2
-3. Numbered list item 3
-
-",
-                Role = ChatWindowMessage.RoleType.System
-            });
-            Messages.Add(new ChatWindowMessage
+            foreach (var msg in session.Messages)
             {
-                Message = @"# Header 1
+                if (msg.Hidden)
+                {
+                    continue;
+                }
 
-## Header 2 你好
+                var chatMsg = new ChatWindowMessage
+                {
+                    Role = msg.Role
+                };
 
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
+                foreach (var content in msg.Content)
+                {
+                    if (content is TextContent textContent)
+                    {
+                        chatMsg.AddText(textContent.Text, enableMarkdown);                        
+                    }
+                    else if (content is ImageContent imgContent)
+                    {
+                        chatMsg.AddImage(imgContent.ImageUrl.Url, null);
+                    }
+                }
+                if (msg is AssistantMessage assistantMsg)
+                {
+                    foreach (var toolcall in assistantMsg.ToolCalls ?? [])
+                    {
+                        chatMsg.AddText($"调用函数：{toolcall.Function.Name}", false);
+                    }
+                }
+                if (msg is ToolMessage toolMsg)
+                {
+                    foreach (var img in toolMsg.GeneratedImages)
+                    {
+                        chatMsg.AddImage(img.ImageBase64Url, img.Description);
+                    }
+                }
 
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
+                Messages.Add(chatMsg);
+                ScrollToEnd();
+            }
+        }
+        public void AddStreamText(string text)
+        {
+            Messages.Last().AddStreamText(text);
+            ScrollToEnd();
+        }
+        public void AddMessage(RoleType role)
+        {
+            Messages.Add(new ChatWindowMessage { Role = role });
+            ScrollToEnd();
+        }
 
-### Header 3
-
-AAAA BBBBB 你好
-
-#### Header 4
-
-CCCC
-
-*Italic*
-
-**Bold**
-
-***Bold and Italic***
-
-~~Strikethrough~~
-
-> Blockquote
-
-` Inline code `
-
-```cpp
-public class Test
-{
-    public string TestString { get; set; }
-}
-```
-
-[Link](https://www.google.com)
-
-- List item 1
-    - List item 1.1
-    - List item 1.2
-- List item 2
-- List item 3
-
-1. Numbered list item 1
-2. Numbered list item 2
-3. Numbered list item 3
-
-",
-                Role = ChatWindowMessage.RoleType.User
-            });
-            Messages.Add(new ChatWindowMessage
+        private void OpenHyperlink(object sender, ExecutedRoutedEventArgs e)
+        {
+            var link = e.Parameter.ToString();
+            if (link is not null)
             {
-                Message = @"# Header 1
+                Process.Start(new ProcessStartInfo(link) { UseShellExecute = true });
+            }
+        }
 
-## Header 2 你好
-
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-### Header 3
-
-AAAA BBBBB 你好
-
-#### Header 4
-
-CCCC
-
-*Italic*
-
-**Bold**
-
-***Bold and Italic***
-
-~~Strikethrough~~
-
-> Blockquote
-
-` Inline code `
-
-```cpp
-public class Test
-{
-    public string TestString { get; set; }
-}
-```
-
-[Link](https://www.google.com)
-
-- List item 1
-    - List item 1.1
-    - List item 1.2
-- List item 2
-- List item 3
-
-1. Numbered list item 1
-2. Numbered list item 2
-3. Numbered list item 3
-
-",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
-            Messages.Add(new ChatWindowMessage
+        private async void btn_send_Click(object sender, RoutedEventArgs e)
+        {
+            if (SendMessageCallback is not null)
             {
-                Message = @"# Header 1
+                await SendMessageCallback(txt_input.Text);
+                txt_input.Text = "";
+            }
+        }
 
-## Header 2 你好
-
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字;这是一段测试文字
-
-### Header 3
-
-AAAA BBBBB 你好
-
-#### Header 4
-
-CCCC
-
-*Italic*
-
-**Bold**
-
-***Bold and Italic***
-
-~~Strikethrough~~
-
-> Blockquote
-
-` Inline code `
-
-```cpp
-public class Test
-{
-    public string TestString { get; set; }
-}
-```
-
-[Link](https://www.google.com)
-
-- List item 1
-    - List item 1.1
-    - List item 1.2
-- List item 2
-- List item 3
-
-1. Numbered list item 1
-2. Numbered list item 2
-3. Numbered list item 3
-
-",
-                Role = ChatWindowMessage.RoleType.Tool
-            });
-            Messages.Add(new ChatWindowMessage
+        private async void btn_reset_Click(object sender, RoutedEventArgs e)
+        {
+            if (ResetSessionCallback is not null)
             {
-                Message = "Hello, world! 2",
-                Role = ChatWindowMessage.RoleType.User
-            });
+                await ResetSessionCallback();
+            }
+        }
 
-            Messages.Add(new ChatWindowMessage
+        private async void btn_save_Click(object sender, RoutedEventArgs e)
+        {
+            if (SaveSessionCallback is not null)
             {
-                Message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
+                await SaveSessionCallback();
+            }
+        }
 
-            Messages.Add(new ChatWindowMessage
+        private async void btn_load_Click(object sender, RoutedEventArgs e)
+        {
+            if (LoadSessionCallback is not null)
             {
-                Message = "Hello, world! 4",
-                Role = ChatWindowMessage.RoleType.Tool
-            });
+                await LoadSessionCallback();
+            }
+        }
 
-            Messages.Add(new ChatWindowMessage
+        private void txt_input_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (firstInput)
             {
-                Message = "# Lorem ipsum dolor sit amet \r\nconsectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
-
-            Messages.Add(new ChatWindowMessage
-            {
-                Message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
-
-            Messages.Add(new ChatWindowMessage
-            {
-                Message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
-
-            Messages.Add(new ChatWindowMessage
-            {
-                Message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
-
-            Messages.Add(new ChatWindowMessage
-            {
-                Message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                Role = ChatWindowMessage.RoleType.Assistant
-            });
+                txt_input.Text = "";
+                firstInput = false;
+            }
         }
     }
 }

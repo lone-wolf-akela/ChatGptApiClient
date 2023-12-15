@@ -89,7 +89,7 @@ namespace ChatGptApiClientV2.Tools
                 return result;
             }
         }
-        public async Task<ToolMessage> Action(ConfigType config, NetStatusType netstatus, string argstr)
+        public async Task<ToolMessage> Action(ConfigType config, NetStatus netstatus, string argstr)
         {
             var msgContents = new List<IMessage.TextContent>();
             var msg = new ToolMessage { Content = msgContents };
@@ -142,9 +142,9 @@ namespace ChatGptApiClientV2.Tools
             {
                 request.Headers.Add("api-key", config.AzureAPIKey);
             }
-            netstatus.Status = NetStatusType.StatusEnum.Sending;
+            netstatus.Status = NetStatus.StatusEnum.Sending;
             var response = await apiClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            netstatus.Status = NetStatusType.StatusEnum.Receiving;
+            netstatus.Status = NetStatus.StatusEnum.Receiving;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -160,7 +160,7 @@ namespace ChatGptApiClientV2.Tools
                 {
                     msgContents[0].Text += $"Error: {errorResponse}\n\n";
                 }
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -174,7 +174,7 @@ namespace ChatGptApiClientV2.Tools
             if (img_download_url is null)
             {
                 msgContents[0].Text += "Error: no image download address generated.\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -197,7 +197,7 @@ namespace ChatGptApiClientV2.Tools
             if (!download_success)
             {
                 msgContents[0].Text += $"Error: failed to download image from {img_download_url}\n\n";
-                netstatus.Status = NetStatusType.StatusEnum.Idle;
+                netstatus.Status = NetStatus.StatusEnum.Idle;
                 return msg;
             }
 
@@ -214,7 +214,7 @@ Download URL: {img_download_url}";
             msg.GeneratedImages.Add(new() { ImageBase64Url = image_url, Description = image_desc });
             File.Delete(image_name);
             msgContents[0].Text += $"Image generated successfully and is now displaying on the screen.\n\n";
-            netstatus.Status = NetStatusType.StatusEnum.Idle;
+            netstatus.Status = NetStatus.StatusEnum.Idle;
             return msg;
         }
     }

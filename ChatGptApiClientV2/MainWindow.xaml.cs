@@ -37,39 +37,9 @@ namespace ChatGptApiClientV2
         private readonly HttpClient client = new();
         private static readonly Random random = new();
 
-        public partial class NetStatusType : ObservableObject
-        {
-            public enum StatusEnum
-            {
-                Idle,
-                Sending,
-                Receiving,
-            }
-
-            [ObservableProperty]
-            [NotifyPropertyChangedFor(nameof(StatusText))]
-            [NotifyPropertyChangedFor(nameof(StatusColor))]
-            private StatusEnum status = StatusEnum.Idle;
-
-            [ObservableProperty]
-            private string systemFingerprint = "";
-            public string StatusText => Status switch
-            {
-                StatusEnum.Idle => $"空闲，等待输入。",
-                StatusEnum.Sending => $"正在发送数据……",
-                StatusEnum.Receiving => $"正在接收数据……",
-                _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
-            };
-            public Brush StatusColor => Status switch
-            {
-                StatusEnum.Idle => Brushes.Black,
-                StatusEnum.Sending => Brushes.Blue,
-                StatusEnum.Receiving => Brushes.Green,
-                _ => throw new System.ComponentModel.InvalidEnumArgumentException(),
-            };
-        }
+        
         [ObservableProperty]
-        private NetStatusType netStatus = new();
+        private NetStatus netStatus = new();
         public partial class PromptsOptionType : ObservableObject
         {
             [ObservableProperty]
@@ -192,7 +162,6 @@ namespace ChatGptApiClientV2
 
         [ObservableProperty]
         private ConfigType config;
-        private bool first_input = true;
 
         private void ResetChatHistoryImages()
         {
@@ -224,6 +193,9 @@ namespace ChatGptApiClientV2
             Console.WriteLine(new string('=', Console.WindowWidth));
             currentSession.Display(Config.EnableMarkdown);
             ResetChatHistoryImages();
+
+            chatWindow?.SyncChatSession(currentSession, Config.EnableMarkdown);
+
             return currentSession;
         }
         private async Task Send()
@@ -282,12 +254,14 @@ namespace ChatGptApiClientV2
             {
                 request.Headers.Add("api-key", Config.AzureAPIKey);
             }
-            NetStatus.Status = NetStatusType.StatusEnum.Sending;
+            NetStatus.Status = NetStatus.StatusEnum.Sending;
             var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            NetStatus.Status = NetStatusType.StatusEnum.Receiving;
+            NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
             List<ChatCompletionChunk> chatChunks = [];
             RoleType.Assistant.DisplayHeader();
+            chatWindow?.AddMessage(RoleType.Assistant);
+
             string? errorMsg = null;
             if (response.IsSuccessStatusCode)
             {
@@ -331,6 +305,7 @@ namespace ChatGptApiClientV2
                         if (ch is not null)
                         {
                             Console.Write(ch);
+                            chatWindow?.AddStreamText(ch);
                         }
                     }
                     Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
@@ -366,7 +341,7 @@ namespace ChatGptApiClientV2
             }
             Console.WriteLine();
             var chatCompletion = ChatCompletion.FromChunks(chatChunks);
-            NetStatus.Status = NetStatusType.StatusEnum.Idle;
+            NetStatus.Status = NetStatus.StatusEnum.Idle;
             NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
 
             var choice_0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
@@ -397,7 +372,7 @@ namespace ChatGptApiClientV2
                 await Send();
             }
         }
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private async Task UserSendText(string text)
         {
             currentSession ??= ResetSession();
 
@@ -407,7 +382,7 @@ namespace ChatGptApiClientV2
             }
 
             StringBuilder input_txt = new();
-            input_txt.Append(txtbx_input.Text);
+            input_txt.Append(text);
 
             var txtfiles = from string file in lst_attachment.Items
                            let mime = MimeTypes.GetMimeType(file)
@@ -458,19 +433,10 @@ namespace ChatGptApiClientV2
 
             await Send();
 
-            txtbx_input.Text = "";
             lst_attachment.Items.Clear();
             ResetSession(currentSession);
         }
 
-        private void txtbx_input_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (first_input)
-            {
-                first_input = false;
-                txtbx_input.Text = "";
-            }
-        }
         private ChatWindow? chatWindow = null;
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -523,11 +489,19 @@ namespace ChatGptApiClientV2
             }
             InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
 
-            chatWindow = new();
+            chatWindow = new()
+            {
+                SendMessageCallback = UserSendText,
+                LoadSessionCallback = LoadSession,
+                ResetSessionCallback = ClearSession,
+                SaveSessionCallback = SaveSession,
+                NetStatus = NetStatus,
+                Config = Config,
+                Plugins = Plugins,
+            };
             chatWindow.Show();
         }
-
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private Task SaveSession()
         {
             string? savedSession = currentSession?.Save();
             var dlg = new SaveFileDialog
@@ -541,9 +515,13 @@ namespace ChatGptApiClientV2
             {
                 File.WriteAllText(dlg.FileName, savedSession);
             }
+            return Task.CompletedTask;
         }
-
-        private void Button_Click_2(object sender, RoutedEventArgs e)
+        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            await SaveSession();
+        }
+        private Task LoadSession()
         {
             var dlg = new OpenFileDialog
             {
@@ -570,28 +548,28 @@ namespace ChatGptApiClientV2
                     if (loadedSession is null)
                     {
                         HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
-                        return;
+                        return Task.CompletedTask;
                     }
                     ResetSession(loadedSession);
                 }
                 catch (JsonSerializationException exception)
                 {
                     HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
-                    return;
+                    return Task.CompletedTask;
                 }
             }
+            return Task.CompletedTask;
         }
-
-        private void Button_Click_3(object sender, RoutedEventArgs e)
+        private Task ClearSession()
         {
             ResetSession();
+            return Task.CompletedTask;
         }
-
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             ResetSession(currentSession);
         }
-
+      
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
