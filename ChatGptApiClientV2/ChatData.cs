@@ -536,8 +536,11 @@ namespace ChatGptApiClientV2
                 {
                     if (content is IMessage.TextContent textContent)
                     {
+                        CultureInfo ci = CultureInfo.CurrentUICulture;
+
                         string prompt = textContent.Text.Replace("{DateTime}", DateTime.Now.ToString("MMM dd yyy", CultureInfo.GetCultureInfo("en-US")));
                         prompt = prompt.Replace("{Cutoff}", knowledge_cutoff.ToString("MMM yyyy", CultureInfo.GetCultureInfo("en-US")));
+                        prompt = prompt.Replace("{Language}", ci.DisplayName);
                         textContent.Text = prompt;
                     }
                 }

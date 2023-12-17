@@ -9,6 +9,10 @@ using System.Windows.Interop;
 using System.Net.Http;
 using System.IO;
 using PuppeteerSharp;
+using System.Windows.Controls;
+using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Media.Imaging;
 
 namespace ChatGptApiClientV2.Tools
 {
@@ -76,7 +80,7 @@ It can only answer one question at a time. If you have a complex question, think
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
             state.NewMessage(RoleType.Tool);
-            state.StreamText($"Wolfram|Alpha: {args.Query}\n");
+            state.StreamText($"Wolfram|Alpha: {args.Query}\n\n");
 
             var request = new HttpRequestMessage
             {
@@ -122,6 +126,47 @@ It can only answer one question at a time. If you have a complex question, think
             state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
+        }
+
+        public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+        {
+            var args_json = JToken.Parse(argstr);
+            var args_reader = new JTokenReader(args_json);
+            var args_serializer = new JsonSerializer();
+            Args args;
+            try
+            {
+                var parsedArgs = args_serializer.Deserialize<Args>(args_reader);
+                if (parsedArgs is null)
+                {
+                    return [new Paragraph(new Run("Asking Wolfram|Alpha..."))];
+                }
+                args = parsedArgs;
+            }
+            catch (JsonSerializationException)
+            {
+                return [new Paragraph(new Run("Asking Wolfram|Alpha..."))];
+            }
+
+            List<string> stickers = [
+                "艾尔海森-动动脑.png",
+                "本-疯狂计算.png",
+                "丹恒 思考.png",
+                "姬子 计算.png",
+                "卡维-挠头.png"
+            ];
+
+            var floater = Utils.CreateStickerFloater(stickers, toolcallId);
+
+            var paragraph = new Paragraph();
+            paragraph.Inlines.Add(floater);
+            paragraph.Inlines.Add(new Run("Asking Wolfram|Alpha:"));
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new Run($"{args.Query}"));
+            paragraph.Inlines.Add(new LineBreak());
+
+            return [paragraph];
         }
     }
 }

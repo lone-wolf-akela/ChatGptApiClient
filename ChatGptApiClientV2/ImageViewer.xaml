@@ -8,11 +8,6 @@
         mc:Ignorable="d"
         Title="ImageViewer" Height="450" Width="800">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="50"/>
-        </Grid.RowDefinitions>
-        <Image x:Name="imgbox"/>
-        <Button x:Name="btn_saveimg" Grid.Row="1" Width="200" Height="40" Content="图片另存为" Click="btn_saveimg_Click"/>
+        <hc:ImageViewer x:Name="imgbox"/>
     </Grid>
 </Window>

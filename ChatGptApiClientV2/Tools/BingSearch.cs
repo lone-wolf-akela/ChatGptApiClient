@@ -9,6 +9,10 @@ using System.Windows.Interop;
 using System.Net.Http;
 using System.IO;
 using PuppeteerSharp;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media.Imaging;
 
 namespace ChatGptApiClientV2.Tools
 {
@@ -26,7 +30,7 @@ namespace ChatGptApiClientV2.Tools
     {
         public class Args
         {
-            [System.ComponentModel.Description(@"The search query. Non-ASCII characters are supported. You MUST NOT use unicode escape sequence such as '\uxxxx' in the query.")]
+            [System.ComponentModel.Description(@"The search query.")]
             public string Query { get; set; } = "";
             [System.ComponentModel.Description(@"The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]
             public uint StartOffset { get; set; } = 0;
@@ -63,6 +67,13 @@ namespace ChatGptApiClientV2.Tools
                 return msg;
             }
 
+            args.Query = args.Query.Trim();
+            if (string.IsNullOrEmpty(args.Query))
+            {
+                msgContents[0].Text += $"Error: Empty query.\n\n";
+                return msg;
+            }
+
             var parameters = new Dictionary<string, string?>
             {
                 {"q",               args.Query },
@@ -78,7 +89,7 @@ namespace ChatGptApiClientV2.Tools
                 select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
             state.NewMessage(RoleType.Tool);
-            state.StreamText($"Bing Searching: {args.Query}\n");
+            state.StreamText($"Bing Searching: {args.Query}\n\n");
 
             var request = new HttpRequestMessage
             {
@@ -134,6 +145,52 @@ namespace ChatGptApiClientV2.Tools
             state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             msg.Hidden = true; // Hide success results from user
             return msg;
+        }
+
+        public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+        {
+            var args_json = JToken.Parse(argstr);
+            var args_reader = new JTokenReader(args_json);
+            var args_serializer = new JsonSerializer();
+            Args args;
+            try
+            {
+                var parsedArgs = args_serializer.Deserialize<Args>(args_reader);
+                if (parsedArgs is null)
+                {
+                    return [new Paragraph(new Run("Bing Search..."))];
+                }
+                args = parsedArgs;
+            }
+            catch (JsonSerializationException)
+            {
+                return [new Paragraph(new Run("Bing Search..."))];
+            }
+            args.Query = args.Query.Trim();
+
+            List<string> stickers = [
+                "非常疑惑.png",
+                "菲谢尔-这是什么？.png",
+                "刻晴-疑问.png",
+                "雷电将军-纳闷.png",
+                "帕姆_好奇.png",
+                "帕姆_疑惑.png",
+                "砂糖-疑问.png",
+                "申鹤-疑惑.png",
+                "烟绯-疑惑.png",
+            ];
+
+            var floater = Utils.CreateStickerFloater(stickers, toolcallId);
+
+            var paragraph = new Paragraph();
+            paragraph.Inlines.Add(floater);
+            paragraph.Inlines.Add(new Run("Bing Search:"));
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new Run($"{args.Query}"));
+            paragraph.Inlines.Add(new LineBreak());
+
+            return [paragraph];
         }
     }
 }

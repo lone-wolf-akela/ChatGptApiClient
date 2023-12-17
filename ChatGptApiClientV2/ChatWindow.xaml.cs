@@ -20,12 +20,15 @@ using System.Diagnostics;
 using HandyControl.Data;
 using static ChatGptApiClientV2.IMessage;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Jdenticon;
 using System.Security.Principal;
 using SharpVectors;
 using System.Windows.Interop;
 using Microsoft.Win32;
 using System.Windows.Resources;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.VisualBasic;
+using PuppeteerSharp.Input;
+using SharpVectors.Converters;
 
 namespace ChatGptApiClientV2
 {
@@ -67,6 +70,27 @@ namespace ChatGptApiClientV2
     }
     public class ChatWindowMessage : ObservableObject
     {
+        public bool IsStreaming { get; set; } = false;
+        private readonly BlockUIContainer loadingBar;
+
+        public ChatWindowMessage()
+        {
+            var loadingBarCtl = new Controls.ContinuingLoadingLine
+            {
+                IsRunning = true,
+                DotCount = 5,
+                DotInterval = 10,
+                DotBorderThickness = 0,
+                DotDiameter = 6,
+                DotSpeed = 4,
+                DotDelayTime = 80
+            };
+
+            loadingBarCtl.SetResourceReference(Control.ForegroundProperty, "PrimaryBrush");
+
+            loadingBar = new(loadingBarCtl);
+        }
+
         public string Message
         {
             init
@@ -84,7 +108,8 @@ namespace ChatGptApiClientV2
             public enum RichMessageType
             {
                 Text,
-                Image
+                Image,
+                Blocks
             }
             public RichMessageType Type { get; set; } = RichMessageType.Text;
             /**** Text Type ****/
@@ -95,6 +120,8 @@ namespace ChatGptApiClientV2
             public BitmapImage? Image { get; set; } = null;
             public string? ImageTooltip { get; set; } = null;
             /********************/
+            /***** Blocks Type *****/
+            public IEnumerable<Block>? Blocks { get; set; } = null;
         }
         public void AddText(string text, bool enableMarkdown)
         {
@@ -116,6 +143,14 @@ namespace ChatGptApiClientV2
             var bitmap = Utils.Base64ToBitmapImage(base64url);
             AddImage(bitmap, tooltip);
         }
+        
+        public void AddBlocks(IEnumerable<Block> blocks)
+        {
+            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Blocks, Blocks = blocks });
+            OnPropertyChanged(nameof(RenderedMessage));
+        }
+
+        /**** stream (temp) data ****/
         private readonly List<RichMessage> messageList = [];
         private StringBuilder? streamMessage = null;
         public void AddStreamText(string text)
@@ -124,14 +159,24 @@ namespace ChatGptApiClientV2
             streamMessage.Append(text);
             OnPropertyChanged(nameof(RenderedMessage));
         }
+        private double? streamProgress = null;
+        private string? streamProgressText = null;
+        public void SetStreamProgress(double progress, string text)
+        {
+            streamProgress = progress;
+            streamProgressText = text;
+            OnPropertyChanged(nameof(RenderedMessage));
+        }
+        /*** end of stream (temp) data ***/
         public FlowDocument RenderedMessage
         {
             get
             {
                 FlowDocument doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
+
                 foreach (var msg in messageList)
                 {
-                    if (msg.Type == RichMessage.RichMessageType.Text)
+                    if (msg.Type == RichMessage.RichMessageType.Text && !string.IsNullOrWhiteSpace(msg.Text))
                     {
                         if (msg.EnableMarkdown)
                         {
@@ -190,10 +235,41 @@ namespace ChatGptApiClientV2
                         };
                         doc.Blocks.Add(new BlockUIContainer(stackpanel));
                     }
+                    else if (msg.Type == RichMessage.RichMessageType.Blocks)
+                    {
+                        doc.Blocks.AddRange(msg.Blocks);
+                    }
                 }
                 if (streamMessage is not null)
                 {
                     doc.Blocks.Add(new Paragraph(new Run(streamMessage.ToString())));
+                }
+                if (streamProgress is not null)
+                {
+                    var progress = new HandyControl.Controls.CircleProgressBar
+                    {
+                        Value = streamProgress.Value,
+                        Maximum = 1,
+                        Height = 20,
+                        Width = 20,
+                        ShowText = false,
+                        Margin = new Thickness(0, 0, 10, 0)
+                    };
+                    var text = new TextBlock
+                    {
+                        Text = streamProgressText,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    var stackpanel = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Children = { progress, text }
+                    };
+                    doc.Blocks.Add(new BlockUIContainer(stackpanel));
+                }
+                if (IsStreaming)
+                {
+                    doc.Blocks.Add(loadingBar);
                 }
                 doc.Foreground = ForegroundColor;
                 return doc;
@@ -240,21 +316,17 @@ namespace ChatGptApiClientV2
             RoleType.Tool => false,
             _ => throw new NotImplementedException()
         };
+
         public bool ShowLeftBlank => Role switch
         {
-            RoleType.User => true,
-            RoleType.Assistant => false,
-            RoleType.System => true,
-            RoleType.Tool => false,
-            _ => throw new NotImplementedException()
+            RoleType.System => false,
+            _ => !ShowLeftAvatar
         };
+
         public bool ShowRightBlank => Role switch
         {
-            RoleType.User => false,
-            RoleType.Assistant => true,
-            RoleType.System => true,
-            RoleType.Tool => true,
-            _ => throw new NotImplementedException()
+            RoleType.System => false,
+            _ => !ShowRightAvatar
         };
     }
     /// <summary>
@@ -267,7 +339,7 @@ namespace ChatGptApiClientV2
         private SystemState state;
         public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
         public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
-        public bool IsFileAttachmentsNotEmpty => FileAttachments.Count != 0;
+        public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
         private bool firstInput = true;
         private void SmoothScrollProcecssor(object sender, MouseWheelEventArgs e)
@@ -283,13 +355,13 @@ namespace ChatGptApiClientV2
                     Source = sender
                 };
 
-                // 找到ListView控件并将事件手动传递给其
+                // 找到 ScrollViewer 控件并将事件手动传递给其
                 var parent = (UIElement)VisualTreeHelper.GetParent((DependencyObject)sender);
                 while (parent is not null && parent is not ScrollViewer)
                 {
                     parent = (UIElement)VisualTreeHelper.GetParent(parent);
                 }
-                // 确认找到ListView控件并触发事件
+                // 确认找到 ScrollViewer 控件并触发事件
                 parent?.RaiseEvent(eventArg);
             }
         }
@@ -303,11 +375,20 @@ namespace ChatGptApiClientV2
             };
             State.NewMessageEvent += AddMessage;
             State.StreamTextEvent += AddStreamText;
+            State.SetStreamProgressEvent += SetStreamProgress;
 
             FileAttachments.CollectionChanged += (sender, e) =>
             {
-                OnPropertyChanged(nameof(IsFileAttachmentsNotEmpty));
+                OnPropertyChanged(nameof(IsFileAttachmentsEmpty));
             };
+
+            var sendKeyBinding = new KeyBinding
+            {
+                Key = System.Windows.Input.Key.Enter,
+                Modifiers = ModifierKeys.Control,
+                Command = new RelayCommand(() => btn_send_Click(this, new RoutedEventArgs(Button.ClickEvent)))
+            };
+            InputBindings.Add(sendKeyBinding);
         }
         private static ScrollViewer? GetScrollViewer(DependencyObject o)
         {
@@ -371,7 +452,7 @@ namespace ChatGptApiClientV2
                 {
                     foreach (var toolcall in assistantMsg.ToolCalls ?? [])
                     {
-                        chatMsg.AddText($"调用函数：{toolcall.Function.Name}", false);
+                        chatMsg.AddBlocks(State.GetToolcallDescription(toolcall));
                     }
                 }
                 if (msg is ToolMessage toolMsg)
@@ -393,7 +474,13 @@ namespace ChatGptApiClientV2
         }
         public void AddMessage(RoleType role)
         {
-            Messages.Add(new ChatWindowMessage { Role = role });
+            Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true });
+            ScrollToEnd();
+        }
+
+        public void SetStreamProgress(double progress, string text)
+        {
+            Messages.Last().SetStreamProgress(progress, text);
             ScrollToEnd();
         }
 
@@ -408,14 +495,84 @@ namespace ChatGptApiClientV2
 
         private async void btn_send_Click(object sender, RoutedEventArgs e)
         {
-            await State.UserSendText(txt_input.Text, from fileinfo in FileAttachments select fileinfo.Path);
+            var input = txt_input.Text;
+            var files = (from fileinfo in FileAttachments select fileinfo.Path).ToList();
             txt_input.Text = "";
             FileAttachments.Clear();
+            await State.UserSendText(input, files);
         }
 
         private void btn_reset_Click(object sender, RoutedEventArgs e)
         {
             State.ClearSession();
+        }
+
+        private void btn_print_Click(object sender, RoutedEventArgs e)
+        {
+            PrintDialog printDialog = new();
+            if (printDialog.ShowDialog() != true)
+            {
+                return;
+            }
+            FlowDocument doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
+            const double avatarSize = 32;
+            const double avatarMargin = 10;
+            const double sectionMargin = 20;
+            foreach (var msg in Messages)
+            {
+                switch (msg.Role)
+                {
+                    case RoleType.User:
+                        var avatarId = ChatWindowMessage.UserAvatarSource;
+                        HandyControl.Controls.Gravatar gravatar = new()
+                        {
+                            Id = avatarId,
+                            Width = avatarSize,
+                            Height = avatarSize,
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            Margin = new Thickness(0, 0, 0, avatarMargin)
+                        };
+                        doc.Blocks.Add(new BlockUIContainer(gravatar));
+                        break;
+                    case RoleType.Assistant:
+                    case RoleType.Tool:
+                        var avatarUri = msg.Avatar;
+                        var svg = new SvgViewbox
+                        {
+                            Source = avatarUri,
+                            Width = avatarSize,
+                            Height = avatarSize,
+                            HorizontalAlignment = HorizontalAlignment.Left,
+                            Margin = new Thickness(0, 0, 0, avatarMargin)
+                        };
+                        doc.Blocks.Add(new BlockUIContainer(svg));
+                        break;
+                    default:
+                        break;
+                }
+
+                var rendered = msg.RenderedMessage;
+                var blocks = rendered.Blocks.ToList();
+                foreach (var block in blocks)
+                {
+                    block.Foreground = msg.ForegroundColor;
+                    block.Background = msg.BackgroundColor;
+                    block.Margin = new Thickness(0);
+                }
+                blocks.Last().Margin = new Thickness(0, 0, 0, sectionMargin);
+                doc.Blocks.AddRange(blocks);
+            }
+            // default is 2 columns, uncomment below to use only one column
+            /*
+            doc.PagePadding = new Thickness(50);
+            doc.ColumnGap = 0;
+            doc.ColumnWidth = printDialog.PrintableAreaWidth;
+            */
+            IDocumentPaginatorSource dps = doc;
+            DocumentPaginator dp = dps.DocumentPaginator;
+            printDialog.PrintDocument(dp, "打印聊天记录");
+            // need to refresh as we have change things like block color
+            State.RefreshSession();
         }
 
         private void btn_save_Click(object sender, RoutedEventArgs e)

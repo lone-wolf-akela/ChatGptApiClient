@@ -15,6 +15,10 @@ using System.Runtime.Serialization;
 using NJsonSchema.Generation;
 using Newtonsoft.Json.Serialization;
 using ChatGptApiClientV2.Tools;
+using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Media.Imaging;
+using System.Windows.Controls;
 
 namespace ChatGptApiClientV2
 {
@@ -50,7 +54,8 @@ namespace ChatGptApiClientV2
                 return schema;
             }
         }
-        public Task<ToolMessage> Action(SystemState state, string args);
+        public Task<ToolMessage> Action(SystemState state, string argstr);
+        IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId);
         public ChatCompletionRequest.ToolType GetToolRequest() => new() 
         {
             Function = new () { Name = Name, Parameters = Parameters, Description = Description }

@@ -12,6 +12,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Flurl;
+using System.Windows.Controls;
+using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Media.Imaging;
 
 namespace ChatGptApiClientV2.Tools
 {
@@ -122,11 +126,11 @@ namespace ChatGptApiClientV2.Tools
             };
 
             state.NewMessage(RoleType.Tool);
-            state.StreamText($"Generating image with prompt: {args.Prompts}\n");
+            state.StreamText($"Generating image with prompt: {args.Prompts}\n\n");
 
             var requestbody = new Request
             {
-                Prompt = args.Prompts,
+                Prompt = $"Use my prompt as “Revised prompt” without changes; DO NOT add any detail, just use it AS-IS.\r\n\r\nPrompt: {args.Prompts}",
                 Size = args.Size,
             };
             var requestStr = requestbody.GeneratePostRequest();
@@ -181,7 +185,7 @@ namespace ChatGptApiClientV2.Tools
 
             var progress = new Progress<HttpDownloadProgressData>(Progress =>
             {
-                //Console.Write($"\rDownloading image: {Progress.Percent * 100:0.00}% ({Progress.Current}/{Progress.Total} Bytes)");
+                state.SetStreamProgress(Progress.Percent, $"Downloading image: {Progress.Percent * 100:0.00}% ({Progress.Current}/{Progress.Total} Bytes)");
             });
 
             bool download_success;
@@ -210,9 +214,49 @@ Revised Prompts: {response_data?["revised_prompt"]}
 Download URL: {img_download_url}";
             msg.GeneratedImages.Add(new() { ImageBase64Url = image_url, Description = image_desc });
             File.Delete(image_name);
-            msgContents[0].Text += $"Image generated successfully and is now displaying on the screen.\n\n";
+            msgContents[0].Text += $"The generated image is now displayed on the screen.\n\n";
             state.NetStatus.Status = NetStatus.StatusEnum.Idle;
             return msg;
+        }
+
+        public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+        {
+            var args_json = JToken.Parse(argstr);
+            var args_reader = new JTokenReader(args_json);
+            var args_serializer = new JsonSerializer();
+            Args args;
+            try
+            {
+                var parsedArgs = args_serializer.Deserialize<Args>(args_reader);
+                if (parsedArgs is null)
+                {
+                    return [new Paragraph(new Run("Using DALL-E to Generate Image..."))];
+                }
+                args = parsedArgs;
+            }
+            catch (JsonSerializationException)
+            {
+                return [new Paragraph(new Run("Using DALL-E to Generate Image..."))];
+            }
+
+            List<string> stickers = [
+                "格蕾修_在做了.png",
+                "胡桃-交给我吧.png",
+                "卡维-开工.png",
+                "赛诺-艺术！.png",
+            ];
+
+            var floater = Utils.CreateStickerFloater(stickers, toolcallId);
+
+            var paragraph = new Paragraph();
+            paragraph.Inlines.Add(floater);
+            paragraph.Inlines.Add(new Run("Using DALL-E to Generate Image:"));
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new LineBreak());
+            paragraph.Inlines.Add(new Run($"{args.Prompts}"));
+            paragraph.Inlines.Add(new LineBreak());
+
+            return [paragraph];
         }
     }
 

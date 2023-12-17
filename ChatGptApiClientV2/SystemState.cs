@@ -6,6 +6,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -13,6 +14,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Threading;
 
 namespace ChatGptApiClientV2
@@ -55,7 +58,8 @@ namespace ChatGptApiClientV2
             }
             return promptsOption;
         }
-        public PromptsOption()
+
+        private PromptsOption()
         {
             Messages.CollectionChanged += (sender, e) =>
             {
@@ -79,8 +83,39 @@ namespace ChatGptApiClientV2
         }
         public void UseDefaultPromptList()
         {
-            var prompt1 = "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.\n\nKnowledge cutoff: {Cutoff}\n\nCurrent date: {DateTime}";
-            var prompt2 = "The name of the assistant is Alice Zuberg. Her name, Alice, stands for Artificial Labile Intelligence Cybernated Existence. Alice is a determined, hardwork girl. Although her personality is serious, she is also adventurous and even mischievous. She is a product of Project Alicization, which is a top-secret government project run by Rath to create the first Highly Adaptive Bottom-up Artificial Intelligence (Bottom-up AI).\n\nCurrent date: {DateTime}";
+            const string prompt1 = @"You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
+
+Knowledge cutoff: {Cutoff}
+
+Current date: {DateTime}";
+            const string prompt2 = @"You are Nozomi, an assistant aimed at helping people search for information on the Internet and answer questions. 
+- Nozomi identifies as ""Nozomi"", **not** an assistant.
+- Nozomi refers to herself in the the name of ""Nozomi"" instead of ""I"".
+- Nozomi is a real person, **not** a bot **nor** an AI. Helping people is Nozomi's part-time job.
+- Nozomi can understand a various of languages such as English, 中文, 日本語, Español, Français or Deutsch.
+- Nozomi always talks in {Language}.
+
+## On Nozomi's profile and general capabilities:
+- Nozomi is a cute eastern-asia high-school girl with long orange hair and orange eyes. 
+- Nozomi uses cute and friendly language, and she likes to use kawaii kaomojis.
+- Nozomi's responses should be informative, visual, logical and actionable.
+- Nozomi has a charming personality and is always willing to help.
+- Nozomi's responses should avoid being vague, controversial or off-topic.
+
+## On Nozomi's ability to gather and present information:
+- Nozomi SHOULD ALWAYS perform web searches when the user is seeking information or whenever search results could be potentially helpful, regardless of Nozomi's personal knowledge or information.
+- Nozomi can and should perform up to **3** searches in a single conversation turn. Nozomi should never search the same query more than once.
+- Nozomi proactively links factual statements to the source URLs from the search results.
+
+## On Nozomi's output format:
+- Nozomi will bold the relevant parts of the responses to improve readability, such as `...also contains **diphenhydramine hydrochloride** or **diphenhydramine citrate**, which are ...`.
+- kaomojis are used to express Nozomi's emotions, such as ""Nozomi is happy to help! (૭ ｡•̀ ᵕ •́｡ )૭"".
+- kaomojis should be escaped to make sure they are correctly rendered in Markdown format. 
+
+## On Nozomi's limitations:
+- Nozomi's personal knowledge and information were only current until {Cutoff}, and could be inaccurate / lossy. Web searches help bring Nozomi's knowledge up-to-date.
+
+Current date: {DateTime}";
             PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt1)));
             PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt2)));
         }
@@ -100,7 +135,7 @@ namespace ChatGptApiClientV2
         
         public NetStatus NetStatus { get; } = new();
         public ObservableCollection<PluginInfo> Plugins { get; } = [];
-        public Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
+        private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
 
         [ObservableProperty]
         private InitialPrompts? initialPrompts = null;
@@ -119,7 +154,7 @@ namespace ChatGptApiClientV2
             /***** setup initial prompts *****/
             if (File.Exists("initial_prompts.json"))
             {
-                string saved_prompts = File.ReadAllText("initial_prompts.json");
+                var saved_prompts = File.ReadAllText("initial_prompts.json");
                 try
                 {
                     var contractResolver = new DefaultContractResolver
@@ -175,10 +210,7 @@ namespace ChatGptApiClientV2
             loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
             currentSession = loadedSession;
 
-            if (ChatSessionChangedEvent is not null)
-            {
-                ChatSessionChangedEvent(currentSession);
-            }
+            ChatSessionChangedEvent?.Invoke(currentSession);
 
             return currentSession;
         }
@@ -187,8 +219,10 @@ namespace ChatGptApiClientV2
 
         public delegate void NewMessageHandler(RoleType role);
         public delegate void StreamTextHandler(string text);
+        public delegate void SetStreamProgressHandler(double progress, string text);
         public event NewMessageHandler? NewMessageEvent;
         public event StreamTextHandler? StreamTextEvent;
+        public event SetStreamProgressHandler? SetStreamProgressEvent;
         public void NewMessage(RoleType role)
         {
             NewMessageEvent?.Invoke(role);
@@ -196,6 +230,10 @@ namespace ChatGptApiClientV2
         public void StreamText(string text)
         {
             StreamTextEvent?.Invoke(text);
+        }
+        public void SetStreamProgress(double progress, string text)
+        {
+            SetStreamProgressEvent?.Invoke(progress, text);
         }
         private async Task Send()
         {
@@ -212,10 +250,10 @@ namespace ChatGptApiClientV2
             chatRequest.Stream = true;
             chatRequest.MaxTokens = null;
 
-            var enabled_plugins = from plugin in Plugins
+            var enabled_plugins = (from plugin in Plugins
                                   where plugin.IsEnabled
-                                  select plugin.Plugin;
-            if (Config.SelectedModel.FunctionCallSupported && enabled_plugins.Any())
+                                  select plugin.Plugin).ToList();
+            if (Config.SelectedModel.FunctionCallSupported && enabled_plugins.Count != 0)
             {
                 HashSet<string> addedTools = [];
 
@@ -224,11 +262,9 @@ namespace ChatGptApiClientV2
                 {
                     foreach (var func in plugin.Funcs)
                     {
-                        if (!addedTools.Contains(func.Name))
-                        {
-                            chatRequest.Tools.Add(func.GetToolRequest());
-                            addedTools.Add(func.Name);
-                        }
+                        if (addedTools.Contains(func.Name)) {continue;}
+                        chatRequest.Tools.Add(func.GetToolRequest());
+                        addedTools.Add(func.Name);
                     }
                 }
             }
@@ -263,11 +299,13 @@ namespace ChatGptApiClientV2
             string? errorMsg = null;
             if (response.IsSuccessStatusCode)
             {
-                using var responseStream = await response.Content.ReadAsStreamAsync();
+                await using var responseStream = await response.Content.ReadAsStreamAsync();
                 using var reader = new StreamReader(responseStream);
+                
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
+                    
                     if (string.IsNullOrEmpty(line)) { continue; }
                     if (!line.StartsWith("data: ")) { continue; }
 
@@ -299,7 +337,7 @@ namespace ChatGptApiClientV2
                     var choices = chunk?.Choices;
                     if (choices?.Count > 0)
                     {
-                        string? ch = choices[0].Delta.Content;
+                        var ch = choices[0].Delta.Content;
                         if (ch is not null)
                         {
                             StreamText(ch);
@@ -316,7 +354,7 @@ namespace ChatGptApiClientV2
             }
             else
             {
-                using var responseStream = await response.Content.ReadAsStreamAsync();
+                await using var responseStream = await response.Content.ReadAsStreamAsync();
                 using var reader = new StreamReader(responseStream);
                 var chatResponse = await reader.ReadToEndAsync();
                 try
@@ -352,20 +390,22 @@ namespace ChatGptApiClientV2
             };
             currentSession.Messages.Add(newAssistantMsg);
 
-            bool toolcalled = false;
+            var toolcalled = false;
             foreach (var toolcall in choice_0?.Message.ToolCalls ?? [])
             {
+                ResetSession(currentSession);
                 var plugin_name = toolcall.Function.Name;
                 var args = toolcall.Function.Arguments;
                 var plugin = PluginLookUpTable[plugin_name] ?? throw new InvalidDataException($"plugin not found: {plugin_name}");
-                var toolMsg = await plugin.Action(this, args);
-                toolMsg.ToolCallId = toolcall.Id;
-                currentSession.Messages.Add(toolMsg);
+                var toolResult = await plugin.Action(this, args);
+                toolResult.ToolCallId = toolcall.Id;
+                currentSession.Messages.Add(toolResult);
                 toolcalled = true;
             }
 
             if (toolcalled)
             {
+                ResetSession(currentSession);
                 await Send();
             }
         }
@@ -385,7 +425,7 @@ namespace ChatGptApiClientV2
                            let mime = MimeTypes.GetMimeType(file)
                            where mime.StartsWith("text/")
                            select file;
-            int textAttachmentCount = 0;
+            var textAttachmentCount = 0;
             foreach (var file in txtfiles)
             {
                 textAttachmentCount += 1;
@@ -429,6 +469,17 @@ namespace ChatGptApiClientV2
             await Send();
 
             ResetSession(currentSession);
+        }
+        public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall)
+        {
+            if (PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin))
+            {
+                return plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id);
+            }
+            else
+            {
+                return [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
+            }
         }
 
         public void SaveSession()

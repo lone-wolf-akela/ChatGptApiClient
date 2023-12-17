@@ -6,7 +6,6 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
-        xmlns:jd="clr-namespace:Jdenticon.Wpf;assembly=Jdenticon.Wpf"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
         Title="ChatWindow" Height="600" Width="1000">
@@ -25,11 +24,40 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,5">
-            <Button x:Name="btn_settings" DockPanel.Dock="Right" Content="其他设置" MinWidth="100" Click="btn_settings_Click"/>
+            <Button x:Name="btn_settings" DockPanel.Dock="Right" Click="btn_settings_Click" ToolTip="其他设置">
+                <Button.Triggers>
+                    <EventTrigger RoutedEvent="MouseEnter">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="txt_settings" 
+                                   Storyboard.TargetProperty="RenderTransform.Angle"
+                                   By="360" Duration="0:0:1"
+                                   AutoReverse="False" RepeatBehavior="Forever"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <EventTrigger RoutedEvent="MouseLeave">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="txt_settings" 
+                                   Storyboard.TargetProperty="RenderTransform.Angle"
+                                   To="360" Duration="0:0:0"
+                                   AutoReverse="False"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Button.Triggers>
+                <TextBlock x:Name="txt_settings" Text="&#xe713;" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <RotateTransform Angle="0"/>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+            </Button>
             <StackPanel Orientation="Horizontal">
                 <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,10,0" Orientation="Horizontal">
                     <Label MinWidth="50" Content="模型" BorderBrush="{x:Null}" Margin="0,0,0,0"/>
-                    <ComboBox x:Name="cbx_model" MinWidth="200" ItemsSource="{Binding State.Config.ModelOptions}" SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
+                    <ComboBox x:Name="cbx_model" Width="200" ItemsSource="{Binding State.Config.ModelOptions}" SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Description}"/>
@@ -39,7 +67,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,25,0" Orientation="Horizontal">
                     <Label MinWidth="50" Content="版本" BorderBrush="{x:Null}" Grid.Row="2" Grid.Column="0" Margin="0,0,0,0"/>
-                    <ComboBox x:Name="cbx_model_version" MinWidth="200" ItemsSource="{Binding State.Config.ModelVersionOptions}" SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
+                    <ComboBox x:Name="cbx_model_version" Width="200" ItemsSource="{Binding State.Config.ModelVersionOptions}" SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Description}"/>
@@ -55,18 +83,18 @@
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
                                 </Border.Effect>
-                                <ListView x:Name="lst_plugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                <ListBox x:Name="lst_plugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                             <Setter Property="Padding" Value="3,3,3,3"/>
                                         </Style>
-                                    </ListView.ItemContainerStyle>
-                                    <ListView.ItemTemplate>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
                                         </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                             </Border>
                         </Popup>
                     </StackPanel>
@@ -84,7 +112,7 @@
                                           ItemsSource="{Binding State.InitialPrompts.PromptsOptions}"
                                           SelectedItem="{Binding State.InitialPrompts.SelectedOption}">
                                     <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                             <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup"/>
                                         </Style>
                                     </ListBox.ItemContainerStyle>
@@ -104,15 +132,22 @@
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
-                <UniformGrid Columns="3" Rows="1" Margin="0,0,0,10">
-                    <Button x:Name="btn_reset" Click="btn_reset_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Margin="0,0,5,0" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="btn_save"  Click="btn_save_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE74E;" ToolTip="保存对话历史" Margin="0,0,5,0" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="btn_load"  Click="btn_load_Click" FontFamily="Segoe MDL2 Assets" Content="&#xE8E5;" ToolTip="载入对话历史" Margin="0,0,0,0" Height="30" Width="30" Padding="0"/>
+                <UniformGrid Columns="3" Rows="2" Margin="0,0,0,10">
+                    <Button x:Name="btn_reset" Click="btn_reset_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Margin="0,0,2.5,2.5" Height="30" Width="30" Padding="0"/>
+                    <Grid x:Name="grid_placeholder1" Width="30" Height="30" Margin="2.5,0,2.5,2.5"/>
+                    <Grid x:Name="grid_placeholder2" Width="30" Height="30" Margin="2.5,0,0,2.5"/>
+                    <Button x:Name="btn_save"  Click="btn_save_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe78c;" ToolTip="保存对话历史" Margin="0,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
+                    <Button x:Name="btn_load"  Click="btn_load_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe8da;" ToolTip="载入对话历史" Margin="2.5,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
+                    <Button x:Name="btn_print"  Click="btn_print_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="载入对话历史" Margin="2.5,2.5,0,0" Height="30" Width="30" Padding="0"/>
                 </UniformGrid>
-                <Button x:Name="btn_send" Content="发送" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="btn_send_Click"/>
+                <Button x:Name="btn_send" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="btn_send_Click">
+                    <TextBlock TextAlignment="Center">
+                        发送<LineBreak/>Ctrl + Enter
+                    </TextBlock>
+                </Button>
             </StackPanel>
             <DockPanel Margin="0,0,5,0">
-                <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding IsFileAttachmentsNotEmpty, Converter={local:BoolToVisibilityConverter}}">
+                <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding IsFileAttachmentsEmpty, Converter={StaticResource Boolean2VisibilityReConverter}}">
                     <ListView x:Name="lst_files"  Background="Transparent" ItemsSource="{Binding FileAttachments}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -130,10 +165,10 @@
                                 <Grid>
                                     <Image Source="{Binding Icon}" Height="32" Width="32" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,3,3,0"/>
                                     <ContentControl x:Name="btn_removefile" MouseLeftButtonUp="btn_removefile_MouseLeftButtonUp">
-                                        <Grid Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListViewItem}}, Converter={local:BoolToVisibilityConverter}}">
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
-                                            <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
+                                        <Grid Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListViewItem}}, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="White" Background="Transparent"/>
                                         </Grid>
                                     </ContentControl>
                                 </Grid>
@@ -144,34 +179,32 @@
                 </StackPanel>
                 <Grid>
                     <TextBox x:Name="txt_input" Text="在此输入对话内容" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" GotFocus="txt_input_GotFocus" VerticalScrollBarVisibility="Auto"/>
-                    <Button x:Name="btn_addfile" FontFamily="Segoe MDL2 Assets" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" VerticalAlignment="Bottom" Margin="0,0,5,5" HorizontalAlignment="Right" Height="30" Width="30" Click="btn_addfile_Click"/>
+                    <Button x:Name="btn_addfile" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" VerticalAlignment="Bottom" Margin="0,0,5,5" Padding="0" HorizontalAlignment="Right" Height="30" Width="30" Click="btn_addfile_Click"/>
                 </Grid>
             </DockPanel>
         </DockPanel>
-        <ListView Grid.Row="1" x:Name="lst_msg" ScrollViewer.CanContentScroll="False" Background="White" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
+        <ListBox Grid.Row="1" x:Name="lst_msg" ScrollViewer.CanContentScroll="False" Background="Transparent" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
                     <Setter Property="Focusable" Value="false"/>
                     <Setter Property="Background" Value="Transparent" />
                     <Setter Property="Template">
                         <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListViewItem}">
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                 <ContentPresenter />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.ItemTemplate>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid>
-                        <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListView}}, Converter={StaticResource ContainerWidthConverter}}">
-                            <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
-                            <Grid x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={local:BoolToVisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
-                            <Border BorderBrush="LightGray" CornerRadius="5" BorderThickness="1" Visibility="{Binding Path=ShowRightAvatar, Converter={local:BoolToVisibilityConverter}}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="10,0,0,0" >
-                                <jd:IdenticonElement x:Name="AvatarRight" Value="{Binding UserAvatarSource}" Background="Transparent"/>
-                            </Border>
-                            <Grid x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={local:BoolToVisibilityConverter}}" Margin="10,0,0,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
+                        <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}, Converter={StaticResource ContainerWidthConverter}}">
+                            <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
+                            <Grid x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="10,0,0,0" Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                            <Grid x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="10,0,0,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
                             <Border CornerRadius="5" Background="{Binding BackgroundColor}">
                                 <FlowDocumentScrollViewer Style="{x:Null}" 
                                                           Document="{Binding Path=RenderedMessage}" 
@@ -184,16 +217,16 @@
                     </Grid>
                 </DataTemplate>
                 
-            </ListView.ItemTemplate>
-            <d:ListView.ItemsSource>
+            </ListBox.ItemTemplate>
+            <d:ListBox.ItemsSource>
                 <x:Array Type="{x:Type local:ChatWindowMessage}">
                     <local:ChatWindowMessage Role="User" Message="# User Messages 1"/>
                     <local:ChatWindowMessage Role="System" Message="System Messages 2"/>
                     <local:ChatWindowMessage Role="Tool" Message="Tool Messages 1"/>
                     <local:ChatWindowMessage Role="Assistant" Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
                 </x:Array>
-            </d:ListView.ItemsSource>
-        </ListView>
+            </d:ListBox.ItemsSource>
+        </ListBox>
         <StatusBar Grid.Row="4" Margin="0,5,0,0">
             <StatusBarItem Content="状态："/>
             <StatusBarItem Content="{Binding Path=State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="200"/>

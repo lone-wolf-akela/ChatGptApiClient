@@ -24,6 +24,9 @@ using static ChatGptApiClientV2.EnumHelper;
 using System.Windows;
 using System.Windows.Documents;
 using System.Diagnostics;
+using System.Xml;
+using Markdig.Extensions.Mathematics;
+using System.Windows.Threading;
 
 namespace ChatGptApiClientV2
 {
@@ -130,26 +133,16 @@ namespace ChatGptApiClientV2
         }
     }
 
-    [ValueConversion(typeof(bool), typeof(bool))]
-    public class InvertBooleanConverter : MarkupExtension, IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => !(bool)value;
-        public override object ProvideValue(IServiceProvider serviceProvider) => this;
-    }
-    [ValueConversion(typeof(bool), typeof(System.Windows.Visibility))]
-    public class BoolToVisibilityConverter : MarkupExtension, IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => (bool)value ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => (System.Windows.Visibility)value == System.Windows.Visibility.Visible;
-
-        public override object ProvideValue(IServiceProvider serviceProvider) => this;
-    }
     partial class Utils
     {
+        public static UIElement CloneUIElement(UIElement old)
+        {
+            string str = XamlWriter.Save(old);
+            StringReader strReader = new StringReader(str);
+            XmlReader xmlReader = XmlReader.Create(strReader);
+            UIElement clonedElement = (UIElement)XamlReader.Load(xmlReader);
+            return clonedElement;
+        }
         public static string ImageFileToBase64(string filename)
         {
             var mime = MimeTypes.GetMimeType(filename);
@@ -230,6 +223,37 @@ namespace ChatGptApiClientV2
             url = url.Split('?')[0];
             url = url.Split('/').Last();
             return url.Contains('.') ? url[url.LastIndexOf('.')..] : "";
+        }
+
+        public static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
+        {
+            var bytes = Encoding.UTF8.GetBytes(hashsrc);
+            var hash = System.Security.Cryptography.MD5.HashData(bytes);
+            int value = Math.Abs(BitConverter.ToInt32(hash, 0));
+
+            var index = value % list.Count;
+            return list[index];
+        }
+
+        public static Floater CreateStickerFloater(IList<string> stickers, string hashsrc)
+        {
+            var selectedSticker = RandomSelectByStringHash(hashsrc, stickers);
+
+            var uri = new Uri($"pack://application:,,,/images/{selectedSticker}");
+            var bitmap = new BitmapImage(uri);
+            var image = new System.Windows.Controls.Image
+            {
+                Source = bitmap,
+            };
+            var floater = new Floater(new BlockUIContainer(image))
+            {
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Width = 64,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 10, 10)
+            };
+
+            return floater;
         }
     }
 }

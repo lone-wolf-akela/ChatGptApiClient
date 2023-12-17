@@ -23,7 +23,7 @@ namespace ChatGptApiClientV2
         public ImageViewer(BitmapImage img)
         {
             InitializeComponent();
-            imgbox.Source = img;
+            imgbox.ImageSource = BitmapFrame.Create(img);
         }
         private void btn_saveimg_Click(object sender, RoutedEventArgs e)
         {
@@ -37,7 +37,7 @@ namespace ChatGptApiClientV2
             if (dlg.ShowDialog() == true)
             {
                 var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imgbox.Source));
+                encoder.Frames.Add(imgbox.ImageSource);
                 using var stream = dlg.OpenFile();
                 encoder.Save(stream);
             }

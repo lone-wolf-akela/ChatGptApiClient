@@ -29,11 +29,9 @@ namespace ChatGptApiClientV2
             if (e.PropertyName == nameof(Config.ServiceProvider))
             {
                 OnPropertyChanged(nameof(IsAzure));
-                OnPropertyChanged(nameof(IsNotAzure));
             }
         }
         public bool IsAzure => Config.ServiceProvider == Config.ServiceProviderType.Azure;
-        public bool IsNotAzure => !IsAzure;
 
         public Settings(Config conf)
         {
