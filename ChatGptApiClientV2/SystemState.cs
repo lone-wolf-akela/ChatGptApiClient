@@ -250,15 +250,15 @@ Current date: {DateTime}";
             chatRequest.Stream = true;
             chatRequest.MaxTokens = null;
 
-            var enabled_plugins = (from plugin in Plugins
+            var enabledPlugins = (from plugin in Plugins
                                   where plugin.IsEnabled
                                   select plugin.Plugin).ToList();
-            if (Config.SelectedModel.FunctionCallSupported && enabled_plugins.Count != 0)
+            if (Config.SelectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
             {
                 HashSet<string> addedTools = [];
 
                 chatRequest.Tools = [];
-                foreach (var plugin in enabled_plugins)
+                foreach (var plugin in enabledPlugins)
                 {
                     foreach (var func in plugin.Funcs)
                     {
@@ -277,13 +277,13 @@ Current date: {DateTime}";
             {
                 chatRequest.MaxTokens = 4096;
             }
-            var post_str = chatRequest.GeneratePostRequest();
-            var post_content = new StringContent(post_str, Encoding.UTF8, "application/json");
+            var postStr = chatRequest.GeneratePostRequest();
+            var postContent = new StringContent(postStr, Encoding.UTF8, "application/json");
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
                 RequestUri = new Uri(Config.OpenAIChatServiceURL),
-                Content = post_content
+                Content = postContent
             };
             if (Config.ServiceProvider == Config.ServiceProviderType.Azure)
             {
@@ -301,56 +301,83 @@ Current date: {DateTime}";
             {
                 await using var responseStream = await response.Content.ReadAsStreamAsync();
                 using var reader = new StreamReader(responseStream);
-                
-                while (!reader.EndOfStream)
+
+                // make the whole thing run in background to prevent freeze the UI
+                // note: just use reader.ReadLineAsync() is not enough, the straemReader
+                // will still use much time on the main thread for rest EndOfStream check
+                await Task.Run(() =>
                 {
-                    var line = await reader.ReadLineAsync();
-                    
-                    if (string.IsNullOrEmpty(line)) { continue; }
-                    if (!line.StartsWith("data: ")) { continue; }
-
-                    var chatResponse = line["data: ".Length..];
-                    if (chatResponse == "[DONE]") { break; }
-                    try
+                    DispatcherOperation? uiUpdateOperation = null;
+                    while (!reader.EndOfStream)
                     {
-                        var contractResolver = new DefaultContractResolver
+                        var line = reader.ReadLine();
+
+                        if (string.IsNullOrEmpty(line))
                         {
-                            NamingStrategy = new SnakeCaseNamingStrategy()
-                        };
-                        var settings = new JsonSerializerSettings
+                            continue;
+                        }
+
+                        if (!line.StartsWith("data: "))
                         {
-                            ContractResolver = contractResolver
-                        };
-                        var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
-                        if (chatChunk is not null)
+                            continue;
+                        }
+
+                        var chatResponse = line["data: ".Length..];
+                        if (chatResponse == "[DONE]")
                         {
-                            chatChunks.Add(chatChunk);
+                            break;
+                        }
+
+                        try
+                        {
+                            var contractResolver = new DefaultContractResolver
+                            {
+                                NamingStrategy = new SnakeCaseNamingStrategy()
+                            };
+                            var settings = new JsonSerializerSettings
+                            {
+                                ContractResolver = contractResolver
+                            };
+                            var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
+                            if (chatChunk is not null)
+                            {
+                                chatChunks.Add(chatChunk);
+                            }
+                        }
+                        catch (JsonSerializationException exception)
+                        {
+                            errorMsg = $"Error: Invalid chat response: {exception.Message}";
+                            break;
+                        }
+
+                        var chunk = chatChunks.Last();
+                        var choices = chunk?.Choices;
+                        if (choices?.Count > 0)
+                        {
+                            var ch = choices[0].Delta.Content;
+                            if (ch is not null)
+                            {
+                                uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() => { StreamText(ch); });
+                            }
+                        }
+                        
+                        var fingerprint = chunk?.SystemFingerprint;
+                        if (!string.IsNullOrEmpty(fingerprint))
+                        {
+                            uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() =>
+                            {
+                                NetStatus.SystemFingerprint = chunk?.SystemFingerprint ?? "";
+                            });
                         }
                     }
-                    catch (JsonSerializationException exception)
-                    {
-                        errorMsg = $"Error: Invalid chat response: {exception.Message}";
-                        break;
-                    }
 
-                    var chunk = chatChunks.Last();
-                    var choices = chunk?.Choices;
-                    if (choices?.Count > 0)
+                    if (uiUpdateOperation is not null)
                     {
-                        var ch = choices[0].Delta.Content;
-                        if (ch is not null)
-                        {
-                            StreamText(ch);
-                        }
+                        // we must ensure all UI update is done
+                        // before the following operations
+                        uiUpdateOperation.Wait();
                     }
-                    Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); // this is needed to allow ui update
-
-                    var fingerprint = chunk?.SystemFingerprint;
-                    if (!string.IsNullOrEmpty(fingerprint))
-                    {
-                        NetStatus.SystemFingerprint = chunk?.SystemFingerprint ?? "";
-                    }
-                }
+                });
             }
             else
             {
@@ -379,24 +406,24 @@ Current date: {DateTime}";
             NetStatus.Status = NetStatus.StatusEnum.Idle;
             NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
 
-            var choice_0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
+            var choice0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
             var newAssistantMsg = new AssistantMessage
             {
                 Content = new List<IMessage.IContent>
                 {
-                    new IMessage.TextContent { Text = errorMsg ?? choice_0?.Message.Content ?? "" },
+                    new IMessage.TextContent { Text = errorMsg ?? choice0?.Message.Content ?? "" },
                 },
-                ToolCalls = choice_0?.Message.ToolCalls,
+                ToolCalls = choice0?.Message.ToolCalls,
             };
             currentSession.Messages.Add(newAssistantMsg);
 
             var toolcalled = false;
-            foreach (var toolcall in choice_0?.Message.ToolCalls ?? [])
+            foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
             {
                 ResetSession(currentSession);
-                var plugin_name = toolcall.Function.Name;
+                var pluginName = toolcall.Function.Name;
                 var args = toolcall.Function.Arguments;
-                var plugin = PluginLookUpTable[plugin_name] ?? throw new InvalidDataException($"plugin not found: {plugin_name}");
+                var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
                 var toolResult = await plugin.Action(this, args);
                 toolResult.ToolCallId = toolcall.Id;
                 currentSession.Messages.Add(toolResult);
@@ -409,7 +436,7 @@ Current date: {DateTime}";
                 await Send();
             }
         }
-        public async Task UserSendText(string text, IEnumerable<string> files)
+        public async Task UserSendText(string text, IList<string> files)
         {
             currentSession ??= ResetSession();
 
@@ -445,7 +472,7 @@ Current date: {DateTime}";
             {
                 var imgContent = new IMessage.ImageContent
                 {
-                    ImageUrl = new()
+                    ImageUrl = new IMessage.ImageContent.ImageUrlType
                     {
                         Url = Utils.ImageFileToBase64(file),
                         Detail = Config.UploadHiresImage

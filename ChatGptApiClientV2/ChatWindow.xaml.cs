@@ -70,9 +70,10 @@ namespace ChatGptApiClientV2
     }
     public class ChatWindowMessage : ObservableObject
     {
-        public bool IsStreaming { get; set; } = false;
+        public bool IsStreaming { get; init; } = false;
         private readonly BlockUIContainer loadingBar;
-
+        
+        
         public ChatWindowMessage()
         {
             var loadingBarCtl = new Controls.ContinuingLoadingLine
@@ -111,17 +112,102 @@ namespace ChatGptApiClientV2
                 Image,
                 Blocks
             }
-            public RichMessageType Type { get; set; } = RichMessageType.Text;
+            public RichMessageType Type { get; init; } = RichMessageType.Text;
             /**** Text Type ****/
-            public string? Text { get; set; } = null;
-            public bool EnableMarkdown { get; set; } = true;
+            public string? Text { get; init; } = null;
+            public bool EnableMarkdown { get; init; } = true;
             /*******************/
             /**** Image Type ****/
-            public BitmapImage? Image { get; set; } = null;
-            public string? ImageTooltip { get; set; } = null;
+            public BitmapImage? Image { get; init; } = null;
+            public string? ImageTooltip { get; init; } = null;
             /********************/
             /***** Blocks Type *****/
-            public IEnumerable<Block>? Blocks { get; set; } = null;
+            public IEnumerable<Block>? Blocks { get; init; } = null;
+            /***********************/
+
+            private List<Block>? cachedRenderResult = null;
+            public List<Block> Rendered
+            {
+                get
+                {
+                    if (cachedRenderResult is not null)
+                    {
+                        return cachedRenderResult;
+                    }
+
+                    switch (Type)
+                    {
+                        case RichMessageType.Text when !string.IsNullOrWhiteSpace(Text):
+                        {
+                            if (EnableMarkdown)
+                            {
+                                var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
+                                    new MarkdownPipelineBuilder()
+                                        .UseAdvancedExtensions()
+                                        .UseColorCodeWpf()
+                                        .UseTaskLists()
+                                        .UseGridTables()
+                                        .UsePipeTables()
+                                        .UseEmphasisExtras()
+                                        .UseAutoLinks()
+                                        .Build());
+                                cachedRenderResult = newDoc.Blocks.ToList();
+                                return cachedRenderResult;
+                            }
+                            else
+                            {
+                                cachedRenderResult = [new Paragraph(new Run(Text))];
+                                return cachedRenderResult;
+                            }
+                        }
+                        case RichMessageType.Image:
+                        {
+                            var image = new Image 
+                            { 
+                                Source = Image,
+                                Stretch = Stretch.Uniform,
+                                MaxHeight = 300,
+                                Margin = new Thickness(0, 0, 10, 0)
+                            };
+                            if (ImageTooltip is not null)
+                            {
+                                image.ToolTip = new ToolTip 
+                                { 
+                                    Content = new TextBlock
+                                    {
+                                        Text = ImageTooltip,
+                                        MaxWidth = 600,
+                                        TextWrapping = TextWrapping.Wrap
+                                    }
+                                };
+                            }
+                            var btn = new Button
+                            {
+                                Content = "在单独窗口中打开",
+                                VerticalAlignment = VerticalAlignment.Bottom
+                            };
+                            btn.Click += (sender, e) =>
+                            {
+                                var viewer = new ImageViewer(Image!);
+                                viewer.ShowDialog();
+                            };
+                            var stackpanel = new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                Children = { image, btn }
+                            };
+                            cachedRenderResult = [new BlockUIContainer(stackpanel)];
+                            return cachedRenderResult;
+                        }
+                        case RichMessage.RichMessageType.Blocks:
+                            cachedRenderResult = Blocks!.ToList();
+                            return cachedRenderResult;
+                        default:
+                            cachedRenderResult = [];
+                            return cachedRenderResult;
+                    }
+                }
+            }
         }
         public void AddText(string text, bool enableMarkdown)
         {
@@ -138,9 +224,9 @@ namespace ChatGptApiClientV2
             });
             OnPropertyChanged(nameof(RenderedMessage));
         }
-        public void AddImage(string base64url, string? tooltip)
+        public void AddImage(string base64Url, string? tooltip)
         {
-            var bitmap = Utils.Base64ToBitmapImage(base64url);
+            var bitmap = Utils.Base64ToBitmapImage(base64Url);
             AddImage(bitmap, tooltip);
         }
         
@@ -172,73 +258,11 @@ namespace ChatGptApiClientV2
         {
             get
             {
-                FlowDocument doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
+                var doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
 
                 foreach (var msg in messageList)
                 {
-                    if (msg.Type == RichMessage.RichMessageType.Text && !string.IsNullOrWhiteSpace(msg.Text))
-                    {
-                        if (msg.EnableMarkdown)
-                        {
-                            var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(msg.Text ?? "",
-                                new MarkdownPipelineBuilder()
-                                .UseAdvancedExtensions()
-                                .UseColorCodeWpf()
-                                .UseTaskLists()
-                                .UseGridTables()
-                                .UsePipeTables()
-                                .UseEmphasisExtras()
-                                .UseAutoLinks()
-                                .Build());
-                            doc.Blocks.AddRange(newDoc.Blocks.ToList());
-                        }
-                        else
-                        {
-                            doc.Blocks.Add(new Paragraph(new Run(msg.Text)));
-                        }
-                    }
-                    else if (msg.Type == RichMessage.RichMessageType.Image)
-                    {
-                        var image = new Image 
-                        { 
-                            Source = msg.Image,
-                            Stretch = Stretch.Uniform,
-                            MaxHeight = 300,
-                            Margin = new Thickness(0, 0, 10, 0)
-                        };
-                        if (msg.ImageTooltip is not null)
-                        {
-                            image.ToolTip = new ToolTip 
-                            { 
-                                Content = new TextBlock
-                                {
-                                    Text = msg.ImageTooltip,
-                                    MaxWidth = 600,
-                                    TextWrapping = TextWrapping.Wrap
-                                }
-                            };
-                        }
-                        var btn = new Button
-                        {
-                            Content = "在单独窗口中打开",
-                            VerticalAlignment = VerticalAlignment.Bottom
-                        };
-                        btn.Click += (sender, e) =>
-                        {
-                            var viewer = new ImageViewer(msg.Image!);
-                            viewer.ShowDialog();
-                        };
-                        var stackpanel = new StackPanel
-                        {
-                            Orientation = Orientation.Horizontal,
-                            Children = { image, btn }
-                        };
-                        doc.Blocks.Add(new BlockUIContainer(stackpanel));
-                    }
-                    else if (msg.Type == RichMessage.RichMessageType.Blocks)
-                    {
-                        doc.Blocks.AddRange(msg.Blocks);
-                    }
+                    doc.Blocks.AddRange(msg.Rendered);
                 }
                 if (streamMessage is not null)
                 {
@@ -344,31 +368,32 @@ namespace ChatGptApiClientV2
         private bool firstInput = true;
         private void SmoothScrollProcecssor(object sender, MouseWheelEventArgs e)
         {
-            if (!e.Handled)
+            if (e.Handled)
             {
-                e.Handled = true; // 防止事件再次触发
-
-                // 创建一个新的MouseWheel事件，基于原来的事件
-                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
-                {
-                    RoutedEvent = MouseWheelEvent,
-                    Source = sender
-                };
-
-                // 找到 ScrollViewer 控件并将事件手动传递给其
-                var parent = (UIElement)VisualTreeHelper.GetParent((DependencyObject)sender);
-                while (parent is not null && parent is not ScrollViewer)
-                {
-                    parent = (UIElement)VisualTreeHelper.GetParent(parent);
-                }
-                // 确认找到 ScrollViewer 控件并触发事件
-                parent?.RaiseEvent(eventArg);
+                return;
             }
+            e.Handled = true; // 防止事件再次触发
+
+            // 创建一个新的MouseWheel事件，基于原来的事件
+            var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = MouseWheelEvent,
+                Source = sender
+            };
+
+            // 找到 ScrollViewer 控件并将事件手动传递给其
+            var parent = (UIElement)VisualTreeHelper.GetParent((DependencyObject)sender);
+            while (parent is not null && parent is not ScrollViewer)
+            {
+                parent = (UIElement)VisualTreeHelper.GetParent(parent);
+            }
+            // 确认找到 ScrollViewer 控件并触发事件
+            parent?.RaiseEvent(eventArg);
         }
         public ChatWindow()
         {
             InitializeComponent();
-            State = new();
+            State = new SystemState();
             State.ChatSessionChangedEvent += (session) =>
             {
                 SyncChatSession(session, State.Config.EnableMarkdown);
@@ -397,16 +422,12 @@ namespace ChatGptApiClientV2
             { 
                 return s; 
             }
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
             {
                 var child = VisualTreeHelper.GetChild(o, i);
                 var result = GetScrollViewer(child);
-                if (result is null) 
-                { 
-                    continue; 
-                }
-                else 
-                { 
+                if (result is not null) 
+                {
                     return result; 
                 }
             }
@@ -421,7 +442,7 @@ namespace ChatGptApiClientV2
                 });
         }
 
-        public void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
+        private void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
         {
             Messages.Clear();
 
@@ -467,18 +488,18 @@ namespace ChatGptApiClientV2
                 ScrollToEnd();
             }
         }
-        public void AddStreamText(string text)
+        private void AddStreamText(string text)
         {
             Messages.Last().AddStreamText(text);
             ScrollToEnd();
         }
-        public void AddMessage(RoleType role)
+        private void AddMessage(RoleType role)
         {
             Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true });
             ScrollToEnd();
         }
 
-        public void SetStreamProgress(double progress, string text)
+        private void SetStreamProgress(double progress, string text)
         {
             Messages.Last().SetStreamProgress(progress, text);
             ScrollToEnd();
