@@ -251,9 +251,11 @@ public partial class SystemState : ObservableObject
         var chatRequest = currentSession ?? throw new ArgumentNullException(nameof(currentSession));
         chatRequest.Model = selectedModel.Name;
         chatRequest.Temperature = Config.Temperature;
+        chatRequest.TopP = Config.TopP;
+        chatRequest.PresencePenalty = Config.PresencePenalty;
         chatRequest.Seed = Config.Seed;
         chatRequest.Stream = true;
-        chatRequest.MaxTokens = null;
+        chatRequest.MaxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
 
         var enabledPlugins = (from plugin in Plugins
             where plugin.IsEnabled
@@ -278,7 +280,7 @@ public partial class SystemState : ObservableObject
             chatRequest.Tools = null;
         }
 
-        if (Config.SelectedModel.Name.Contains("vision"))
+        if (chatRequest.MaxTokens is null && Config.SelectedModel.Name.Contains("vision"))
         {
             chatRequest.MaxTokens = 4096;
         }

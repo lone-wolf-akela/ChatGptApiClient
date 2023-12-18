@@ -73,7 +73,7 @@ public partial class Config : ObservableObject
     [JsonIgnore]
     public string DalleImageGenServiceURL => ServiceProvider switch
     {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, "openai/deployments/dall-e-3/images/generations?api-version=2023-12-01-preview"),
+        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2023-12-01-preview"),
         _ => Url.Combine(ServiceURL, "v1/images/generations")
     };
     [JsonIgnore]
@@ -103,6 +103,10 @@ public partial class Config : ObservableObject
         }
     }
 
+    [ObservableProperty]
+    private string azureDalleDeploymentId;
+    partial void OnAzureDalleDeploymentIdChanged(string value) => SaveConfig();
+
     /* Google Search Plugin Config */
     [ObservableProperty]
     private string googleSearchEngineID;
@@ -122,9 +126,22 @@ public partial class Config : ObservableObject
     partial void OnWolframAlphaAppidChanged(string value) => SaveConfig();
     /******************************/
 
+
     [ObservableProperty]
     private double temperature;
     partial void OnTemperatureChanged(double value) => SaveConfig();
+    
+    [ObservableProperty]
+    private double topP;
+    partial void OnTopPChanged(double value) => SaveConfig();
+
+    [ObservableProperty]
+    private double presencePenalty;
+    partial void OnPresencePenaltyChanged(double value) => SaveConfig();
+
+    [ObservableProperty]
+    private long maxTokens;
+    partial void OnMaxTokensChanged(long value) => SaveConfig();
 
     [ObservableProperty]
     private int seed;
@@ -259,11 +276,15 @@ public partial class Config : ObservableObject
         azureEndpoint = "";
         _API_KEY = "";
         azureAPIKey = "";
+        azureDalleDeploymentId = "dall-e-3";
         googleSearchAPIKey = "";
         googleSearchEngineID = "";
         bingSearchAPIKey = "";
         wolframAlphaAppid = "";
         temperature = 1.0;
+        topP = 1.0;
+        presencePenalty = 0.0;
+        maxTokens = 0;
         seed = 0;
         enableMarkdown = false;
         selectedModelIndex = 0;

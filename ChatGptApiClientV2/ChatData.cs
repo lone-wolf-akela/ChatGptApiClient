@@ -436,13 +436,13 @@ public class ChatCompletionRequest
     // logit_bias
     public long? MaxTokens { get; set; }
     // n -> 1
-    // presence_penalty
+    public double PresencePenalty { get; set; } = 0.0;
     // response_format
     public long Seed { get; set; }
     // stop
     public bool Stream { get; set; } = true;
     public double Temperature { get; set; } = 1.0;
-    // top_p
+    public double TopP { get; set; } = 1.0;
     public List<ToolType>? Tools { get; set; }
     // tool_choice
     // user
