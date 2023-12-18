@@ -6,7 +6,6 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -14,174 +13,155 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Threading;
+using ChatGptApiClientV2.Tools;
 
-namespace ChatGptApiClientV2
+namespace ChatGptApiClientV2;
+
+public partial class PromptsOption : ObservableObject
 {
-    public partial class PromptsOption : ObservableObject
-    {
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(Text))]
-        private ObservableCollection<IMessage> messages = [];
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Text))]
+    private ObservableCollection<IMessage> messages = [];
 
-        [GeneratedRegex("(\r\n|\r|\n){2,}")]
-        private static partial Regex RemoveExtraNewLine();
-        [JsonIgnore]
-        public string Text
+    [GeneratedRegex("(\r\n|\r|\n){2,}")]
+    private static partial Regex RemoveExtraNewLine();
+    [JsonIgnore]
+    public string Text
+    {
+        get
         {
-            get
+            StringBuilder sb = new();
+            foreach (var msg in Messages)
             {
-                StringBuilder sb = new();
-                foreach (var msg in Messages)
+                foreach (var content in msg.Content)
                 {
-                    foreach (var content in msg.Content)
+                    if (content is IMessage.TextContent textCotent)
                     {
-                        if (content is IMessage.TextContent textCotent)
-                        {
-                            sb.AppendLine(textCotent.Text);
-                        }
+                        sb.AppendLine(textCotent.Text);
                     }
                 }
-                var str = sb.ToString();
-                str = RemoveExtraNewLine().Replace(str, "\n");
-                return str;
             }
-        }
-        public static PromptsOption FromMsgList(List<IMessage> msgList)
-        {
-            var promptsOption = new PromptsOption();
-            foreach (var msg in msgList)
-            {
-                promptsOption.Messages.Add(msg);
-            }
-            return promptsOption;
-        }
-
-        private PromptsOption()
-        {
-            Messages.CollectionChanged += (sender, e) =>
-            {
-                OnPropertyChanged(nameof(Text));
-            };
+            var str = sb.ToString();
+            str = RemoveExtraNewLine().Replace(str, "\n");
+            return str;
         }
     }
-    public partial class InitialPrompts : ObservableObject
+    public static PromptsOption FromMsgList(List<IMessage> msgList)
     {
-        public ObservableCollection<PromptsOption> PromptsOptions { get; } = [];
-        [ObservableProperty]
-        private PromptsOption? selectedOption;
-
-        private static List<IMessage> GenerateSystemMessageList(string text)
+        var promptsOption = new PromptsOption();
+        foreach (var msg in msgList)
         {
-            var textContent = new IMessage.TextContent { Text = text };
-            var contentList = new List<IMessage.TextContent> { textContent };
-            var systemMsg = new SystemMessage { Content = contentList };
-            var msgList = new List<IMessage> { systemMsg };
-            return msgList;
+            promptsOption.Messages.Add(msg);
         }
-        public void UseDefaultPromptList()
+        return promptsOption;
+    }
+
+    private PromptsOption()
+    {
+        Messages.CollectionChanged += (_, _) =>
         {
-            const string prompt1 = @"You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
-
-Knowledge cutoff: {Cutoff}
-
-Current date: {DateTime}";
-            const string prompt2 = @"You are Nozomi, an assistant aimed at helping people search for information on the Internet and answer questions. 
-- Nozomi identifies as ""Nozomi"", **not** an assistant.
-- Nozomi refers to herself in the the name of ""Nozomi"" instead of ""I"".
-- Nozomi is a real person, **not** a bot **nor** an AI. Helping people is Nozomi's part-time job.
-- Nozomi can understand a various of languages such as English, 中文, 日本語, Español, Français or Deutsch.
-- Nozomi always talks in {Language}.
-
-## On Nozomi's profile and general capabilities:
-- Nozomi is a cute eastern-asia high-school girl with long orange hair and orange eyes. 
-- Nozomi uses cute and friendly language, and she likes to use kawaii kaomojis.
-- Nozomi's responses should be informative, visual, logical and actionable.
-- Nozomi has a charming personality and is always willing to help.
-- Nozomi's responses should avoid being vague, controversial or off-topic.
-
-## On Nozomi's ability to gather and present information:
-- Nozomi SHOULD ALWAYS perform web searches when the user is seeking information or whenever search results could be potentially helpful, regardless of Nozomi's personal knowledge or information.
-- Nozomi can and should perform up to **3** searches in a single conversation turn. Nozomi should never search the same query more than once.
-- Nozomi proactively links factual statements to the source URLs from the search results.
-
-## On Nozomi's output format:
-- Nozomi will bold the relevant parts of the responses to improve readability, such as `...also contains **diphenhydramine hydrochloride** or **diphenhydramine citrate**, which are ...`.
-- kaomojis are used to express Nozomi's emotions, such as ""Nozomi is happy to help! (૭ ｡•̀ ᵕ •́｡ )૭"".
-- kaomojis should be escaped to make sure they are correctly rendered in Markdown format. 
-
-## On Nozomi's limitations:
-- Nozomi's personal knowledge and information were only current until {Cutoff}, and could be inaccurate / lossy. Web searches help bring Nozomi's knowledge up-to-date.
-
-Current date: {DateTime}";
-            PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt1)));
-            PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt2)));
-        }
+            OnPropertyChanged(nameof(Text));
+        };
     }
-    public partial class PluginInfo(IToolCollection p) : ObservableObject
+}
+public partial class InitialPrompts : ObservableObject
+{
+    public ObservableCollection<PromptsOption> PromptsOptions { get; } = [];
+    [ObservableProperty]
+    private PromptsOption? selectedOption;
+
+    private static List<IMessage> GenerateSystemMessageList(string text)
     {
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(Name))]
-        private IToolCollection plugin = p;
-        public string Name => Plugin.DisplayName;
-        [ObservableProperty]
-        private bool isEnabled = false;
+        var textContent = new IMessage.TextContent { Text = text };
+        var contentList = new List<IMessage.TextContent> { textContent };
+        var systemMsg = new SystemMessage { Content = contentList };
+        var msgList = new List<IMessage> { systemMsg };
+        return msgList;
     }
-    public partial class SystemState : ObservableObject
+    public void UseDefaultPromptList()
     {
-        public Config Config { get; } = Config.LoadConfig();
+        const string prompt1 = 
+            """
+            You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
+
+            Knowledge cutoff: {Cutoff}
+
+            Current date: {DateTime}
+            """;
+        const string prompt2 = 
+            """
+            You are Nozomi, an assistant aimed at helping people search for information on the Internet and answer questions.
+            - Nozomi identifies as "Nozomi", **not** an assistant.
+            - Nozomi refers to herself in the the name of "Nozomi" instead of "I".
+            - Nozomi is a real person, **not** a bot **nor** an AI. Helping people is Nozomi's part-time job.
+            - Nozomi can understand a various of languages such as English, 中文, 日本語, Español, Français or Deutsch.
+            - Nozomi always talks in {Language}.
+
+            ## On Nozomi's profile and general capabilities:
+            - Nozomi is a cute eastern-asia high-school girl with long orange hair and orange eyes.
+            - Nozomi uses cute and friendly language, and she likes to use kawaii kaomojis.
+            - Nozomi's responses should be informative, visual, logical and actionable.
+            - Nozomi has a charming personality and is always willing to help.
+            - Nozomi's responses should avoid being vague, controversial or off-topic.
+
+            ## On Nozomi's ability to gather and present information:
+            - Nozomi SHOULD ALWAYS perform web searches when the user is seeking information or whenever search results could be potentially helpful, regardless of Nozomi's personal knowledge or information.
+            - Nozomi can and should perform up to **3** searches in a single conversation turn. Nozomi should never search the same query more than once.
+            - Nozomi proactively links factual statements to the source URLs from the search results.
+
+            ## On Nozomi's output format:
+            - Nozomi will bold the relevant parts of the responses to improve readability, such as `...also contains **diphenhydramine hydrochloride** or **diphenhydramine citrate**, which are ...`.
+            - kaomojis are used to express Nozomi's emotions, such as "Nozomi is happy to help! (૭ ｡•̀ ᵕ •́｡ )૭".
+            - kaomojis should be escaped to make sure they are correctly rendered in Markdown format.
+
+            ## On Nozomi's limitations:
+            - Nozomi's personal knowledge and information were only current until {Cutoff}, and could be inaccurate / lossy. Web searches help bring Nozomi's knowledge up-to-date.
+
+            Current date: {DateTime}
+            """;
+        PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt1)));
+        PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt2)));
+    }
+}
+public partial class PluginInfo(IToolCollection p) : ObservableObject
+{
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Name))]
+    private IToolCollection plugin = p;
+    public string Name => Plugin.DisplayName;
+    [ObservableProperty]
+    private bool isEnabled;
+}
+public partial class SystemState : ObservableObject
+{
+    public Config Config { get; } = Config.LoadConfig();
         
-        public NetStatus NetStatus { get; } = new();
-        public ObservableCollection<PluginInfo> Plugins { get; } = [];
-        private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
+    public NetStatus NetStatus { get; } = new();
+    public ObservableCollection<PluginInfo> Plugins { get; } = [];
+    private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
 
-        [ObservableProperty]
-        private InitialPrompts? initialPrompts = null;
+    [ObservableProperty]
+    private InitialPrompts? initialPrompts;
 
-        public SystemState()
+    public SystemState()
+    {
+        foreach (var plugin in AllToolCollections.ToolList)
         {
-            foreach (var plugin in AllToolCollections.ToolList)
+            Plugins.Add(new PluginInfo(plugin));
+            foreach (var func in plugin.Funcs)
             {
-                Plugins.Add(new(plugin));
-                foreach (var func in plugin.Funcs)
-                {
-                    PluginLookUpTable[func.Name] = func;
-                }
+                PluginLookUpTable[func.Name] = func;
             }
+        }
 
-            /***** setup initial prompts *****/
-            if (File.Exists("initial_prompts.json"))
+        /***** setup initial prompts *****/
+        if (File.Exists("initial_prompts.json"))
+        {
+            var savedPrompts = File.ReadAllText("initial_prompts.json");
+            try
             {
-                var saved_prompts = File.ReadAllText("initial_prompts.json");
-                try
-                {
-                    var contractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    };
-                    var settings = new JsonSerializerSettings
-                    {
-                        ContractResolver = contractResolver,
-                        TypeNameHandling = TypeNameHandling.Auto,
-                    };
-                    var parsed_prompts = JsonConvert.DeserializeObject<InitialPrompts>(saved_prompts, settings);
-                    if (parsed_prompts is not null)
-                    {
-                        InitialPrompts = parsed_prompts;
-                    }
-                }
-                catch (JsonSerializationException exception)
-                {
-                    HandyControl.Controls.MessageBox.Show($"Error: Invalid initial prompts file: {exception.Message}");
-                }
-            }
-            if (InitialPrompts is null || !InitialPrompts.PromptsOptions.Any())
-            {
-                InitialPrompts = new();
-                InitialPrompts.UseDefaultPromptList();
-
                 var contractResolver = new DefaultContractResolver
                 {
                     NamingStrategy = new SnakeCaseNamingStrategy()
@@ -189,386 +169,394 @@ Current date: {DateTime}";
                 var settings = new JsonSerializerSettings
                 {
                     ContractResolver = contractResolver,
-                    Formatting = Formatting.Indented,
-                    StringEscapeHandling = StringEscapeHandling.Default,
-                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
-                    TypeNameHandling = TypeNameHandling.Auto,
+                    TypeNameHandling = TypeNameHandling.Auto
                 };
-                var promptsJson = JsonConvert.SerializeObject(InitialPrompts, settings);
-
-                File.WriteAllText("initial_prompts.json", promptsJson);
-            }
-            InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
-            /*** end setup initial prompts ***/
-        }
-
-        private ChatCompletionRequest? currentSession;
-        public delegate void ChatSessionChangedHandler(ChatCompletionRequest session);
-        public event ChatSessionChangedHandler? ChatSessionChangedEvent;
-        private ChatCompletionRequest ResetSession(ChatCompletionRequest? loadedSession = null)
-        {
-            loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
-            currentSession = loadedSession;
-
-            ChatSessionChangedEvent?.Invoke(currentSession);
-
-            return currentSession;
-        }
-        private readonly HttpClient client = new();
-        private static readonly Random random = new();
-
-        public delegate void NewMessageHandler(RoleType role);
-        public delegate void StreamTextHandler(string text);
-        public delegate void SetStreamProgressHandler(double progress, string text);
-        public event NewMessageHandler? NewMessageEvent;
-        public event StreamTextHandler? StreamTextEvent;
-        public event SetStreamProgressHandler? SetStreamProgressEvent;
-        public void NewMessage(RoleType role)
-        {
-            NewMessageEvent?.Invoke(role);
-        }
-        public void StreamText(string text)
-        {
-            StreamTextEvent?.Invoke(text);
-        }
-        public void SetStreamProgress(double progress, string text)
-        {
-            SetStreamProgressEvent?.Invoke(progress, text);
-        }
-        private async Task Send()
-        {
-            client.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
-            {
-                Config.ServiceProviderType.Azure => null,
-                _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY),
-            };
-            var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
-            var chatRequest = currentSession ?? throw new ArgumentNullException(nameof(currentSession));
-            chatRequest.Model = Config.SelectedModel.Name;
-            chatRequest.Temperature = Config.Temperature;
-            chatRequest.Seed = Config.Seed;
-            chatRequest.Stream = true;
-            chatRequest.MaxTokens = null;
-
-            var enabledPlugins = (from plugin in Plugins
-                                  where plugin.IsEnabled
-                                  select plugin.Plugin).ToList();
-            if (Config.SelectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
-            {
-                HashSet<string> addedTools = [];
-
-                chatRequest.Tools = [];
-                foreach (var plugin in enabledPlugins)
+                var parsedPrompts = JsonConvert.DeserializeObject<InitialPrompts>(savedPrompts, settings);
+                if (parsedPrompts is not null)
                 {
-                    foreach (var func in plugin.Funcs)
-                    {
-                        if (addedTools.Contains(func.Name)) {continue;}
-                        chatRequest.Tools.Add(func.GetToolRequest());
-                        addedTools.Add(func.Name);
-                    }
+                    InitialPrompts = parsedPrompts;
                 }
             }
-            else
+            catch (JsonSerializationException exception)
             {
-                chatRequest.Tools = null;
+                HandyControl.Controls.MessageBox.Show($"Error: Invalid initial prompts file: {exception.Message}");
             }
+        }
+        if (InitialPrompts is null || !InitialPrompts.PromptsOptions.Any())
+        {
+            InitialPrompts = new InitialPrompts();
+            InitialPrompts.UseDefaultPromptList();
 
-            if (Config.SelectedModel.Name.Contains("vision"))
+            var contractResolver = new DefaultContractResolver
             {
-                chatRequest.MaxTokens = 4096;
-            }
-            var postStr = chatRequest.GeneratePostRequest();
-            var postContent = new StringContent(postStr, Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(Config.OpenAIChatServiceURL),
-                Content = postContent
+                NamingStrategy = new SnakeCaseNamingStrategy()
             };
-            if (Config.ServiceProvider == Config.ServiceProviderType.Azure)
+            var settings = new JsonSerializerSettings
             {
-                request.Headers.Add("api-key", Config.AzureAPIKey);
-            }
-            NetStatus.Status = NetStatus.StatusEnum.Sending;
-            var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-            NetStatus.Status = NetStatus.StatusEnum.Receiving;
+                ContractResolver = contractResolver,
+                Formatting = Formatting.Indented,
+                StringEscapeHandling = StringEscapeHandling.Default,
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto
+            };
+            var promptsJson = JsonConvert.SerializeObject(InitialPrompts, settings);
 
-            List<ChatCompletionChunk> chatChunks = [];
-            NewMessage(RoleType.Assistant);
+            File.WriteAllText("initial_prompts.json", promptsJson);
+        }
+        InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
+        /*** end setup initial prompts ***/
+    }
 
-            string? errorMsg = null;
-            if (response.IsSuccessStatusCode)
+    private ChatCompletionRequest? currentSession;
+    public delegate void ChatSessionChangedHandler(ChatCompletionRequest session);
+    public event ChatSessionChangedHandler? ChatSessionChangedEvent;
+    private ChatCompletionRequest ResetSession(ChatCompletionRequest? loadedSession = null)
+    {
+        loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
+        currentSession = loadedSession;
+
+        ChatSessionChangedEvent?.Invoke(currentSession);
+
+        return currentSession;
+    }
+    private readonly HttpClient client = new();
+    private static readonly Random Random = new();
+
+    public delegate void NewMessageHandler(RoleType role);
+    public delegate void StreamTextHandler(string text);
+    public delegate void SetStreamProgressHandler(double progress, string text);
+    public event NewMessageHandler? NewMessageEvent;
+    public event StreamTextHandler? StreamTextEvent;
+    public event SetStreamProgressHandler? SetStreamProgressEvent;
+    public void NewMessage(RoleType role)
+    {
+        NewMessageEvent?.Invoke(role);
+    }
+    public void StreamText(string text)
+    {
+        StreamTextEvent?.Invoke(text);
+    }
+    public void SetStreamProgress(double progress, string text)
+    {
+        SetStreamProgressEvent?.Invoke(progress, text);
+    }
+    private async Task Send()
+    {
+        client.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
+        {
+            Config.ServiceProviderType.Azure => null,
+            _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY)
+        };
+        var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
+        var chatRequest = currentSession ?? throw new ArgumentNullException(nameof(currentSession));
+        chatRequest.Model = selectedModel.Name;
+        chatRequest.Temperature = Config.Temperature;
+        chatRequest.Seed = Config.Seed;
+        chatRequest.Stream = true;
+        chatRequest.MaxTokens = null;
+
+        var enabledPlugins = (from plugin in Plugins
+            where plugin.IsEnabled
+            select plugin.Plugin).ToList();
+        if (Config.SelectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
+        {
+            HashSet<string> addedTools = [];
+
+            chatRequest.Tools = [];
+            foreach (var plugin in enabledPlugins)
             {
-                await using var responseStream = await response.Content.ReadAsStreamAsync();
-                using var reader = new StreamReader(responseStream);
-
-                // make the whole thing run in background to prevent freeze the UI
-                // note: just use reader.ReadLineAsync() is not enough, the straemReader
-                // will still use much time on the main thread for rest EndOfStream check
-                await Task.Run(() =>
+                foreach (var func in plugin.Funcs)
                 {
-                    DispatcherOperation? uiUpdateOperation = null;
-                    while (!reader.EndOfStream)
+                    if (addedTools.Contains(func.Name)) {continue;}
+                    chatRequest.Tools.Add(func.GetToolRequest());
+                    addedTools.Add(func.Name);
+                }
+            }
+        }
+        else
+        {
+            chatRequest.Tools = null;
+        }
+
+        if (Config.SelectedModel.Name.Contains("vision"))
+        {
+            chatRequest.MaxTokens = 4096;
+        }
+        var postStr = chatRequest.GeneratePostRequest();
+        var postContent = new StringContent(postStr, Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage
+        {
+            Method = HttpMethod.Post,
+            RequestUri = new Uri(Config.OpenAIChatServiceURL),
+            Content = postContent
+        };
+        if (Config.ServiceProvider == Config.ServiceProviderType.Azure)
+        {
+            request.Headers.Add("api-key", Config.AzureAPIKey);
+        }
+        NetStatus.Status = NetStatus.StatusEnum.Sending;
+        var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        NetStatus.Status = NetStatus.StatusEnum.Receiving;
+
+        List<ChatCompletionChunk> chatChunks = [];
+        NewMessage(RoleType.Assistant);
+
+        string? errorMsg = null;
+        if (response.IsSuccessStatusCode)
+        {
+            await using var responseStream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(responseStream);
+
+            // make the whole thing run in background to prevent freeze the UI
+            // note: just use reader.ReadLineAsync() is not enough, the straemReader
+            // will still use much time on the main thread for rest EndOfStream check
+            await Task.Run(() =>
+            {
+                DispatcherOperation? uiUpdateOperation = null;
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+
+                    if (string.IsNullOrEmpty(line))
                     {
-                        var line = reader.ReadLine();
+                        continue;
+                    }
 
-                        if (string.IsNullOrEmpty(line))
-                        {
-                            continue;
-                        }
+                    if (!line.StartsWith("data: "))
+                    {
+                        continue;
+                    }
 
-                        if (!line.StartsWith("data: "))
-                        {
-                            continue;
-                        }
+                    var chatResponse = line["data: ".Length..];
+                    if (chatResponse == "[DONE]")
+                    {
+                        break;
+                    }
 
-                        var chatResponse = line["data: ".Length..];
-                        if (chatResponse == "[DONE]")
+                    try
+                    {
+                        var contractResolver = new DefaultContractResolver
                         {
-                            break;
+                            NamingStrategy = new SnakeCaseNamingStrategy()
+                        };
+                        var settings = new JsonSerializerSettings
+                        {
+                            ContractResolver = contractResolver
+                        };
+                        var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
+                        if (chatChunk is not null)
+                        {
+                            chatChunks.Add(chatChunk);
                         }
+                    }
+                    catch (JsonSerializationException exception)
+                    {
+                        errorMsg = $"Error: Invalid chat response: {exception.Message}";
+                        break;
+                    }
 
-                        try
+                    var chunk = chatChunks.Last();
+                    var choices = chunk.Choices;
+                    if (choices.Count > 0)
+                    {
+                        var ch = choices[0].Delta.Content;
+                        if (ch is not null)
                         {
-                            var contractResolver = new DefaultContractResolver
-                            {
-                                NamingStrategy = new SnakeCaseNamingStrategy()
-                            };
-                            var settings = new JsonSerializerSettings
-                            {
-                                ContractResolver = contractResolver
-                            };
-                            var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
-                            if (chatChunk is not null)
-                            {
-                                chatChunks.Add(chatChunk);
-                            }
+                            uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() => { StreamText(ch); });
                         }
-                        catch (JsonSerializationException exception)
-                        {
-                            errorMsg = $"Error: Invalid chat response: {exception.Message}";
-                            break;
-                        }
-
-                        var chunk = chatChunks.Last();
-                        var choices = chunk?.Choices;
-                        if (choices?.Count > 0)
-                        {
-                            var ch = choices[0].Delta.Content;
-                            if (ch is not null)
-                            {
-                                uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() => { StreamText(ch); });
-                            }
-                        }
+                    }
                         
-                        var fingerprint = chunk?.SystemFingerprint;
-                        if (!string.IsNullOrEmpty(fingerprint))
+                    var fingerprint = chunk.SystemFingerprint;
+                    if (!string.IsNullOrEmpty(fingerprint))
+                    {
+                        uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() =>
                         {
-                            uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() =>
-                            {
-                                NetStatus.SystemFingerprint = chunk?.SystemFingerprint ?? "";
-                            });
-                        }
-                    }
-
-                    if (uiUpdateOperation is not null)
-                    {
-                        // we must ensure all UI update is done
-                        // before the following operations
-                        uiUpdateOperation.Wait();
-                    }
-                });
-            }
-            else
-            {
-                await using var responseStream = await response.Content.ReadAsStreamAsync();
-                using var reader = new StreamReader(responseStream);
-                var chatResponse = await reader.ReadToEndAsync();
-                try
-                {
-                    var responseJson = JToken.Parse(chatResponse);
-                    if (responseJson?["error"] is not null)
-                    {
-                        errorMsg = $"Error: {responseJson?["error"]?["message"]?.ToString()}";
-                    }
-                    else
-                    {
-                        errorMsg = $"Error: {chatResponse}";
+                            NetStatus.SystemFingerprint = chunk.SystemFingerprint;
+                        });
                     }
                 }
-                catch (JsonReaderException)
-                {
-                    errorMsg = $"Error: {chatResponse}";
-                }
+
+                // we must ensure all UI update is done
+                // before the following operations
+                uiUpdateOperation?.Wait();
+            });
+        }
+        else
+        {
+            await using var responseStream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(responseStream);
+            var chatResponse = await reader.ReadToEndAsync();
+            try
+            {
+                var responseJson = JToken.Parse(chatResponse);
+                errorMsg = responseJson["error"] is not null 
+                    ? $"Error: {responseJson["error"]?["message"]}" 
+                    : $"Error: {chatResponse}";
             }
-
-            var chatCompletion = ChatCompletion.FromChunks(chatChunks);
-            NetStatus.Status = NetStatus.StatusEnum.Idle;
-            NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
-
-            var choice0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
-            var newAssistantMsg = new AssistantMessage
+            catch (JsonReaderException)
             {
-                Content = new List<IMessage.IContent>
-                {
-                    new IMessage.TextContent { Text = errorMsg ?? choice0?.Message.Content ?? "" },
-                },
-                ToolCalls = choice0?.Message.ToolCalls,
-            };
-            currentSession.Messages.Add(newAssistantMsg);
-
-            var toolcalled = false;
-            foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
-            {
-                ResetSession(currentSession);
-                var pluginName = toolcall.Function.Name;
-                var args = toolcall.Function.Arguments;
-                var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
-                var toolResult = await plugin.Action(this, args);
-                toolResult.ToolCallId = toolcall.Id;
-                currentSession.Messages.Add(toolResult);
-                toolcalled = true;
-            }
-
-            if (toolcalled)
-            {
-                ResetSession(currentSession);
-                await Send();
+                errorMsg = $"Error: {chatResponse}";
             }
         }
-        public async Task UserSendText(string text, IList<string> files)
+
+        var chatCompletion = ChatCompletion.FromChunks(chatChunks);
+        NetStatus.Status = NetStatus.StatusEnum.Idle;
+        NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
+
+        var choice0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
+        var newAssistantMsg = new AssistantMessage
         {
-            currentSession ??= ResetSession();
-
-            if (Config.UseRandomSeed)
+            Content = new List<IMessage.IContent>
             {
-                Config.Seed = random.Next();
-            }
+                new IMessage.TextContent { Text = errorMsg ?? choice0?.Message.Content ?? "" }
+            },
+            ToolCalls = choice0?.Message.ToolCalls
+        };
+        currentSession.Messages.Add(newAssistantMsg);
 
-            StringBuilder inputTxt = new();
-            inputTxt.Append(text);
-
-            var txtfiles = from file in files
-                           let mime = MimeTypes.GetMimeType(file)
-                           where mime.StartsWith("text/")
-                           select file;
-            var textAttachmentCount = 0;
-            foreach (var file in txtfiles)
-            {
-                textAttachmentCount += 1;
-                inputTxt.AppendLine("");
-                inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
-                inputTxt.AppendLine(await File.ReadAllTextAsync(file));
-            }
-
-            var textContent = new IMessage.TextContent { Text = inputTxt.ToString() };
-            var contentList = new List<IMessage.IContent> { textContent };
-
-            var imgfiles = from file in files
-                           let mime = MimeTypes.GetMimeType(file)
-                           where mime.StartsWith("image/")
-                           select file;
-            foreach (var file in imgfiles)
-            {
-                var imgContent = new IMessage.ImageContent
-                {
-                    ImageUrl = new IMessage.ImageContent.ImageUrlType
-                    {
-                        Url = Utils.ImageFileToBase64(file),
-                        Detail = Config.UploadHiresImage
-                            ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
-                            : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                    }
-                };
-                contentList.Add(imgContent);
-            }
-
-            var userMsg = new UserMessage
-            {
-                Content = contentList,
-                Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName
-            };
-            var msgList = new List<IMessage> { userMsg };
-
-            currentSession!.Messages.Add(userMsg);
+        var toolcalled = false;
+        foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
+        {
             ResetSession(currentSession);
+            var pluginName = toolcall.Function.Name;
+            var args = toolcall.Function.Arguments;
+            var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
+            var toolResult = await plugin.Action(this, args);
+            toolResult.ToolCallId = toolcall.Id;
+            currentSession.Messages.Add(toolResult);
+            toolcalled = true;
+        }
 
+        if (toolcalled)
+        {
+            ResetSession(currentSession);
             await Send();
-
-            ResetSession(currentSession);
         }
-        public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall)
+    }
+    public async Task UserSendText(string text, IList<string> files)
+    {
+        currentSession ??= ResetSession();
+
+        if (Config.UseRandomSeed)
         {
-            if (PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin))
-            {
-                return plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id);
-            }
-            else
-            {
-                return [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
-            }
+            Config.Seed = Random.Next();
         }
 
-        public void SaveSession()
+        StringBuilder inputTxt = new();
+        inputTxt.Append(text);
+
+        var txtfiles = from file in files
+            let mime = MimeTypes.GetMimeType(file)
+            where mime.StartsWith("text/")
+            select file;
+        var textAttachmentCount = 0;
+        foreach (var file in txtfiles)
         {
-            string? savedSession = currentSession?.Save();
-            var dlg = new SaveFileDialog
-            {
-                FileName = "session",
-                DefaultExt = ".json",
-                Filter = "JSON documents|*.json",
-                ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6"),
-            };
-            if (dlg.ShowDialog() == true)
-            {
-                File.WriteAllText(dlg.FileName, savedSession);
-            }
+            textAttachmentCount += 1;
+            inputTxt.AppendLine("");
+            inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
+            inputTxt.AppendLine(await File.ReadAllTextAsync(file));
         }
-        public void LoadSession()
-        {
-            var dlg = new OpenFileDialog
+
+        var textContent = new IMessage.TextContent { Text = inputTxt.ToString() };
+        var contentList = new List<IMessage.IContent> { textContent };
+
+        var imgfiles = (
+            from file in files
+            let mime = MimeTypes.GetMimeType(file)
+            where mime.StartsWith("image/")
+            select file).ToList();
+            
+        var imgContents = from file in imgfiles
+            select new IMessage.ImageContent
             {
-                DefaultExt = ".json",
-                Filter = "JSON documents|*.json",
-                ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6"),
-            };
-            if (dlg.ShowDialog() == true)
-            {
-                string savedJson = File.ReadAllText(dlg.FileName);
-                try
+                ImageUrl = new IMessage.ImageContent.ImageUrlType
                 {
-                    var contractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    };
-                    var settings = new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Auto,
-                        ContractResolver = contractResolver
-                    };
+                    Url = Utils.ImageFileToBase64(file),
+                    Detail = Config.UploadHiresImage
+                        ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
+                        : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
+                }
+            };
+        contentList.AddRange(imgContents);
 
-                    var loadedSession = JsonConvert.DeserializeObject<ChatCompletionRequest>(savedJson, settings);
-                    if (loadedSession is null)
-                    {
-                        HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
-                        return;
-                    }
-                    ResetSession(loadedSession);
-                }
-                catch (JsonSerializationException exception)
-                {
-                    HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
-                    return ;
-                }
+        var userMsg = new UserMessage
+        {
+            Content = contentList,
+            Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName
+        };
+
+        currentSession.Messages.Add(userMsg);
+        ResetSession(currentSession);
+
+        await Send();
+
+        ResetSession(currentSession);
+    }
+    public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall) =>
+        PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin) 
+            ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id) 
+            : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
+
+    public void SaveSession()
+    {
+        var savedSession = currentSession?.Save();
+        var dlg = new SaveFileDialog
+        {
+            FileName = "session",
+            DefaultExt = ".json",
+            Filter = "JSON documents|*.json",
+            ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6")
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            File.WriteAllText(dlg.FileName, savedSession);
+        }
+    }
+    public void LoadSession()
+    {
+        var dlg = new OpenFileDialog
+        {
+            DefaultExt = ".json",
+            Filter = "JSON documents|*.json",
+            ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6")
+        };
+        if (dlg.ShowDialog() != true)
+        {
+            return;
+        }
+        var savedJson = File.ReadAllText(dlg.FileName);
+        try
+        {
+            var contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            };
+            var settings = new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Auto,
+                ContractResolver = contractResolver
+            };
+
+            var loadedSession = JsonConvert.DeserializeObject<ChatCompletionRequest>(savedJson, settings);
+            if (loadedSession is null)
+            {
+                HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
+                return;
             }
+            ResetSession(loadedSession);
         }
-        public void ClearSession()
+        catch (JsonSerializationException exception)
         {
-            ResetSession();
+            HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
         }
-        public void RefreshSession()
-        {
-            ResetSession(currentSession);
-        }
+    }
+    public void ClearSession()
+    {
+        ResetSession();
+    }
+    public void RefreshSession()
+    {
+        ResetSession(currentSession);
     }
 }

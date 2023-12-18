@@ -1,4 +1,4 @@
-﻿<Window x:Name="window" x:Class="ChatGptApiClientV2.Settings"
+﻿<Window x:Name="Window" x:Class="ChatGptApiClientV2.Settings"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Settings" Height="600" Width="800"
         Unloaded="Window_Unloaded">
-    <Grid DataContext="{Binding ElementName=window, Mode=OneWay}">
+    <Grid DataContext="{Binding ElementName=Window, Mode=OneWay}">
         <DockPanel Margin="10,10,10,10">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
             <StackPanel>
@@ -37,15 +37,15 @@
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
                     <DockPanel Grid.Column="0" Margin="0,0,5,0">
-                        <Label MinWidth="75" DockPanel.Dock="Left" Content="Seed" BorderBrush="{x:Null}" Grid.Row="1" VerticalAlignment="Center"  HorizontalContentAlignment="Left"/>
+                        <Label MinWidth="75" DockPanel.Dock="Left" Content="Seed" BorderBrush="{x:Null}" VerticalAlignment="Center"  HorizontalContentAlignment="Left"/>
                         <CheckBox DockPanel.Dock="Right" Width="70" Content="随机种子" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
-                        <TextBox x:Name="txt_seed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox x:Name="TxtSeed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
                     <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
                     <DockPanel Grid.Column="2">
                         <Label MinWidth="100" DockPanel.Dock="Left" Content="Temperature" BorderBrush="{x:Null}" Width="85"/>
-                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="txt_temp" Text="{Binding ElementName=slid_temp,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="slid_temp" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTemp" Text="{Binding ElementName=SlidTemp,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
+                        <Slider x:Name="SlidTemp" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
                 </Grid>
                 <hc:Divider Margin="0"/>
@@ -63,7 +63,7 @@
                     </DockPanel>
                     <DockPanel Margin="0,0,0,0" Grid.Column="1" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
                         <Label DockPanel.Dock="Left" MinWidth="100" Content="OpenAI Service URL" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                        <TextBox x:Name="txtbx_serviceurl" TextWrapping="Wrap" VerticalAlignment="Center" IsEnabled="{Binding Path=Config.ServiceURLEditable}">
+                        <TextBox x:Name="TxtbxServiceurl" TextWrapping="Wrap" VerticalAlignment="Center" IsEnabled="{Binding Path=Config.ServiceURLEditable}">
                             <TextBox.Text>
                                 <Binding Path="Config.ServiceURL" Mode="TwoWay">
                                     <Binding.ValidationRules>
@@ -75,7 +75,7 @@
                     </DockPanel>
                     <DockPanel Margin="0,0,0,0" Grid.Column="1"  Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                         <Label DockPanel.Dock="Left" MinWidth="100" Content="Azure Endpoint" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                        <TextBox x:Name="txtbx_azureendpoint" TextWrapping="Wrap" VerticalAlignment="Center">
+                        <TextBox x:Name="TxtbxAzureendpoint" TextWrapping="Wrap" VerticalAlignment="Center">
                             <TextBox.Text>
                                 <Binding Path="Config.AzureEndpoint" Mode="TwoWay">
                                     <Binding.ValidationRules>
@@ -88,12 +88,12 @@
                 </Grid>
                 <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="OpenAI API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_apikey" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxApikey" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
                 <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                     <StackPanel>
                         <Label Content="Azure Deployment ID"  VerticalAlignment="Stretch" BorderBrush="{x:Null}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
-                        <ListView x:Name="lst_azure_deployment_ids" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="{DynamicResource DefaultBrush}">
+                        <ListView x:Name="LstAzureDeploymentIds" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="{DynamicResource DefaultBrush}">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                     <Setter Property="Padding" Value="5,0,5,0"/>
@@ -102,32 +102,32 @@
                             </ListView.ItemContainerStyle>
                         </ListView>
                         <DockPanel>
-                            <Button x:Name="btn_del_azure_deployment_id" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="btn_del_azure_deployment_id_Click"/>
-                            <Button x:Name="btn_add_azure_deployment_id" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="btn_add_azure_deployment_id_Click"/>
-                            <TextBox x:Name="txtbx_add_azure_deployment_id"  Margin="0,0,5,0" />
+                            <Button x:Name="BtnDelAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="btn_del_azure_deployment_id_Click"/>
+                            <Button x:Name="BtnAddAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="btn_add_azure_deployment_id_Click"/>
+                            <TextBox x:Name="TxtbxAddAzureDeploymentId"  Margin="0,0,5,0" />
                         </DockPanel>
                     
                     </StackPanel>
                 </Border>
                 <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_azure_apikey" Text="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxAzureApikey" Text="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Margin="0,0,0,5">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_googlesearch_engineid" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxGooglesearchEngineid" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Margin="0,0,0,5">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_googlesearch_key" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxGooglesearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Margin="0,0,0,5">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_bingsearch_key" TextWrapping="Wrap" Text="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxBingsearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
                 </DockPanel>
                 <DockPanel Margin="0,0,0,5">
                     <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
-                    <TextBox x:Name="txtbx_wolfram_key" TextWrapping="Wrap" Text="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtbxWolframKey" TextWrapping="Wrap" Text="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" VerticalAlignment="Center"/>
                 </DockPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
