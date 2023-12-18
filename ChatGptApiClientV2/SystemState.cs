@@ -217,6 +217,8 @@ public partial class SystemState : ObservableObject
 
         ChatSessionChangedEvent?.Invoke(currentSession);
 
+        SaveSessionToPath("./latest_session.json");
+
         return currentSession;
     }
     private readonly HttpClient client = new();
@@ -500,9 +502,13 @@ public partial class SystemState : ObservableObject
             ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id) 
             : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
 
-    public void SaveSession()
+    private void SaveSessionToPath(string path)
     {
         var savedSession = currentSession?.Save();
+        File.WriteAllText(path, savedSession);
+    }
+    public void SaveSession()
+    {
         var dlg = new SaveFileDialog
         {
             FileName = "session",
@@ -512,7 +518,7 @@ public partial class SystemState : ObservableObject
         };
         if (dlg.ShowDialog() == true)
         {
-            File.WriteAllText(dlg.FileName, savedSession);
+            SaveSessionToPath(dlg.FileName);
         }
     }
     public void LoadSession()

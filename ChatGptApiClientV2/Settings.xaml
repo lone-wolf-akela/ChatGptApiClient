@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="1080"
+        Title="Settings" Height="600" Width="1080"
         Unloaded="Window_Unloaded">
     <Grid DataContext="{Binding ElementName=Window, Mode=OneWay}">
         <DockPanel Margin="10,10,10,10">

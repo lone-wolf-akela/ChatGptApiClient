@@ -118,7 +118,7 @@ public class DalleImageGenFunc : IToolFunction
         };
 
         state.NewMessage(RoleType.Tool);
-        state.StreamText($"Generating image with prompt: {args.Prompts}\n\n");
+        state.StreamText($"Generating...\n\n");
 
         var requestbody = new Request
         {
