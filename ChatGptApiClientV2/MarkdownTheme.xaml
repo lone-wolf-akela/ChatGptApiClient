@@ -44,6 +44,9 @@
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading6StyleKey}">
         <!-- no changes -->
     </Style>
+    <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.ParagraphStyleKey}">
+        <!-- no changes -->
+    </Style>
     <Style TargetType="{x:Type Hyperlink}" x:Key="{x:Static markdig:Styles.HyperlinkStyleKey}">
         <!-- no changes -->
     </Style>

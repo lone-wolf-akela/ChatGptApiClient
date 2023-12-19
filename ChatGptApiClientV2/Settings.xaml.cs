@@ -7,7 +7,7 @@ namespace ChatGptApiClientV2;
 /// <summary>
 /// Settings.xaml 的交互逻辑
 /// </summary>
-[INotifyPropertyChanged]
+[ObservableObject]
 public partial class Settings
 {
     [ObservableProperty]

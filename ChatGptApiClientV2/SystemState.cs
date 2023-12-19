@@ -207,19 +207,20 @@ public partial class SystemState : ObservableObject
         /*** end setup initial prompts ***/
     }
 
-    private ChatCompletionRequest? currentSession;
+    public ChatCompletionRequest? CurrentSession { get; private set; }
+
     public delegate void ChatSessionChangedHandler(ChatCompletionRequest session);
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
     private ChatCompletionRequest ResetSession(ChatCompletionRequest? loadedSession = null)
     {
         loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
-        currentSession = loadedSession;
+        CurrentSession = loadedSession;
 
-        ChatSessionChangedEvent?.Invoke(currentSession);
+        ChatSessionChangedEvent?.Invoke(CurrentSession);
 
         SaveSessionToPath("./latest_session.json");
 
-        return currentSession;
+        return CurrentSession;
     }
     private readonly HttpClient client = new();
     private static readonly Random Random = new();
@@ -250,7 +251,7 @@ public partial class SystemState : ObservableObject
             _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY)
         };
         var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
-        var chatRequest = currentSession ?? throw new ArgumentNullException(nameof(currentSession));
+        var chatRequest = CurrentSession ?? throw new ArgumentNullException(nameof(CurrentSession));
         chatRequest.Model = selectedModel.Name;
         chatRequest.Temperature = Config.Temperature;
         chatRequest.TopP = Config.TopP;
@@ -416,30 +417,30 @@ public partial class SystemState : ObservableObject
             },
             ToolCalls = choice0?.Message.ToolCalls
         };
-        currentSession.Messages.Add(newAssistantMsg);
+        CurrentSession.Messages.Add(newAssistantMsg);
 
         var toolcalled = false;
         foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
         {
-            ResetSession(currentSession);
+            ResetSession(CurrentSession);
             var pluginName = toolcall.Function.Name;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
             var toolResult = await plugin.Action(this, args);
             toolResult.ToolCallId = toolcall.Id;
-            currentSession.Messages.Add(toolResult);
+            CurrentSession.Messages.Add(toolResult);
             toolcalled = true;
         }
 
         if (toolcalled)
         {
-            ResetSession(currentSession);
+            ResetSession(CurrentSession);
             await Send();
         }
     }
     public async Task UserSendText(string text, IList<string> files)
     {
-        currentSession ??= ResetSession();
+        CurrentSession ??= ResetSession();
 
         if (Config.UseRandomSeed)
         {
@@ -490,12 +491,12 @@ public partial class SystemState : ObservableObject
             Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName
         };
 
-        currentSession.Messages.Add(userMsg);
-        ResetSession(currentSession);
+        CurrentSession.Messages.Add(userMsg);
+        ResetSession(CurrentSession);
 
         await Send();
 
-        ResetSession(currentSession);
+        ResetSession(CurrentSession);
     }
     public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall) =>
         PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin) 
@@ -504,7 +505,7 @@ public partial class SystemState : ObservableObject
 
     private void SaveSessionToPath(string path)
     {
-        var savedSession = currentSession?.Save();
+        var savedSession = CurrentSession?.Save();
         File.WriteAllText(path, savedSession);
     }
     public void SaveSession()
@@ -565,6 +566,6 @@ public partial class SystemState : ObservableObject
     }
     public void RefreshSession()
     {
-        ResetSession(currentSession);
+        ResetSession(CurrentSession);
     }
 }

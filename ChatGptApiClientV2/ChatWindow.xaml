@@ -183,7 +183,7 @@
                 </Grid>
             </DockPanel>
         </DockPanel>
-        <ListBox Grid.Row="1" x:Name="LstMsg" ScrollViewer.CanContentScroll="False" Background="Transparent" Margin="0,0,0,5" ItemsSource="{Binding Path=Messages, Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+        <ListBox Grid.Row="1" x:Name="LstMsg" ScrollViewer.CanContentScroll="False" Background="Transparent" Margin="0,0,0,5" ItemsSource="{Binding Path=MessageList.Messages , Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Focusable" Value="false"/>

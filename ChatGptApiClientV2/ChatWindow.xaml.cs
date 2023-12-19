@@ -21,6 +21,7 @@ using System.Windows.Interop;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
+using System.Windows.Media.Effects;
 
 namespace ChatGptApiClientV2;
 
@@ -64,8 +65,8 @@ public class ChatWindowMessage : ObservableObject
 {
     public bool IsStreaming { get; init; }
     private readonly BlockUIContainer loadingBar;
-        
-        
+
+
     public ChatWindowMessage()
     {
         var loadingBarCtl = new Controls.ContinuingLoadingLine
@@ -130,70 +131,111 @@ public class ChatWindowMessage : ObservableObject
                 switch (Type)
                 {
                     case RichMessageType.Text when !string.IsNullOrWhiteSpace(Text):
-                    {
-                        if (EnableMarkdown)
                         {
-                            var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
-                                new MarkdownPipelineBuilder()
-                                    .UseAdvancedExtensions()
-                                    .UseColorCodeWpf()
-                                    .UseTaskLists()
-                                    .UseGridTables()
-                                    .UsePipeTables()
-                                    .UseEmphasisExtras()
-                                    .UseAutoLinks()
-                                    .Build());
-                            cachedRenderResult = newDoc.Blocks.ToList();
+                            if (EnableMarkdown)
+                            {
+                                var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
+                                    new MarkdownPipelineBuilder()
+                                        .UseAdvancedExtensions()
+                                        .UseColorCodeWpf()
+                                        .UseTaskLists()
+                                        .UseGridTables()
+                                        .UsePipeTables()
+                                        .UseEmphasisExtras()
+                                        .UseAutoLinks()
+                                        .Build());
+                                cachedRenderResult = newDoc.Blocks.ToList();
+                                return cachedRenderResult;
+                            }
+                            cachedRenderResult = [new Paragraph(new Run(Text))];
                             return cachedRenderResult;
                         }
-                        cachedRenderResult = [new Paragraph(new Run(Text))];
-                        return cachedRenderResult;
-                    }
                     case RichMessageType.Image:
-                    {
-                        var image = new Image 
-                        { 
-                            Source = Image,
-                            Stretch = Stretch.Uniform,
-                            MaxHeight = 300,
-                            Margin = new Thickness(0, 0, 10, 0)
-                        };
-                        if (ImageTooltip is not null)
                         {
-                            image.ToolTip = new ToolTip 
-                            { 
-                                Content = new TextBlock
+                            var btnOpenImageViewer = new Button
+                            {
+                                Content = "在单独窗口中打开",
+                                Margin = new Thickness(0, 0, 5, 0)
+                            };
+                            btnOpenImageViewer.Click += (_, _) =>
+                            {
+                                var viewer = new ImageViewer(Image!);
+                                viewer.ShowDialog();
+                            };
+                            var btnShowImageDetails = new Button
+                            {
+                                Content = "查看图片信息",
+                            };
+                            var btnPanel = new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                VerticalAlignment = VerticalAlignment.Bottom,
+                                HorizontalAlignment = HorizontalAlignment.Right,
+                                Margin = new Thickness(0, 0, 10, 10),
+                                Children = { btnOpenImageViewer, btnShowImageDetails },
+                                Visibility = Visibility.Collapsed
+                            };
+                            if (ImageTooltip is not null)
+                            {
+                                var imageTooltip = new TextBox
                                 {
                                     Text = ImageTooltip,
                                     MaxWidth = 600,
-                                    TextWrapping = TextWrapping.Wrap
-                                }
+                                    TextWrapping = TextWrapping.Wrap,
+                                    IsReadOnly = true
+                                };
+                                var popUp = new Popup
+                                {
+                                    Placement = PlacementMode.Mouse,
+                                    AllowsTransparency = true,
+                                    StaysOpen = false,
+                                    Child = imageTooltip
+                                };
+                                btnShowImageDetails.Click += (_, _) =>
+                                {
+                                    popUp.IsOpen = true;
+                                };
+                            }
+                            else
+                            {
+                                btnShowImageDetails.Visibility = Visibility.Collapsed;
+                            }
+
+                            var image = new Image
+                            {
+                                Source = Image,
+                                Stretch = Stretch.Uniform,
+                                MaxHeight = 300
                             };
+                            var imageGrid = new Grid
+                            {
+                                HorizontalAlignment = HorizontalAlignment.Left,
+                                Children = { image, btnPanel }
+                            };
+
+                            imageGrid.MouseEnter += (s, e) =>
+                            {
+                                btnPanel.Visibility = Visibility.Visible;
+                            };
+
+                            imageGrid.MouseLeave += (s, e) =>
+                            {
+                                btnPanel.Visibility = Visibility.Collapsed;
+                            };
+
+                            cachedRenderResult = [new BlockUIContainer(imageGrid)];
+                            return cachedRenderResult;
                         }
-                        var btn = new Button
-                        {
-                            Content = "在单独窗口中打开",
-                            VerticalAlignment = VerticalAlignment.Bottom
-                        };
-                        btn.Click += (_, _) =>
-                        {
-                            var viewer = new ImageViewer(Image!);
-                            viewer.ShowDialog();
-                        };
-                        var stackpanel = new StackPanel
-                        {
-                            Orientation = Orientation.Horizontal,
-                            Children = { image, btn }
-                        };
-                        cachedRenderResult = [new BlockUIContainer(stackpanel)];
-                        return cachedRenderResult;
-                    }
                     case RichMessageType.Blocks:
-                        cachedRenderResult = Blocks!.ToList();
-                        return cachedRenderResult;
+                        {
+                            cachedRenderResult = Blocks!.ToList();
+                            return cachedRenderResult;
+                        }
                     default:
-                        cachedRenderResult = [];
-                        return cachedRenderResult;
+                        {
+                            cachedRenderResult = [];
+                            return cachedRenderResult;
+                        }
                 }
             }
         }
@@ -205,11 +247,11 @@ public class ChatWindowMessage : ObservableObject
     }
     public void AddImage(BitmapImage image, string? tooltip)
     {
-        messageList.Add(new RichMessage 
-        { 
-            Type = RichMessage.RichMessageType.Image, 
-            Image = image, 
-            ImageTooltip = tooltip 
+        messageList.Add(new RichMessage
+        {
+            Type = RichMessage.RichMessageType.Image,
+            Image = image,
+            ImageTooltip = tooltip
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
@@ -218,7 +260,7 @@ public class ChatWindowMessage : ObservableObject
         var bitmap = Utils.Base64ToBitmapImage(base64Url);
         AddImage(bitmap, tooltip);
     }
-        
+
     public void AddBlocks(IEnumerable<Block> blocks)
     {
         messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Blocks, Blocks = blocks });
@@ -342,15 +384,137 @@ public class ChatWindowMessage : ObservableObject
         _ => !ShowRightAvatar
     };
 }
+
+public partial class ChatWindowMessageList : ObservableObject
+{
+    public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
+    public void AddStreamText(string text)
+    {
+        Messages.Last().AddStreamText(text);
+    }
+    public void AddMessage(RoleType role)
+    {
+        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true });
+    }
+
+    public void SetStreamProgress(double progress, string text)
+    {
+        Messages.Last().SetStreamProgress(progress, text);
+    }
+    public void SyncChatSession(ChatCompletionRequest session, SystemState state, bool enableMarkdown)
+    {
+        Messages.Clear();
+
+        foreach (var msg in session.Messages)
+        {
+            if (msg.Hidden)
+            {
+                continue;
+            }
+
+            var chatMsg = new ChatWindowMessage
+            {
+                Role = msg.Role
+            };
+
+            foreach (var content in msg.Content)
+            {
+                if (content is TextContent textContent)
+                {
+                    chatMsg.AddText(textContent.Text, enableMarkdown);
+                }
+                else if (content is ImageContent imgContent)
+                {
+                    chatMsg.AddImage(imgContent.ImageUrl.Url, null);
+                }
+            }
+            if (msg is AssistantMessage assistantMsg)
+            {
+                foreach (var toolcall in assistantMsg.ToolCalls ?? [])
+                {
+                    chatMsg.AddBlocks(state.GetToolcallDescription(toolcall));
+                }
+            }
+            else if (msg is ToolMessage toolMsg)
+            {
+                foreach (var img in toolMsg.GeneratedImages)
+                {
+                    chatMsg.AddImage(img.ImageBase64Url, img.Description);
+                }
+            }
+            Messages.Add(chatMsg);
+        }
+    }
+
+    public FlowDocument GeneratePrintableDocument()
+    {
+        var doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
+        const double avatarSize = 32;
+        const double avatarMargin = 10;
+        const double sectionMargin = 20;
+
+        foreach (var msg in Messages)
+        {
+            switch (msg.Role)
+            {
+                case RoleType.User:
+                    var avatarId = ChatWindowMessage.UserAvatarSource;
+                    HandyControl.Controls.Gravatar gravatar = new()
+                    {
+                        Id = avatarId,
+                        Width = avatarSize,
+                        Height = avatarSize,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        Margin = new Thickness(0, 0, 0, avatarMargin)
+                    };
+                    doc.Blocks.Add(new BlockUIContainer(gravatar));
+                    break;
+                case RoleType.Assistant:
+                case RoleType.Tool:
+                    var avatarUri = msg.Avatar;
+                    var svg = new SvgViewbox
+                    {
+                        Source = avatarUri,
+                        Width = avatarSize,
+                        Height = avatarSize,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        Margin = new Thickness(0, 0, 0, avatarMargin)
+                    };
+                    doc.Blocks.Add(new BlockUIContainer(svg));
+                    break;
+                case RoleType.System:
+                    // no avatar
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            var rendered = msg.RenderedMessage;
+            var blocks = rendered.Blocks.ToList();
+            foreach (var block in blocks)
+            {
+                block.Foreground = msg.ForegroundColor;
+                block.Background = msg.BackgroundColor;
+                block.Margin = new Thickness(0);
+            }
+            blocks.Last().Margin = new Thickness(0, 0, 0, sectionMargin);
+            doc.Blocks.AddRange(blocks);
+        }
+
+        return doc;
+    }
+}
+
 /// <summary>
 /// ChatWindow.xaml 的交互逻辑
 /// </summary>
-[INotifyPropertyChanged]
+[ObservableObject]
 public partial class ChatWindow
 {
     [ObservableProperty]
     private SystemState state;
-    public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
+
+    public ChatWindowMessageList MessageList { get; } = new();
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
     public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
@@ -408,17 +572,17 @@ public partial class ChatWindow
     private static ScrollViewer? GetScrollViewer(DependencyObject o)
     {
         // Return the DependencyObject if it is a ScrollViewer
-        if (o is ScrollViewer s) 
-        { 
-            return s; 
+        if (o is ScrollViewer s)
+        {
+            return s;
         }
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
         {
             var child = VisualTreeHelper.GetChild(o, i);
             var result = GetScrollViewer(child);
-            if (result is not null) 
+            if (result is not null)
             {
-                return result; 
+                return result;
             }
         }
         return null;
@@ -434,64 +598,23 @@ public partial class ChatWindow
 
     private void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
     {
-        Messages.Clear();
-
-        foreach (var msg in session.Messages)
-        {
-            if (msg.Hidden)
-            {
-                continue;
-            }
-
-            var chatMsg = new ChatWindowMessage
-            {
-                Role = msg.Role
-            };
-
-            foreach (var content in msg.Content)
-            {
-                if (content is TextContent textContent)
-                {
-                    chatMsg.AddText(textContent.Text, enableMarkdown);                        
-                }
-                else if (content is ImageContent imgContent)
-                {
-                    chatMsg.AddImage(imgContent.ImageUrl.Url, null);
-                }
-            }
-            if (msg is AssistantMessage assistantMsg)
-            {
-                foreach (var toolcall in assistantMsg.ToolCalls ?? [])
-                {
-                    chatMsg.AddBlocks(State.GetToolcallDescription(toolcall));
-                }
-            }
-            else if (msg is ToolMessage toolMsg)
-            {
-                foreach (var img in toolMsg.GeneratedImages)
-                {
-                    chatMsg.AddImage(img.ImageBase64Url, img.Description);
-                }
-            }
-
-            Messages.Add(chatMsg);
-            ScrollToEnd();
-        }
+        MessageList.SyncChatSession(session, State, enableMarkdown);
+        ScrollToEnd();
     }
     private void AddStreamText(string text)
     {
-        Messages.Last().AddStreamText(text);
+        MessageList.AddStreamText(text);
         ScrollToEnd();
     }
     private void AddMessage(RoleType role)
     {
-        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true });
+        MessageList.AddMessage(role);
         ScrollToEnd();
     }
 
     private void SetStreamProgress(double progress, string text)
     {
-        Messages.Last().SetStreamProgress(progress, text);
+        MessageList.SetStreamProgress(progress, text);
         ScrollToEnd();
     }
 
@@ -525,68 +648,25 @@ public partial class ChatWindow
         {
             return;
         }
-        var doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
-        const double avatarSize = 32;
-        const double avatarMargin = 10;
-        const double sectionMargin = 20;
-        foreach (var msg in Messages)
-        {
-            switch (msg.Role)
-            {
-                case RoleType.User:
-                    var avatarId = ChatWindowMessage.UserAvatarSource;
-                    HandyControl.Controls.Gravatar gravatar = new()
-                    {
-                        Id = avatarId,
-                        Width = avatarSize,
-                        Height = avatarSize,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        Margin = new Thickness(0, 0, 0, avatarMargin)
-                    };
-                    doc.Blocks.Add(new BlockUIContainer(gravatar));
-                    break;
-                case RoleType.Assistant:
-                case RoleType.Tool:
-                    var avatarUri = msg.Avatar;
-                    var svg = new SvgViewbox
-                    {
-                        Source = avatarUri,
-                        Width = avatarSize,
-                        Height = avatarSize,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        Margin = new Thickness(0, 0, 0, avatarMargin)
-                    };
-                    doc.Blocks.Add(new BlockUIContainer(svg));
-                    break;
-                case RoleType.System:
-                    // no avatar
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
 
-            var rendered = msg.RenderedMessage;
-            var blocks = rendered.Blocks.ToList();
-            foreach (var block in blocks)
-            {
-                block.Foreground = msg.ForegroundColor;
-                block.Background = msg.BackgroundColor;
-                block.Margin = new Thickness(0);
-            }
-            blocks.Last().Margin = new Thickness(0, 0, 0, sectionMargin);
-            doc.Blocks.AddRange(blocks);
+        if (State.CurrentSession is null)
+        {
+            return;
         }
+
+        ChatWindowMessageList tempMessages = new();
+        tempMessages.SyncChatSession(State.CurrentSession, State, State.Config.EnableMarkdown);
+        var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
         /*
         doc.PagePadding = new Thickness(50);
         doc.ColumnGap = 0;
         doc.ColumnWidth = printDialog.PrintableAreaWidth;
         */
+
         var dps = (IDocumentPaginatorSource)doc;
         var dp = dps.DocumentPaginator;
         printDialog.PrintDocument(dp, "打印聊天记录");
-        // need to refresh as we have change things like block color
-        State.RefreshSession();
     }
 
     private void btn_save_Click(object sender, RoutedEventArgs e)
