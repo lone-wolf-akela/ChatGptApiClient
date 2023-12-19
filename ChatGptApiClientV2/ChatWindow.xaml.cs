@@ -518,7 +518,6 @@ public partial class ChatWindow
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
     public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
-    private bool firstInput = true;
     private void SmoothScrollProcecssor(object? sender, MouseWheelEventArgs e)
     {
         if (e.Handled || sender is not DependencyObject senderObj)
@@ -677,15 +676,6 @@ public partial class ChatWindow
     private void btn_load_Click(object sender, RoutedEventArgs e)
     {
         State.LoadSession();
-    }
-
-    private void txt_input_GotFocus(object sender, RoutedEventArgs e)
-    {
-        if (firstInput)
-        {
-            TxtInput.Text = "";
-            firstInput = false;
-        }
     }
 
     private void btn_addfile_Click(object sender, RoutedEventArgs e)

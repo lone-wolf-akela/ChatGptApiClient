@@ -22,6 +22,28 @@ using System.Xml;
 namespace ChatGptApiClientV2;
 
 // from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
+
+public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is int i)
+        {
+            return i == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        return Visibility.Collapsed;
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is Visibility v)
+        {
+            return v == Visibility.Visible ? 0 : 1;
+        }
+        return 0;
+    }
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
 public class EnumValueDescription(Enum value, string desc)
 {
     public Enum Value { get; set; } = value;
