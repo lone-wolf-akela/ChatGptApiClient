@@ -604,8 +604,18 @@ public partial class ChatWindow
         printDialog.PrintDocument(dp, "打印聊天记录");
     }
 
-    static RenderTargetBitmap RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
+    private class RenderScrollViewerResult(RenderTargetBitmap bitmap, int offsetY)
     {
+        public RenderTargetBitmap Bitmap = bitmap;
+        public int OffsetY = offsetY;
+    }
+    static RenderScrollViewerResult RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
+    {
+        // rounding to integer pixels to make sure sharp font rendering
+        var offsetY = Math.Floor(viewer.VerticalOffset * dpiScaleY);
+        viewer.ScrollToVerticalOffset(offsetY / dpiScaleY);
+        viewer.UpdateLayout();
+
         var renderTargetBitmap = new RenderTargetBitmap(
             (int)(viewer.ActualWidth * dpiScaleX),
             (int)(viewer.ActualHeight * dpiScaleY),
@@ -614,7 +624,7 @@ public partial class ChatWindow
             PixelFormats.Pbgra32
         );
         renderTargetBitmap.Render(viewer);
-        return renderTargetBitmap;
+        return new(renderTargetBitmap, (int)offsetY);
     }
 
     void btn_screenshot_Click(object sender, RoutedEventArgs e)
@@ -627,30 +637,42 @@ public partial class ChatWindow
         var dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
         var dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
 
+        var dlg = new SaveFileDialog
+        {
+            FileName = "screenshot",
+            DefaultExt = ".png",
+            Filter = "PNG images|*.png",
+            ClientGuid = new Guid("49CEC7E0-C84B-4B69-8238-B6EFB608D7DC")
+        };
+        if (dlg.ShowDialog() != true) { return; }
+
+        var oldScrollOffset = scrollViewer.VerticalOffset;
+
+        scrollViewer.ScrollToBottom();
+        scrollViewer.UpdateLayout();
+        var bottomOffset = scrollViewer.VerticalOffset;
+
         scrollViewer.ScrollToTop();
         scrollViewer.UpdateLayout();
 
-        List<RenderTargetBitmap> bitmaps = [];
+        List<RenderScrollViewerResult> bitmaps = [];
 
         // scroll 3/4 of a page a time
-        // and rounding to integer pixels to make sure sharp font rendering
-        var PageHeight = Math.Ceiling(scrollViewer.ActualHeight * 3 / 4 * dpiScaleY) / dpiScaleY;
-        var Padding = 1;
-        while (scrollViewer.VerticalOffset + PageHeight < scrollViewer.ScrollableHeight - Padding)
+        var PageHeight = scrollViewer.ActualHeight * 3 / 4;
+        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+        do
         {
-            bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
             scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + PageHeight);
             scrollViewer.UpdateLayout();
-        }
-        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
-        scrollViewer.ScrollToBottom();
-        scrollViewer.UpdateLayout();
+            bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+        } while (scrollViewer.VerticalOffset < bottomOffset - 1); // need -1 to avoid rounding error
+
         bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
 
         // concat bitmaps
         var fullBitmap = new RenderTargetBitmap(
-            (int)(scrollViewer.ActualWidth * dpiScaleX),
-            (int)(scrollViewer.ActualHeight * dpiScaleY) * bitmaps.Count + Padding,
+            (int)(bitmaps.Last().Bitmap.Width * dpiScaleX),
+            (int)(bitmaps.Last().OffsetY + bitmaps.Last().Bitmap.Height * dpiScaleY),
             96 * dpiScaleX,
             96 * dpiScaleY,
             PixelFormats.Pbgra32
@@ -658,19 +680,22 @@ public partial class ChatWindow
         var drawingVisual = new DrawingVisual();
         using (var drawingContext = drawingVisual.RenderOpen())
         {
-            double offsetY = 0;
-            foreach (var bitmap in bitmaps)
+            foreach (var renderResult in bitmaps)
             {
-                drawingContext.DrawImage(bitmap, new Rect(0, offsetY, bitmap.Width, bitmap.Height));
-                offsetY += PageHeight;
+                drawingContext.DrawImage(renderResult.Bitmap,
+                    new Rect(0, renderResult.OffsetY / dpiScaleY,
+                    renderResult.Bitmap.Width, renderResult.Bitmap.Height)
+                );
             }
         }
         fullBitmap.Render(drawingVisual);
         // save as png
         PngBitmapEncoder png = new();
         png.Frames.Add(BitmapFrame.Create(fullBitmap));
-        using Stream stm = File.Create(@$"C:\Users\liuruoyang\Desktop\ChatGPT\Full.png");
+        using Stream stm = File.Create(dlg.FileName);
         png.Save(stm);
+
+        scrollViewer.ScrollToVerticalOffset(oldScrollOffset);
     }
 
     private void btn_save_Click(object sender, RoutedEventArgs e)

@@ -20,7 +20,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*" MinHeight="100"/>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="150" MinHeight="100"/>
+            <RowDefinition Height="150" MinHeight="150"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,5">
@@ -137,7 +137,7 @@
                     <Button x:Name="BtnSave"  Click="btn_save_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe78c;" ToolTip="保存对话历史" Margin="2.5,0,2.5,2.5" Height="30" Width="30" Padding="0"/>
                     <Button x:Name="BtnLoad"  Click="btn_load_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe8da;" ToolTip="载入对话历史" Margin="2.5,0,0,2.5" Height="30" Width="30" Padding="0"/>
                     <Button x:Name="BtnPrint"  Click="btn_print_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="打印对话历史" Margin="0,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="BtnScreenshot"  Click="btn_screenshot_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="导出长截图" Margin="2.5,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
+                    <Button x:Name="BtnScreenshot"  Click="btn_screenshot_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe91b;" ToolTip="导出长截图" Margin="2.5,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
                 </UniformGrid>
                 <Button x:Name="BtnSend" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="btn_send_Click">
                     <TextBlock TextAlignment="Center">
