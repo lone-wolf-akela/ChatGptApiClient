@@ -21,7 +21,7 @@ using System.Windows.Interop;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
-using System.Windows.Media.Effects;
+using System.IO;
 
 namespace ChatGptApiClientV2;
 
@@ -152,75 +152,11 @@ public class ChatWindowMessage : ObservableObject
                         }
                     case RichMessageType.Image:
                         {
-                            var btnOpenImageViewer = new Button
+                            var imageGrid = new ImageDisplayer
                             {
-                                Content = "在单独窗口中打开",
-                                Margin = new Thickness(0, 0, 5, 0)
-                            };
-                            btnOpenImageViewer.Click += (_, _) =>
-                            {
-                                var viewer = new ImageViewer(Image!);
-                                viewer.ShowDialog();
-                            };
-                            var btnShowImageDetails = new Button
-                            {
-                                Content = "查看图片信息",
-                            };
-                            var btnPanel = new StackPanel
-                            {
-                                Orientation = Orientation.Horizontal,
-                                VerticalAlignment = VerticalAlignment.Bottom,
-                                HorizontalAlignment = HorizontalAlignment.Right,
-                                Margin = new Thickness(0, 0, 10, 10),
-                                Children = { btnOpenImageViewer, btnShowImageDetails },
-                                Visibility = Visibility.Collapsed
-                            };
-                            if (ImageTooltip is not null)
-                            {
-                                var imageTooltip = new TextBox
-                                {
-                                    Text = ImageTooltip,
-                                    MaxWidth = 600,
-                                    TextWrapping = TextWrapping.Wrap,
-                                    IsReadOnly = true
-                                };
-                                var popUp = new Popup
-                                {
-                                    Placement = PlacementMode.Mouse,
-                                    AllowsTransparency = true,
-                                    StaysOpen = false,
-                                    Child = imageTooltip
-                                };
-                                btnShowImageDetails.Click += (_, _) =>
-                                {
-                                    popUp.IsOpen = true;
-                                };
-                            }
-                            else
-                            {
-                                btnShowImageDetails.Visibility = Visibility.Collapsed;
-                            }
-
-                            var image = new Image
-                            {
-                                Source = Image,
-                                Stretch = Stretch.Uniform,
-                                MaxHeight = 300
-                            };
-                            var imageGrid = new Grid
-                            {
-                                HorizontalAlignment = HorizontalAlignment.Left,
-                                Children = { image, btnPanel }
-                            };
-
-                            imageGrid.MouseEnter += (s, e) =>
-                            {
-                                btnPanel.Visibility = Visibility.Visible;
-                            };
-
-                            imageGrid.MouseLeave += (s, e) =>
-                            {
-                                btnPanel.Visibility = Visibility.Collapsed;
+                                Image = Image!,
+                                ImageTooltip = ImageTooltip ?? "",
+                                ImageMaxHeight = 300
                             };
 
                             cachedRenderResult = [new BlockUIContainer(imageGrid)];
@@ -666,6 +602,75 @@ public partial class ChatWindow
         var dps = (IDocumentPaginatorSource)doc;
         var dp = dps.DocumentPaginator;
         printDialog.PrintDocument(dp, "打印聊天记录");
+    }
+
+    static RenderTargetBitmap RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
+    {
+        var renderTargetBitmap = new RenderTargetBitmap(
+            (int)(viewer.ActualWidth * dpiScaleX),
+            (int)(viewer.ActualHeight * dpiScaleY),
+            96 * dpiScaleX,
+            96 * dpiScaleY,
+            PixelFormats.Pbgra32
+        );
+        renderTargetBitmap.Render(viewer);
+        return renderTargetBitmap;
+    }
+
+    void btn_screenshot_Click(object sender, RoutedEventArgs e)
+    {
+        var scrollViewer = GetScrollViewer(LstMsg);
+        if (scrollViewer is null) { return; }
+
+        var source = PresentationSource.FromVisual(this);
+        if (source is null) { return; }
+        var dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
+        var dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
+
+        scrollViewer.ScrollToTop();
+        scrollViewer.UpdateLayout();
+
+        List<RenderTargetBitmap> bitmaps = [];
+
+        // scroll 3/4 of a page a time
+        // and rounding to integer pixels to make sure sharp font rendering
+        var PageHeight = Math.Ceiling(scrollViewer.ActualHeight * 3 / 4 * dpiScaleY) / dpiScaleY;
+        var Padding = 1;
+        while (scrollViewer.VerticalOffset + PageHeight < scrollViewer.ScrollableHeight - Padding)
+        {
+            bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + PageHeight);
+            scrollViewer.UpdateLayout();
+        }
+        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+        scrollViewer.ScrollToBottom();
+        scrollViewer.UpdateLayout();
+        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+
+        // concat bitmaps
+        var fullBitmap = new RenderTargetBitmap(
+            (int)(scrollViewer.ActualWidth * dpiScaleX),
+            (int)(scrollViewer.ActualHeight * dpiScaleY) * bitmaps.Count + Padding,
+            96 * dpiScaleX,
+            96 * dpiScaleY,
+            PixelFormats.Pbgra32
+        );
+        var drawingVisual = new DrawingVisual();
+        using (var drawingContext = drawingVisual.RenderOpen())
+        {
+            double offsetY = 0;
+            foreach (var bitmap in bitmaps)
+            {
+                drawingContext.DrawImage(bitmap, new Rect(0, offsetY, bitmap.Width, bitmap.Height));
+                offsetY += PageHeight;
+            }
+        }
+        fullBitmap.Render(drawingVisual);
+        // save as png
+        PngBitmapEncoder png = new();
+        png.Frames.Add(BitmapFrame.Create(fullBitmap));
+        using Stream stm = File.Create(@$"C:\Users\liuruoyang\Desktop\ChatGPT\Full.png");
+        png.Save(stm);
     }
 
     private void btn_save_Click(object sender, RoutedEventArgs e)
