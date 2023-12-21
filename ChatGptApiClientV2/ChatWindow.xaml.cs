@@ -26,20 +26,6 @@ using System.Reflection;
 
 namespace ChatGptApiClientV2;
 
-public class ContainerWidthConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        // 减去一些像素来容纳滚动条等
-        var actualWidth = (double?)value;
-        return actualWidth - 30;
-    }
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotSupportedException();
-    }
-}
 public class FileAttachmentInfo
 {
     public FileAttachmentInfo(string path)
@@ -527,7 +513,12 @@ public partial class ChatWindow
     {
         var scrollViewer = GetScrollViewer(LstMsg);
         scrollViewer?.UpdateLayout();
-        scrollViewer?.ScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+        // we cannot use scrollViewer.ScrollToEnd() because it cause NaN error
+        // and also it is not animated
+        if (scrollViewer is not null && msgSmoothScrollInfoAdapter is not null)
+        {
+            msgSmoothScrollInfoAdapter.AnimatedScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+        }
     }
 
     private SmoothScrollInfoAdapter? msgSmoothScrollInfoAdapter;
@@ -535,17 +526,15 @@ public partial class ChatWindow
     {
         MessageList.SyncChatSession(session, State, enableMarkdown);
 
+        LstMsg.UpdateLayout(); // need this, or the scrollviewer can be null
         var scrollViewer = GetScrollViewer(LstMsg);
-        do
-        {
-            if (scrollViewer is null) { break; }
-            var property = scrollViewer.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (property is null) { break; }
-            if (property.GetValue(scrollViewer) is not IScrollInfo scrollInfo) { break; }
-            if (scrollInfo is SmoothScrollInfoAdapter) { break; }
-            msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
-            property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
-        } while (false);
+        if (scrollViewer is null) { return; }
+        var property = scrollViewer.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (property is null) { return; }
+        if (property.GetValue(scrollViewer) is not IScrollInfo scrollInfo) { return; }
+        if (scrollInfo is SmoothScrollInfoAdapter) { return; }
+        msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
+        property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
 
         ScrollToEnd();
     }

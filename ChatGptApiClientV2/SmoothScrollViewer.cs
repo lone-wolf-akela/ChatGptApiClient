@@ -199,6 +199,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
         if (AnimatedScrollingEnabled)
         {
             _computedHorizontalOffset = offset;
+            // here we use 0 duration, or it will lag when user drags scrollbar thumb
             Animate(HorizontalScrollOffsetProperty, offset, 0);
         }
         else
@@ -212,11 +213,36 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
         if (AnimatedScrollingEnabled)
         {
             _computedVerticalOffset = offset;
-            Animate(VerticalScrollOffsetProperty, offset, 0);
+            // here we use 0 duration, or it will lag when user drags scrollbar thumb
+            Animate(VerticalScrollOffsetProperty, offset, 0); 
         }
         else
         {
             _child.SetVerticalOffset(offset);
+        }
+    }
+
+    public void AnimatedScrollToVerticalOffset(double offset)
+    {
+        if (AnimatedScrollingEnabled)
+        {
+            VerticalScroll(offset);
+        }
+        else
+        {
+            _child.SetVerticalOffset(offset);
+        }
+    }
+
+    public void AnimatedScrollToHorizontalOffset(double offset)
+    {
+        if (AnimatedScrollingEnabled)
+        {
+            HorizontalScroll(offset);
+        }
+        else
+        {
+            _child.SetHorizontalOffset(offset);
         }
     }
 
@@ -292,17 +318,8 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     }
     internal static readonly DependencyProperty VerticalScrollOffsetProperty =
         DependencyProperty.Register("VerticalScrollOffset", typeof(double), typeof(SmoothScrollInfoAdapter),
-        new PropertyMetadata(0.0, new PropertyChangedCallback(OnVerticalScrollOffsetChanged), new CoerceValueCallback(VerticalScrollOffsetCoerceValue)));
-    private static object VerticalScrollOffsetCoerceValue(DependencyObject d, object baseValue)
-    {
-        var newValue = (double)baseValue;
-        /*if (double.IsNaN(newValue))
-        {
-            var smoothScrollViewer = (SmoothScrollInfoAdapter)d;
-            return smoothScrollViewer._child.ScrollOwner.ScrollableHeight;
-        }*/
-        return newValue;
-    }
+        new PropertyMetadata(0.0, new PropertyChangedCallback(OnVerticalScrollOffsetChanged)));
+
     private static void OnVerticalScrollOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var smoothScrollViewer = (SmoothScrollInfoAdapter)d;
