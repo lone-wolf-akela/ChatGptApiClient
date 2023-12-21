@@ -183,24 +183,26 @@
                 </Grid>
             </DockPanel>
         </DockPanel>
-        <ListBox Grid.Row="1" x:Name="LstMsg" ScrollViewer.CanContentScroll="False" Background="Transparent" Margin="0,0,0,5" ItemsSource="{Binding Path=MessageList.Messages , Mode=OneWay}" ScrollViewer.VerticalScrollBarVisibility="Auto">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
+        <ListView Grid.Row="1" x:Name="LstMsg" Background="Transparent" Margin="0,0,0,5" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ItemsSource="{Binding Path=MessageList.Messages , Mode=OneWay}"
+                  VirtualizingPanel.ScrollUnit="Pixel">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="false"/>
                     <Setter Property="Background" Value="Transparent" />
                     <Setter Property="Template">
                         <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                            <ControlTemplate TargetType="{x:Type ListViewItem}">
                                 <ContentPresenter />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
                 </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
                 <DataTemplate>
                     <Grid>
-                        <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}, Converter={StaticResource ContainerWidthConverter}}">
+                        <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListView}}, Converter={StaticResource ContainerWidthConverter}}">
                             <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="0,0,10,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
                             <Grid x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="0,0,10,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
                             <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="10,0,0,0" Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"/>
@@ -216,17 +218,16 @@
                         </DockPanel>
                     </Grid>
                 </DataTemplate>
-                
-            </ListBox.ItemTemplate>
-            <d:ListBox.ItemsSource>
+            </ListView.ItemTemplate>
+            <d:ListView.ItemsSource>
                 <x:Array Type="{x:Type local:ChatWindowMessage}">
                     <local:ChatWindowMessage Role="User" Message="# User Messages 1"/>
                     <local:ChatWindowMessage Role="System" Message="System Messages 2"/>
                     <local:ChatWindowMessage Role="Tool" Message="Tool Messages 1"/>
                     <local:ChatWindowMessage Role="Assistant" Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
                 </x:Array>
-            </d:ListBox.ItemsSource>
-        </ListBox>
+            </d:ListView.ItemsSource>
+        </ListView>
         <StatusBar Grid.Row="4" Margin="0,5,0,0">
             <StatusBarItem Content="状态："/>
             <StatusBarItem Content="{Binding Path=State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="200"/>
