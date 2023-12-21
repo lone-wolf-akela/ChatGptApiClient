@@ -22,6 +22,7 @@ using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.IO;
+using System.Reflection;
 
 namespace ChatGptApiClientV2;
 
@@ -525,15 +526,27 @@ public partial class ChatWindow
     private void ScrollToEnd()
     {
         var scrollViewer = GetScrollViewer(LstMsg);
-        scrollViewer?.Dispatcher.Invoke(() =>
-        {
-            scrollViewer.ScrollToEnd();
-        });
+        scrollViewer?.UpdateLayout();
+        scrollViewer?.ScrollToVerticalOffset(scrollViewer.ScrollableHeight);
     }
 
+    private SmoothScrollInfoAdapter? msgSmoothScrollInfoAdapter;
     private void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
     {
         MessageList.SyncChatSession(session, State, enableMarkdown);
+
+        var scrollViewer = GetScrollViewer(LstMsg);
+        do
+        {
+            if (scrollViewer is null) { break; }
+            var property = scrollViewer.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (property is null) { break; }
+            if (property.GetValue(scrollViewer) is not IScrollInfo scrollInfo) { break; }
+            if (scrollInfo is SmoothScrollInfoAdapter) { break; }
+            msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
+            property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
+        } while (false);
+
         ScrollToEnd();
     }
     private void AddStreamText(string text)
@@ -646,11 +659,11 @@ public partial class ChatWindow
         };
         if (dlg.ShowDialog() != true) { return; }
 
+        if (msgSmoothScrollInfoAdapter is not null)
+        {
+            msgSmoothScrollInfoAdapter.AnimatedScrollingEnabled = false;
+        }
         var oldScrollOffset = scrollViewer.VerticalOffset;
-
-        scrollViewer.ScrollToBottom();
-        scrollViewer.UpdateLayout();
-        var bottomOffset = scrollViewer.VerticalOffset;
 
         scrollViewer.ScrollToTop();
         scrollViewer.UpdateLayout();
@@ -660,12 +673,20 @@ public partial class ChatWindow
         // scroll 3/4 of a page a time
         var PageHeight = scrollViewer.ActualHeight * 3 / 4;
         bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
-        do
+        int lastOffsetY = -1;
+        while(true)
         {
             scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + PageHeight);
             scrollViewer.UpdateLayout();
-            bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
-        } while (scrollViewer.VerticalOffset < bottomOffset - 1); // need -1 to avoid rounding error
+            var newScreenShot = RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY);
+            if(newScreenShot.OffsetY == lastOffsetY)
+            {
+                // we have reached the end and cannot scroll further down
+                break;
+            }
+            bitmaps.Add(newScreenShot);
+            lastOffsetY = newScreenShot.OffsetY;
+        }
 
         bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
 
@@ -696,6 +717,11 @@ public partial class ChatWindow
         png.Save(stm);
 
         scrollViewer.ScrollToVerticalOffset(oldScrollOffset);
+        scrollViewer.UpdateLayout();
+        if (msgSmoothScrollInfoAdapter is not null)
+        {
+            msgSmoothScrollInfoAdapter.AnimatedScrollingEnabled = true;
+        }
     }
 
     private void btn_save_Click(object sender, RoutedEventArgs e)

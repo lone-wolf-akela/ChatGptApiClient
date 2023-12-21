@@ -184,7 +184,7 @@
             </DockPanel>
         </DockPanel>
         <ListView Grid.Row="1" x:Name="LstMsg" Background="Transparent" Margin="0,0,0,5" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ItemsSource="{Binding Path=MessageList.Messages , Mode=OneWay}"
+                  ItemsSource="{Binding Path=MessageList.Messages, Mode=OneWay}"
                   VirtualizingPanel.ScrollUnit="Pixel">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
