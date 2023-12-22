@@ -23,6 +23,7 @@ using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace ChatGptApiClientV2;
 
@@ -170,30 +171,39 @@ public class ChatWindowMessage : ObservableObject
             }
         }
     }
-    public void AddText(string text, bool enableMarkdown)
+    public async Task AddText(string text, bool enableMarkdown)
     {
-        messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
-        OnPropertyChanged(nameof(RenderedMessage));
-    }
-    public void AddImage(BitmapImage image, string? tooltip)
-    {
-        messageList.Add(new RichMessage
+        await Task.Run(()=>
         {
-            Type = RichMessage.RichMessageType.Image,
-            Image = image,
-            ImageTooltip = tooltip
+            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
+        });
+        OnPropertyChanged(nameof(RenderedMessage));
+        return;
+    }
+    public async Task AddImage(BitmapImage image, string? tooltip)
+    {
+        await Task.Run(() =>
+        {
+            messageList.Add(new RichMessage
+            {
+                Type = RichMessage.RichMessageType.Image,
+                Image = image,
+                ImageTooltip = tooltip
+            });
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
-    public void AddImage(string base64Url, string? tooltip)
+    public async Task AddImage(string base64Url, string? tooltip)
     {
         var bitmap = Utils.Base64ToBitmapImage(base64Url);
-        AddImage(bitmap, tooltip);
+        await AddImage(bitmap, tooltip);
     }
-
-    public void AddBlocks(IEnumerable<Block> blocks)
+    public async Task AddBlocks(IEnumerable<Block> blocks)
     {
-        messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Blocks, Blocks = blocks });
+        await Task.Run(() =>
+        {
+            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Blocks, Blocks = blocks });
+        });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
@@ -331,7 +341,7 @@ public partial class ChatWindowMessageList : ObservableObject
     {
         Messages.Last().SetStreamProgress(progress, text);
     }
-    public void SyncChatSession(ChatCompletionRequest session, SystemState state, bool enableMarkdown)
+    public async Task SyncChatSession(ChatCompletionRequest session, SystemState state, bool enableMarkdown)
     {
         Messages.Clear();
 
@@ -346,30 +356,29 @@ public partial class ChatWindowMessageList : ObservableObject
             {
                 Role = msg.Role
             };
-
             foreach (var content in msg.Content)
             {
                 if (content is TextContent textContent)
                 {
-                    chatMsg.AddText(textContent.Text, enableMarkdown);
+                    await chatMsg.AddText(textContent.Text, enableMarkdown);
                 }
                 else if (content is ImageContent imgContent)
                 {
-                    chatMsg.AddImage(imgContent.ImageUrl.Url, null);
+                    await chatMsg.AddImage(imgContent.ImageUrl.Url, null);
                 }
             }
             if (msg is AssistantMessage assistantMsg)
             {
                 foreach (var toolcall in assistantMsg.ToolCalls ?? [])
                 {
-                    chatMsg.AddBlocks(state.GetToolcallDescription(toolcall));
+                    await chatMsg.AddBlocks(state.GetToolcallDescription(toolcall));
                 }
             }
             else if (msg is ToolMessage toolMsg)
             {
                 foreach (var img in toolMsg.GeneratedImages)
                 {
-                    chatMsg.AddImage(img.ImageBase64Url, img.Description);
+                    await chatMsg.AddImage(img.ImageBase64Url, img.Description);
                 }
             }
             Messages.Add(chatMsg);
@@ -443,6 +452,15 @@ public partial class ChatWindow
 {
     [ObservableProperty]
     private SystemState state;
+    [ObservableProperty]
+    private bool isLoading = false;
+    private void SetIsLoading(bool loading)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            IsLoading = loading;
+        });
+    }
 
     public ChatWindowMessageList MessageList { get; } = new();
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
@@ -477,13 +495,14 @@ public partial class ChatWindow
     {
         InitializeComponent();
         State = new SystemState();
-        State.ChatSessionChangedEvent += session =>
+        State.ChatSessionChangedEvent += async session =>
         {
-            SyncChatSession(session, State.Config.EnableMarkdown);
+            await SyncChatSession(session, State.Config.EnableMarkdown);
         };
         State.NewMessageEvent += AddMessage;
         State.StreamTextEvent += AddStreamText;
         State.SetStreamProgressEvent += SetStreamProgress;
+        State.SetIsLoadingHandlerEvent += SetIsLoading;
 
         FileAttachments.CollectionChanged += (_, _) =>
         {
@@ -498,6 +517,7 @@ public partial class ChatWindow
         };
         InputBindings.Add(sendKeyBinding);
     }
+
     private static ScrollViewer? GetScrollViewer(DependencyObject o)
     {
         // Return the DependencyObject if it is a ScrollViewer
@@ -524,14 +544,17 @@ public partial class ChatWindow
         // and also it is not animated
         if (scrollViewer is not null && msgSmoothScrollInfoAdapter is not null)
         {
-            msgSmoothScrollInfoAdapter.AnimatedScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+            msgSmoothScrollInfoAdapter.Dispatcher.Invoke(() =>
+            {
+                msgSmoothScrollInfoAdapter.AnimatedScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+            });
         }
     }
 
     private SmoothScrollInfoAdapter? msgSmoothScrollInfoAdapter;
-    private void SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
+    private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
     {
-        MessageList.SyncChatSession(session, State, enableMarkdown);
+        await MessageList.SyncChatSession(session, State, enableMarkdown);
 
         LstMsg.UpdateLayout(); // need this, or the scrollviewer can be null
         var scrollViewer = GetScrollViewer(LstMsg);
@@ -582,12 +605,12 @@ public partial class ChatWindow
         await State.UserSendText(input, files);
     }
 
-    private void btn_reset_Click(object sender, RoutedEventArgs e)
+    private async void btn_reset_Click(object sender, RoutedEventArgs e)
     {
-        State.ClearSession();
+        await State.ClearSession();
     }
 
-    private void btn_print_Click(object sender, RoutedEventArgs e)
+    private async void btn_print_Click(object sender, RoutedEventArgs e)
     {
         PrintDialog printDialog = new();
         if (printDialog.ShowDialog() != true)
@@ -601,7 +624,7 @@ public partial class ChatWindow
         }
 
         ChatWindowMessageList tempMessages = new();
-        tempMessages.SyncChatSession(State.CurrentSession, State, State.Config.EnableMarkdown);
+        await tempMessages.SyncChatSession(State.CurrentSession, State, State.Config.EnableMarkdown);
         var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
         /*
@@ -727,9 +750,9 @@ public partial class ChatWindow
         State.SaveSession();
     }
 
-    private void btn_load_Click(object sender, RoutedEventArgs e)
+    private async void btn_load_Click(object sender, RoutedEventArgs e)
     {
-        State.LoadSession();
+        await State.LoadSession();
     }
 
     private void btn_addfile_Click(object sender, RoutedEventArgs e)
@@ -756,9 +779,9 @@ public partial class ChatWindow
         TgglPrompt.IsChecked = false;
     }
 
-    private void chk_markdown_Click(object sender, RoutedEventArgs e)
+    private async void chk_markdown_Click(object sender, RoutedEventArgs e)
     {
-        State.RefreshSession();
+        await State.RefreshSession();
     }
 
     private void btn_settings_Click(object sender, RoutedEventArgs e)

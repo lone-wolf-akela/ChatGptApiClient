@@ -209,14 +209,17 @@ public partial class SystemState : ObservableObject
 
     public ChatCompletionRequest? CurrentSession { get; private set; }
 
-    public delegate void ChatSessionChangedHandler(ChatCompletionRequest session);
+    public delegate Task ChatSessionChangedHandler(ChatCompletionRequest session);
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
-    private ChatCompletionRequest ResetSession(ChatCompletionRequest? loadedSession = null)
+    private async Task<ChatCompletionRequest> ResetSession(ChatCompletionRequest? loadedSession = null)
     {
         loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
         CurrentSession = loadedSession;
 
-        ChatSessionChangedEvent?.Invoke(CurrentSession);
+        if (ChatSessionChangedEvent is not null)
+        {
+            await ChatSessionChangedEvent.Invoke(CurrentSession);
+        }
 
         SaveSessionToPath("./latest_session.json");
 
@@ -422,7 +425,7 @@ public partial class SystemState : ObservableObject
         var toolcalled = false;
         foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
         {
-            ResetSession(CurrentSession);
+            await ResetSession(CurrentSession);
             var pluginName = toolcall.Function.Name;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
@@ -434,13 +437,13 @@ public partial class SystemState : ObservableObject
 
         if (toolcalled)
         {
-            ResetSession(CurrentSession);
+            await ResetSession(CurrentSession);
             await Send();
         }
     }
     public async Task UserSendText(string text, IList<string> files)
     {
-        CurrentSession ??= ResetSession();
+        CurrentSession ??= await ResetSession();
 
         if (Config.UseRandomSeed)
         {
@@ -492,11 +495,11 @@ public partial class SystemState : ObservableObject
         };
 
         CurrentSession.Messages.Add(userMsg);
-        ResetSession(CurrentSession);
+        await ResetSession(CurrentSession);
 
         await Send();
 
-        ResetSession(CurrentSession);
+        await ResetSession(CurrentSession);
     }
     public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall) =>
         PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin) 
@@ -522,7 +525,10 @@ public partial class SystemState : ObservableObject
             SaveSessionToPath(dlg.FileName);
         }
     }
-    public void LoadSession()
+
+    public delegate void SetIsLoadingHandler(bool isLoading);
+    public event SetIsLoadingHandler? SetIsLoadingHandlerEvent;
+    public async Task LoadSession()
     {
         var dlg = new OpenFileDialog
         {
@@ -534,38 +540,57 @@ public partial class SystemState : ObservableObject
         {
             return;
         }
-        var savedJson = File.ReadAllText(dlg.FileName);
-        try
-        {
-            var contractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new SnakeCaseNamingStrategy()
-            };
-            var settings = new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto,
-                ContractResolver = contractResolver
-            };
 
-            var loadedSession = JsonConvert.DeserializeObject<ChatCompletionRequest>(savedJson, settings);
-            if (loadedSession is null)
-            {
-                HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
-                return;
-            }
-            ResetSession(loadedSession);
-        }
-        catch (JsonSerializationException exception)
+        SetIsLoadingHandlerEvent?.Invoke(true);
+
+        var savedJson = File.ReadAllText(dlg.FileName);
+
+        var loadedSession = await Task.Run(() =>
         {
-            HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
+            try
+            {
+                var contractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                };
+                var settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto,
+                    ContractResolver = contractResolver
+                };
+
+                var loadedSession = JsonConvert.DeserializeObject<ChatCompletionRequest>(savedJson, settings);
+                if (loadedSession is null)
+                {
+                    HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
+                    return null;
+                }
+                return loadedSession;
+            }
+            catch (JsonSerializationException exception)
+            {
+                HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
+                return null;
+            }
+            catch (JsonReaderException exception)
+            {
+                HandyControl.Controls.MessageBox.Show($"Error: Invalid session file: {exception.Message}");
+                return null;
+            }
+        });
+        
+        if(loadedSession is not null)
+        {
+            await ResetSession(loadedSession);
         }
+        SetIsLoadingHandlerEvent?.Invoke(false);
     }
-    public void ClearSession()
+    public async Task ClearSession()
     {
-        ResetSession();
+        await ResetSession();
     }
-    public void RefreshSession()
+    public async Task RefreshSession()
     {
-        ResetSession(CurrentSession);
+        await ResetSession(CurrentSession);
     }
 }
