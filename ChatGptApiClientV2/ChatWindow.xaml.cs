@@ -124,7 +124,7 @@ public class ChatWindowMessage : ObservableObject
             }
             catch (Exception)
             {
-                // render failure, fallback to pure text mode
+                // render failure, fallback to plain text mode
                 return [new Paragraph(new Run(Text))];
             }
         }

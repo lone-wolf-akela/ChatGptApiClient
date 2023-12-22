@@ -251,41 +251,56 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     private enum AnimateAxis { Horizontal, Vertical }
     private readonly Storyboard _horizontalStoryboard = new();
     private readonly Storyboard _verticalStoryboard = new();
-    private void Animate(DependencyProperty property, double targetValue, AnimateAxis axis, int duration = 300)
+    private double _previousHorizontalAnimationStartOffset = 0;
+    private double _previousVerticalAnimationStartOffset = 0;
+    private void Animate(DependencyProperty property, double targetValue, AnimateAxis axis, double duration = -1)
     {
         var storyboard = axis == AnimateAxis.Horizontal ? _horizontalStoryboard : _verticalStoryboard;
+        var previousBaseValue = axis == AnimateAxis.Horizontal ? _previousHorizontalAnimationStartOffset : _previousVerticalAnimationStartOffset;
 
         var currentValue = (double)GetValue(property);
+        if (axis == AnimateAxis.Horizontal)
+        {
+            _previousHorizontalAnimationStartOffset = currentValue;
+        }
+        else
+        {
+            _previousVerticalAnimationStartOffset = currentValue;
+        }
+
+        if (duration < 0)
+        {
+            var durationFactor = 1 - Math.Exp((1 - Math.Abs(targetValue - currentValue) / _mouseWheelDelta) / 5);
+            duration = 300 + 300 * durationFactor;
+        }
         var isAnimationRunning = storyboard.Children.Count != 0 && storyboard.GetCurrentState() == ClockState.Active;
         var currentSpeed = 0.0;
         if (isAnimationRunning)
         {
             var previousAnimation = (DoubleAnimationUsingKeyFrames)storyboard.Children[0];
-            var previousStartKeyFrame = previousAnimation.KeyFrames[0];
-            var previousSplineKeyFrame = previousAnimation.KeyFrames[1];
+            var previousDuration = previousAnimation.Duration.TimeSpan.TotalMilliseconds;
+            var previousSplineKeyFrame = previousAnimation.KeyFrames[0];
             var previousProgress = storyboard.GetCurrentProgress();
-            var previousBaseValue = previousStartKeyFrame.Value;
             var InterpolateValueCore = typeof(DoubleKeyFrame).GetMethod("InterpolateValueCore", BindingFlags.NonPublic | BindingFlags.Instance);
             const double tick = 0.01;
             var valueTickLater = (double?)InterpolateValueCore?.Invoke(previousSplineKeyFrame, new object[] { previousBaseValue, previousProgress + tick });
-            currentSpeed = ((valueTickLater - currentValue) / tick) ?? 0.0;
+            currentSpeed = ((valueTickLater - currentValue) / (tick * previousDuration)) ?? 0.0;
         }
 
-        const double MidPointX = 0.5;
-        var firstControlPointY = (currentSpeed * MidPointX) / (targetValue - currentValue);
+        const double firstControlPointX = 0.3;
+        var firstControlPointY = (currentSpeed * firstControlPointX * duration) / (targetValue - currentValue);
+        const double secondControlPointX = 0.5;
 
         //make a smooth animation that starts and ends slowly
         var keyFramesAnimation = new DoubleAnimationUsingKeyFrames
         {
             Duration = TimeSpan.FromMilliseconds(duration)
         };
-        var start = new LinearDoubleKeyFrame(currentValue, KeyTime.FromTimeSpan(TimeSpan.Zero));
         var spline = new SplineDoubleKeyFrame(
                 targetValue,
                 KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(duration)),
-                new KeySpline(MidPointX, firstControlPointY, MidPointX, 1.0)
+                new KeySpline(firstControlPointX, firstControlPointY, secondControlPointX, 1.0)
                 );
-        keyFramesAnimation.KeyFrames.Add(start);
         keyFramesAnimation.KeyFrames.Add(spline);
         storyboard.Children.Clear();
         storyboard.Children.Add(keyFramesAnimation);
