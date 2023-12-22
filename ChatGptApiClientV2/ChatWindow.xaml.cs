@@ -532,9 +532,11 @@ public partial class ChatWindow
         var property = scrollViewer.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
         if (property is null) { return; }
         if (property.GetValue(scrollViewer) is not IScrollInfo scrollInfo) { return; }
-        if (scrollInfo is SmoothScrollInfoAdapter) { return; }
-        msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
-        property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
+        if (scrollInfo is not SmoothScrollInfoAdapter) 
+        {
+            msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
+            property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
+        }
 
         ScrollToEnd();
     }
