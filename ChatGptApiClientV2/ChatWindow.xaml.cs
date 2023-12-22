@@ -106,6 +106,28 @@ public class ChatWindowMessage : ObservableObject
         /***********************/
 
         private List<Block>? cachedRenderResult;
+        private List<Block> RenderMarkdownText()
+        {
+            try
+            {
+                var doc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
+                    new MarkdownPipelineBuilder()
+                        .UseAdvancedExtensions()
+                        .UseColorCodeWpf()
+                        .UseTaskLists()
+                        .UseGridTables()
+                        .UsePipeTables()
+                        .UseEmphasisExtras()
+                        .UseAutoLinks()
+                        .Build());
+                return doc.Blocks.ToList();
+            }
+            catch (Exception)
+            {
+                // render failure, fallback to pure text mode
+                return [new Paragraph(new Run(Text))];
+            }
+        }
         public List<Block> Rendered
         {
             get
@@ -119,22 +141,7 @@ public class ChatWindowMessage : ObservableObject
                 {
                     case RichMessageType.Text when !string.IsNullOrWhiteSpace(Text):
                         {
-                            if (EnableMarkdown)
-                            {
-                                var newDoc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
-                                    new MarkdownPipelineBuilder()
-                                        .UseAdvancedExtensions()
-                                        .UseColorCodeWpf()
-                                        .UseTaskLists()
-                                        .UseGridTables()
-                                        .UsePipeTables()
-                                        .UseEmphasisExtras()
-                                        .UseAutoLinks()
-                                        .Build());
-                                cachedRenderResult = newDoc.Blocks.ToList();
-                                return cachedRenderResult;
-                            }
-                            cachedRenderResult = [new Paragraph(new Run(Text))];
+                            cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
                             return cachedRenderResult;
                         }
                     case RichMessageType.Image:
