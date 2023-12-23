@@ -36,13 +36,22 @@
                         <!-- 9:Control 2 -->
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Row="0" Grid.Column="3" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Column="3" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Column="7" Margin="0" Orientation="Vertical"/>
                     <Label Grid.Column="0" Content="主题" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     <hc:ButtonGroup Grid.Column="1" Style="{StaticResource ButtonGroupSolidDynamicColor}">
                         <RadioButton Content="跟随系统" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}"/>
                         <RadioButton Content="浅色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}"/>
                         <RadioButton Content="深色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}"/>
                     </hc:ButtonGroup>
+                    <Label Grid.Column="4" Content="主题颜色" HorizontalAlignment="Left"/>
+                    <StackPanel Grid.Column="5" HorizontalAlignment="Left" Orientation="Horizontal">
+                        <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统" IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}" Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0"/>
+                        <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}">
+                            <TextBox Width="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}"/>
+                            <Button x:Name="BtnColorPicker" Background="{Binding Config.CustomThemeColor}" hc:BorderElement.CornerRadius="0" VerticalAlignment="Stretch" Click="BtnColorPicker_Click" Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}" Margin="0,0,5,0"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Grid>
                 <hc:Divider Margin="0" Content="模型参数" HorizontalContentAlignment="Left"/>
                 <Grid Margin="0,0,0,5">

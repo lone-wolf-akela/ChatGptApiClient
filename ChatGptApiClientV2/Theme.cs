@@ -45,9 +45,9 @@ namespace ChatGptApiClientV2
         }
         public delegate void ThemeChangedEventHandler();
         public static event ThemeChangedEventHandler? ThemeChanged;
-        public static void UpdateTheme(ThemeType theme)
+        public static void UpdateTheme(ThemeType theme, Brush? accentColor)
         {
-            ThemeManager.Current.AccentColor = ThemeManager.Current.GetAccentColorFromSystem();
+            ThemeManager.Current.AccentColor = accentColor ?? ThemeManager.Current.GetAccentColorFromSystem();
             switch (theme)
             {
                 case ThemeType.System:

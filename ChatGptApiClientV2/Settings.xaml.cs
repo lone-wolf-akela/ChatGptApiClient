@@ -1,6 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using HandyControl.Controls;
+using HandyControl.Tools;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows;
+using System.Windows.Media;
 
 namespace ChatGptApiClientV2;
 
@@ -50,5 +54,54 @@ public partial class Settings
         {
             Config.AzureDeploymentList.Remove(id);
         }
+    }
+
+    private void BtnColorPicker_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = SingleOpenHelper.CreateControl<ColorPicker>();
+        picker.SelectedBrush = Config.CustomThemeColor;
+        var window = new PopupWindow
+        {
+            PopupElement = picker, 
+            Owner = this
+        };
+
+        const bool showBackground = false;
+
+        window.Loaded += (_, _) =>
+        {
+            var targetElement = picker;
+            if (showBackground == false)
+            {
+                // from HandyControl.Tools.ArithmeticHelper.CalSafePoint
+                var point = targetElement.PointToScreen(new Point(0, 0));
+
+                if (point.X < 0) { point.X = 0; }
+                if (point.Y < 0) { point.Y = 0; }
+                var dpi = VisualTreeHelper.GetDpi(window);
+
+                // patch: add dpi scaling
+                point.X /= dpi.DpiScaleX;
+                point.Y /= dpi.DpiScaleY;
+
+                var maxLeft = SystemParameters.WorkArea.Width -
+                              ((double.IsNaN(window.PopupElement.Width) ? window.PopupElement.ActualWidth : window.PopupElement.Width) +
+                               BorderThickness.Left + BorderThickness.Right);
+                var maxTop = SystemParameters.WorkArea.Height -
+                             ((double.IsNaN(window.PopupElement.Height) ? window.PopupElement.ActualHeight : window.PopupElement.Height) +
+                              BorderThickness.Top + BorderThickness.Bottom);
+                point = new Point(maxLeft > point.X ? point.X : maxLeft, maxTop > point.Y ? point.Y : maxTop);
+                window.Left = point.X;
+                window.Top = point.Y;
+            }
+        };
+
+        picker.Confirmed += (_, _) =>
+            {
+                Config.CustomThemeColor = picker.SelectedBrush;
+                window.Close();
+            };
+        picker.Canceled += (_, _) => window.Close();
+        window.ShowDialog(BtnColorPicker, showBackground);
     }
 }

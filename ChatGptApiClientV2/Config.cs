@@ -11,6 +11,7 @@ using Flurl;
 using Newtonsoft.Json.Linq;
 using HandyControl.Themes;
 using System.Reflection;
+using System.Windows.Media;
 
 namespace ChatGptApiClientV2;
 
@@ -23,10 +24,26 @@ public partial class Config : ObservableObject
     private ThemeType theme;
     partial void OnThemeChanged(ThemeType value)
     {
-        ThemeUpdater.UpdateTheme(value);
+        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
         SaveConfig();
     }
-    
+
+    [ObservableProperty]
+    private bool enableCustomThemeColor;
+    partial void OnEnableCustomThemeColorChanged(bool value)
+    {
+        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+        SaveConfig();
+    }
+
+    [ObservableProperty]
+    private SolidColorBrush customThemeColor;
+    partial void OnCustomThemeColorChanged(SolidColorBrush value)
+    {
+        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+        SaveConfig();
+    }
+
     [ObservableProperty]
     private string userNickName;
     partial void OnUserNickNameChanged(string value) => SaveConfig();
@@ -282,7 +299,9 @@ public partial class Config : ObservableObject
     public Config()
     {
         theme = ThemeType.System;
-        ThemeUpdater.UpdateTheme(Theme);
+        enableCustomThemeColor = false;
+        customThemeColor = new SolidColorBrush(Color.FromRgb(0x2e, 0x6c, 0xf3));
+        ThemeUpdater.UpdateTheme(Theme, null);
         ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
 
         userNickName = string.Empty;
@@ -317,7 +336,7 @@ public partial class Config : ObservableObject
     {
         if (Theme == ThemeType.System)
         {
-            ThemeUpdater.UpdateTheme(Theme);
+            ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
         }
     }
 

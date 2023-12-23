@@ -18,11 +18,11 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Diagnostics;
 using System.Xml;
+using System.Reflection;
 
 namespace ChatGptApiClientV2;
 
 // from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
-
 public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

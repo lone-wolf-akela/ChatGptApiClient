@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HandyControl.Tools;
+using System;
 using System.Drawing;
 using System.Net.NetworkInformation;
 using System.Windows;
@@ -17,6 +18,7 @@ namespace ChatGptApiClientV2
         {
             AppDomain.CurrentDomain.UnhandledException += AppExceptionHandler;
             DispatcherUnhandledException += UiExceptionHandler;
+            ConfigHelper.Instance.SetLang("zh-CN");
         }
         private static void UiExceptionHandler(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {

@@ -780,7 +780,10 @@ public partial class ChatWindow
 
     private void btn_settings_Click(object sender, RoutedEventArgs e)
     {
-        var settingsDialog = new Settings(State.Config);
+        var settingsDialog = new Settings(State.Config)
+        {
+            Owner = this
+        };
         settingsDialog.ShowDialog();
     }
 }
