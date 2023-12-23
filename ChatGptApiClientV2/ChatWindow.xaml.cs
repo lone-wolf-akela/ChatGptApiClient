@@ -22,8 +22,10 @@ using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
+using HandyControl.Themes;
+using HandyControl.Tools;
+using System.Reflection.Metadata;
 
 namespace ChatGptApiClientV2;
 
@@ -466,7 +468,7 @@ public partial class ChatWindow
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
     public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
-    private void SmoothScrollProcecssor(object? sender, MouseWheelEventArgs e)
+    private void ScrollToParentProcecssor(object? sender, MouseWheelEventArgs e)
     {
         if (e.Handled || sender is not DependencyObject senderObj)
         {
@@ -515,7 +517,7 @@ public partial class ChatWindow
             Modifiers = ModifierKeys.Control,
             Command = new RelayCommand(() => btn_send_Click(this, new RoutedEventArgs(ButtonBase.ClickEvent)))
         };
-        InputBindings.Add(sendKeyBinding);
+        InputBindings.Add(sendKeyBinding);        
     }
 
     private static ScrollViewer? GetScrollViewer(DependencyObject o)
@@ -558,15 +560,7 @@ public partial class ChatWindow
 
         LstMsg.UpdateLayout(); // need this, or the scrollviewer can be null
         var scrollViewer = GetScrollViewer(LstMsg);
-        if (scrollViewer is null) { return; }
-        var property = scrollViewer.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (property is null) { return; }
-        if (property.GetValue(scrollViewer) is not IScrollInfo scrollInfo) { return; }
-        if (scrollInfo is not SmoothScrollInfoAdapter) 
-        {
-            msgSmoothScrollInfoAdapter = new SmoothScrollInfoAdapter(scrollInfo);
-            property.SetValue(scrollViewer, msgSmoothScrollInfoAdapter);
-        }
+        msgSmoothScrollInfoAdapter = SmoothScrolling.Enable(scrollViewer);
 
         ScrollToEnd();
     }

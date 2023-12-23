@@ -1,14 +1,40 @@
 ﻿<Application x:Class="ChatGptApiClientV2.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
              StartupUri="ChatWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/SkinDefault.xaml"/>
-                <ResourceDictionary Source="pack://application:,,,/HandyControl;component/Themes/Theme.xaml"/>
+                <hc:ThemeResources>
+                    <ResourceDictionary x:Key="Light" hc:ThemeDictionary.Key="Light">
+                        <ResourceDictionary.MergedDictionaries>
+                            <hc:ColorPresetResources TargetTheme="Light" />
+                        </ResourceDictionary.MergedDictionaries>
+                    </ResourceDictionary>
+                    <ResourceDictionary x:Key="Dark" hc:ThemeDictionary.Key="Dark">
+                        <ResourceDictionary.MergedDictionaries>
+                            <hc:ColorPresetResources TargetTheme="Dark" />
+                        </ResourceDictionary.MergedDictionaries>
+                    </ResourceDictionary>
+                </hc:ThemeResources>
+                <hc:Theme/>
                 <ResourceDictionary Source="MarkdownTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="Label" BasedOn="{StaticResource LabelBaseStyle}">
+                <!--<Setter Property="Background" Value="{DynamicResource SecondaryRegionBrush}"/>-->
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            </Style>
+            <Style TargetType="StatusBar" BasedOn="{StaticResource StatusBarBaseStyle}">
+                <Setter Property="Background" Value="Transparent"/>
+            </Style>
+            <Style x:Key="ButtonGroupSolidDynamicColor" BasedOn="{StaticResource ButtonGroupBaseStyle}" TargetType="hc:ButtonGroup">
+                <Setter Property="hc:VisualElement.HighlightBorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="hc:VisualElement.HighlightBackground" Value="{DynamicResource PrimaryBrush}"/>
+                <Setter Property="hc:VisualElement.HighlightForeground" Value="{DynamicResource TextIconBrush}"/>
+            </Style>
+            <Geometry x:Key="StraightBubbleTailGeometry">M-6.5253045E-55,0 L29.9,0.2 29.9,0.066666668 C33,15.466667 38.166667,23.1 44.966667,35 L44.966667,35.133333 C25.766667,28.433333 7.35,15.625 -6.5253045E-55,0 z</Geometry>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -1,17 +1,49 @@
-﻿<Window x:Name="Window" x:Class="ChatGptApiClientV2.Settings"
+﻿<hc:Window x:Name="Window" x:Class="ChatGptApiClientV2.Settings"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        mc:Ignorable="d"
+        mc:Ignorable="d" SystemBackdropType="Mica" Icon="/chatgpt-icon.ico"
         Title="Settings" Height="600" Width="1080"
         Unloaded="Window_Unloaded">
-    <Grid DataContext="{Binding ElementName=Window, Mode=OneWay}">
+    <hc:SimplePanel DataContext="{Binding ElementName=Window, Mode=OneWay}">
         <DockPanel Margin="10,10,10,10">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
             <StackPanel>
+                <hc:Divider Margin="0" Content="UI选项" HorizontalContentAlignment="Left"/>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <!-- 0:Label   0 -->
+                        <ColumnDefinition Width="75"/>
+                        <!-- 1:Control 0 -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- 2:Margin    -->
+                        <ColumnDefinition Width="5"/>
+                        <!-- 3:Divider   -->
+                        <ColumnDefinition Width="auto"/>
+                        <!-- 4:Label   1 -->
+                        <ColumnDefinition Width="75"/>
+                        <!-- 5:Control 1 -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- 6:Margin    -->
+                        <ColumnDefinition Width="5"/>
+                        <!-- 7:Divider   -->
+                        <ColumnDefinition Width="auto"/>
+                        <!-- 8:Label   2 -->
+                        <ColumnDefinition Width="100"/>
+                        <!-- 9:Control 2 -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <hc:Divider Grid.Row="0" Grid.Column="3" Margin="0" Orientation="Vertical"/>
+                    <Label Grid.Column="0" Content="主题" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <hc:ButtonGroup Grid.Column="1" Style="{StaticResource ButtonGroupSolidDynamicColor}">
+                        <RadioButton Content="跟随系统" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}"/>
+                        <RadioButton Content="浅色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}"/>
+                        <RadioButton Content="深色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}"/>
+                    </hc:ButtonGroup>
+                </Grid>
                 <hc:Divider Margin="0" Content="模型参数" HorizontalContentAlignment="Left"/>
                 <Grid Margin="0,0,0,5">
                     <Grid.RowDefinitions>
@@ -47,12 +79,12 @@
                     <hc:Divider Grid.Row="2" Grid.Column="3" Margin="0" Orientation="Vertical"/>
                     <hc:Divider Grid.Row="2" Grid.Column="7" Margin="0" Orientation="Vertical"/>
 
-                    <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="0" Grid.Column="4" Content="种子" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="温度" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="4" Content="重复惩罚" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="8" Content="Top P" BorderBrush="{x:Null}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="0" Grid.Column="4" Content="种子" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="2" Grid.Column="4" Content="重复惩罚" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="2" Grid.Column="8" Content="Top P" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     
                     <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname">
                         <TextBox.Text>
@@ -94,14 +126,14 @@
                     <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI 服务源" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI 服务源" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <ComboBox ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
                                       SelectedValuePath="Value"
                                       DisplayMemberPath="Description"
                                       SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxServiceurl" TextWrapping="Wrap" VerticalAlignment="Center" IsEnabled="{Binding Path=Config.ServiceURLEditable}">
                                 <TextBox.Text>
                                     <Binding Path="Config.ServiceURL" Mode="TwoWay">
@@ -113,7 +145,7 @@
                             </TextBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxAzureendpoint" TextWrapping="Wrap" VerticalAlignment="Center">
                                 <TextBox.Text>
                                     <Binding Path="Config.AzureEndpoint" Mode="TwoWay">
@@ -125,26 +157,19 @@
                             </TextBox>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxApikey" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxAzureApikey" Text="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="5,0,0,0" >
                         <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <StackPanel>
-                                <Label Content="Azure 部署 ID"  VerticalAlignment="Stretch" BorderBrush="{x:Null}" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
-                                <ListView x:Name="LstAzureDeploymentIds" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"  Padding="0" Background="{DynamicResource DefaultBrush}">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                                            <Setter Property="Padding" Value="5,0,5,0"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-                                </ListView>
+                                <Label Content="Azure 部署 ID"  VerticalAlignment="Stretch" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
+                                <ListBox x:Name="LstAzureDeploymentIds" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"/>
                                 <DockPanel>
                                     <Button x:Name="BtnDelAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="btn_del_azure_deployment_id_Click"/>
                                     <Button x:Name="BtnAddAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="btn_add_azure_deployment_id_Click"/>
@@ -164,30 +189,30 @@
                     <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxGooglesearchEngineid" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxGooglesearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxAzureDalleId" TextWrapping="Wrap" Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="5,0,0,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxBingsearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" BorderBrush="{x:Null}" HorizontalContentAlignment="Left"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxWolframKey" TextWrapping="Wrap" Text="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                 </Grid>
             </StackPanel>
         </DockPanel>
-    </Grid>
-</Window>
+    </hc:SimplePanel>
+</hc:Window>

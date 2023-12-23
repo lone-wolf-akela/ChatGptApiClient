@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Drawing;
+using System.Net.NetworkInformation;
 using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Media;
+
 
 namespace ChatGptApiClientV2
 {

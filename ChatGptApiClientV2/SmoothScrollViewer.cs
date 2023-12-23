@@ -4,6 +4,8 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Windows;
 using System.Reflection;
+using System.Windows.Controls;
+using SharpVectors.Dom.Css;
 
 namespace ChatGptApiClientV2;
 
@@ -386,4 +388,23 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
         smoothScrollViewer._child.SetHorizontalOffset(newValue);
     }
     #endregion
+}
+
+public static class SmoothScrolling
+{
+    public static SmoothScrollInfoAdapter? Enable(ScrollViewer? scrollViewer)
+    {
+        var property = scrollViewer?.GetType().GetProperty("ScrollInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (property?.GetValue(scrollViewer) is not IScrollInfo scrollInfo)
+        {
+            return null;
+        }
+        if (scrollInfo is SmoothScrollInfoAdapter oldAdaptor)
+        {
+            return oldAdaptor;
+        }
+        var newAdaptor = new SmoothScrollInfoAdapter(scrollInfo);
+        property.SetValue(scrollViewer, newAdaptor);
+        return newAdaptor;
+    }
 }

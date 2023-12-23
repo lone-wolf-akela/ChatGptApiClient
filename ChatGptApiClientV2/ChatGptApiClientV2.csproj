@@ -83,7 +83,7 @@
     <PackageReference Include="Coltr.Markdig.Wpf.ColorCode" Version="1.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="Flurl" Version="4.0.0" />
-    <PackageReference Include="HandyControl" Version="3.4.0" />
+    <PackageReference Include="HandyControls" Version="3.5.0" />
     <PackageReference Include="Markdig" Version="0.34.0" />
     <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -98,4 +98,11 @@
     <RuntimeHostConfigurationOption Include="Switch.System.Windows.Media.EnableHardwareAccelerationInRdp" Value="true" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Include="Properties\DesignTimeResources.xaml" Condition="'$(DesignTime)'=='true' OR ('$(SolutionPath)'!='' AND Exists('$(SolutionPath)') AND '$(BuildingInsideVisualStudio)'!='true' AND '$(BuildingInsideExpressionBlend)'!='true')">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+      <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
+    </Page>
+  </ItemGroup>
 </Project>

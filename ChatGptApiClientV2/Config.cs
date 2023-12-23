@@ -8,6 +8,9 @@ using System.IO;
 using System.Windows;
 using System.ComponentModel;
 using Flurl;
+using Newtonsoft.Json.Linq;
+using HandyControl.Themes;
+using System.Reflection;
 
 namespace ChatGptApiClientV2;
 
@@ -16,6 +19,14 @@ public partial class Config : ObservableObject
     [JsonIgnore]
     private static string ConfigPath => "config.json";
 
+    [ObservableProperty]
+    private ThemeType theme;
+    partial void OnThemeChanged(ThemeType value)
+    {
+        ThemeUpdater.UpdateTheme(value);
+        SaveConfig();
+    }
+    
     [ObservableProperty]
     private string userNickName;
     partial void OnUserNickNameChanged(string value) => SaveConfig();
@@ -270,6 +281,10 @@ public partial class Config : ObservableObject
     public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
     public Config()
     {
+        theme = ThemeType.System;
+        ThemeUpdater.UpdateTheme(Theme);
+        ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
+
         userNickName = string.Empty;
         serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         serviceURL = "";
@@ -296,6 +311,14 @@ public partial class Config : ObservableObject
 
         UpdateModelOptionList();
         UpdateModelVersionList();
+    }
+
+    private void SystemThemeChanged(object? sender, HandyControl.Data.FunctionEventArgs<ThemeManager.SystemTheme> e)
+    {
+        if (Theme == ThemeType.System)
+        {
+            ThemeUpdater.UpdateTheme(Theme);
+        }
     }
 
     private void SaveConfig()

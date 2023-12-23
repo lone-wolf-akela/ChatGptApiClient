@@ -28,9 +28,14 @@ public partial class NetStatus : ObservableObject
     };
     public Brush StatusColor => Status switch
     {
-        StatusEnum.Idle => Brushes.Black,
-        StatusEnum.Sending => Brushes.Blue,
-        StatusEnum.Receiving => Brushes.Green,
+        StatusEnum.Idle => (Brush)System.Windows.Application.Current.FindResource("PrimaryTextBrush"),
+        StatusEnum.Sending => (Brush)System.Windows.Application.Current.FindResource("InfoBrush"),
+        StatusEnum.Receiving => (Brush)System.Windows.Application.Current.FindResource("SuccessBrush"),
         _ => throw new System.ComponentModel.InvalidEnumArgumentException()
     };
+
+    public NetStatus()
+    {
+        ThemeUpdater.ThemeChanged += () => OnPropertyChanged(nameof(StatusColor));
+    }
 }
