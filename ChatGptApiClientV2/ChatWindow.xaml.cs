@@ -150,7 +150,7 @@ public class ChatWindowMessage : ObservableObject
                         }
                     case RichMessageType.Image:
                         {
-                            var imageGrid = new ImageDisplayer
+                            var imageGrid = new Controls.ImageDisplayer
                             {
                                 Image = Image!,
                                 ImageTooltip = ImageTooltip ?? "",
