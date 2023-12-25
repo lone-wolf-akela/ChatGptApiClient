@@ -136,13 +136,13 @@ public class WolframAlphaFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Asking Wolfram|Alpha..."))];
+                return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Asking Wolfram|Alpha..."))];
+            return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
         }
 
         List<string> stickers = [
@@ -157,7 +157,7 @@ public class WolframAlphaFunc : IToolFunction
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Asking Wolfram|Alpha:"));
+        paragraph.Inlines.Add(new Run("询问 Wolfram|Alpha:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new Run($"{args.Query}"));

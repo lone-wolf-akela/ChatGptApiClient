@@ -152,13 +152,13 @@ public class BingSearchFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Bing Search..."))];
+                return [new Paragraph(new Run("Bing 搜索..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Bing Search..."))];
+            return [new Paragraph(new Run("Bing 搜索..."))];
         }
         args.Query = args.Query.Trim();
 
@@ -178,7 +178,7 @@ public class BingSearchFunc : IToolFunction
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Bing Search:"));
+        paragraph.Inlines.Add(new Run("Bing 搜索:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new Run($"{args.Query}"));

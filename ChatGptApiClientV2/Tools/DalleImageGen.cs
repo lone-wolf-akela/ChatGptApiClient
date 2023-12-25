@@ -230,13 +230,13 @@ public class DalleImageGenFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Using DALL-E to Generate Image..."))];
+                return [new Paragraph(new Run("使用 DALL-E 生成图像..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Using DALL-E to Generate Image..."))];
+            return [new Paragraph(new Run("使用 DALL-E 生成图像..."))];
         }
 
         List<string> stickers = [
@@ -250,7 +250,7 @@ public class DalleImageGenFunc : IToolFunction
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Using DALL-E to Generate Image:"));
+        paragraph.Inlines.Add(new Run("使用 DALL-E 生成图像:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new Run($"{args.Prompts}"));

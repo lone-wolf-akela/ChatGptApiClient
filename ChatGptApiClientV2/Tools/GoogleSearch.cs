@@ -130,13 +130,13 @@ public class GoogleSearchFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Google Search..."))];
+                return [new Paragraph(new Run("Google 搜索..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Google Search..."))];
+            return [new Paragraph(new Run("Google 搜索..."))];
         }
         args.Query = args.Query.Trim();
 
@@ -156,7 +156,7 @@ public class GoogleSearchFunc : IToolFunction
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Google Search:"));
+        paragraph.Inlines.Add(new Run("Google 搜索:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new Run($"{args.Query}"));
@@ -260,13 +260,13 @@ public class WebsiteAccessFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Accessing Website..."))];
+                return [new Paragraph(new Run("访问网站..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Accessing Website..."))];
+            return [new Paragraph(new Run("访问网站..."))];
         }
 
         List<string> stickers = [
@@ -281,7 +281,7 @@ public class WebsiteAccessFunc : IToolFunction
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Accessing Website:"));
+        paragraph.Inlines.Add(new Run("访问网站:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         var link = new Hyperlink(new Run($"{args.Url}")) 
@@ -385,20 +385,20 @@ public class WebsiteNextPageFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Accessing the Next Page..."))];
+                return [new Paragraph(new Run("访问下一页..."))];
             }
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Accessing the Next Page..."))];
+            return [new Paragraph(new Run("访问下一页..."))];
         }
 
         var floater = Utils.CreateStickerFloater(stickers, toolcallId);
 
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Accessing the Next Page:"));
+        paragraph.Inlines.Add(new Run("访问下一页:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
         var link = new Hyperlink(new Run($"{args.Url}"))
