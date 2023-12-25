@@ -12,7 +12,7 @@ namespace ChatGptApiClientV2.Tools;
 
 public class BingSearch : IToolCollection
 {
-    public List<IToolFunction> Funcs { get; } =
+    public List<IToolFunction> Funcs =>
     [
         new BingSearchFunc(),
         new WebsiteAccessFunc(),

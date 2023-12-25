@@ -12,7 +12,7 @@ namespace ChatGptApiClientV2.Tools;
 
 public class WolframAlpha : IToolCollection
 {
-    public List<IToolFunction> Funcs { get; } =
+    public List<IToolFunction> Funcs =>
     [
         new WolframAlphaFunc()
     ];

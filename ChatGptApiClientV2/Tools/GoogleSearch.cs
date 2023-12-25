@@ -15,7 +15,7 @@ namespace ChatGptApiClientV2.Tools;
 
 public class GoogleSearch : IToolCollection
 {
-    public List<IToolFunction> Funcs { get; } =
+    public List<IToolFunction> Funcs =>
     [
         new GoogleSearchFunc(),
         new WebsiteAccessFunc(),

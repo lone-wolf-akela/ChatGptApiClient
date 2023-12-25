@@ -18,7 +18,7 @@ namespace ChatGptApiClientV2.Tools;
 
 public class DalleImageGen : IToolCollection
 {
-    public List<IToolFunction> Funcs { get; } =
+    public List<IToolFunction> Funcs =>
     [
         new DalleImageGenFunc()
     ];
