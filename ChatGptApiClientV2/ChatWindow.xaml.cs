@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using HandyControl.Themes;
 using HandyControl.Tools;
 using System.Reflection.Metadata;
+using System.Linq.Expressions;
 
 namespace ChatGptApiClientV2;
 
@@ -542,13 +543,12 @@ public partial class ChatWindow
     {
         var scrollViewer = GetScrollViewer(LstMsg);
         scrollViewer?.UpdateLayout();
-        // we cannot use scrollViewer.ScrollToEnd() because it cause NaN error
-        // and also it is not animated
+        // we cannot use scrollViewer.ScrollToEnd() because it is not animated
         if (scrollViewer is not null && msgSmoothScrollInfoAdapter is not null)
         {
             msgSmoothScrollInfoAdapter.Dispatcher.Invoke(() =>
             {
-                msgSmoothScrollInfoAdapter.AnimatedScrollToVerticalOffset(scrollViewer.ScrollableHeight);
+                msgSmoothScrollInfoAdapter.ToEnd();
             });
         }
     }
@@ -785,5 +785,39 @@ public partial class ChatWindow
             Owner = this
         };
         settingsDialog.ShowDialog();
+    }
+
+    private void LstMsg_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Up)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.LineUp();
+        }
+        else if (e.Key == Key.Down)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.LineDown();
+        }
+        else if (e.Key == Key.PageUp)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.PageUp();
+        }
+        else if (e.Key == Key.PageDown || e.Key == Key.Space)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.PageDown();
+        }
+        else if (e.Key == Key.Home)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.ToHome();
+        }
+        else if (e.Key == Key.End)
+        {
+            e.Handled = true;
+            msgSmoothScrollInfoAdapter?.ToEnd();
+        }
     }
 }

@@ -187,13 +187,19 @@
             </DockPanel>
         </DockPanel>
         <hc:SimplePanel Grid.Row="1" Margin="0,0,0,5" >
-            <ListBox x:Name="LstMsg" Background="{DynamicResource RegionBrush}" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ItemsSource="{Binding Path=MessageList.Messages, Mode=OneWay}"
-                  ScrollViewer.CanContentScroll="False">
+            <ListBox x:Name="LstMsg" Background="{DynamicResource RegionBrush}" 
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ItemsSource="{Binding Path=MessageList.Messages, Mode=OneWay}"
+                     KeyboardNavigation.TabNavigation="None"
+                     KeyboardNavigation.ControlTabNavigation="None"
+                     KeyboardNavigation.DirectionalNavigation="None"
+                     ScrollViewer.CanContentScroll="False"
+                     Keyboard.PreviewKeyDown="LstMsg_KeyDown">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
-                        <Setter Property="Focusable" Value="false"/>
                         <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Margin" Value="0,0,0,10" />
+                        <Setter Property="Focusable" Value="False" />
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
@@ -205,46 +211,44 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <hc:SimplePanel>
-                            <DockPanel Margin="0,0,0,10" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}">
-                                <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
-                                <hc:SimplePanel x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
-                                <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="5,0,15,0" Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"/>
-                                <hc:SimplePanel x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="5,0,15,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
-                                <DockPanel>
-                                    <Path x:Name="RightTail" DockPanel.Dock="Right" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
-                                          Stretch="Uniform" VerticalAlignment="Top" Margin="-2,16,0,0" 
-                                          Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                          Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
-                                        <Path.RenderTransform>
-                                            <TransformGroup>
-                                                <RotateTransform Angle="270"/>
-                                                <ScaleTransform ScaleX="1" />
-                                            </TransformGroup>
-                                        </Path.RenderTransform>
-                                    </Path>
-                                    <Path x:Name="LeftTail" DockPanel.Dock="Left" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
-                                          Stretch="Uniform" VerticalAlignment="Top" Margin="0,16,-2,0" 
-                                          Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                          Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
-                                        <Path.RenderTransform>
-                                            <TransformGroup>
-                                                <RotateTransform Angle="270"/>
-                                                <ScaleTransform ScaleX="-1" />
-                                            </TransformGroup>
-                                        </Path.RenderTransform>
-                                    </Path>
-                                    <Border CornerRadius="5" Background="{Binding BackgroundColor}">
-                                        <FlowDocumentScrollViewer Style="{x:Null}" 
-                                                              Document="{Binding Path=RenderedMessage}" 
-                                                              IsToolBarVisible="False" 
-                                                              VerticalScrollBarVisibility="Hidden"
-                                                              PreviewMouseWheel="ScrollToParentProcecssor">
-                                        </FlowDocumentScrollViewer>
-                                    </Border>
-                                </DockPanel>
+                        <DockPanel Margin="0" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}">
+                            <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
+                            <hc:SimplePanel x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="5,0,15,0" Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                            <hc:SimplePanel x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="5,0,15,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
+                            <DockPanel>
+                                <Path x:Name="RightTail" DockPanel.Dock="Right" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
+                                        Stretch="Uniform" VerticalAlignment="Top" Margin="-2,16,0,0" 
+                                        Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                        Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
+                                    <Path.RenderTransform>
+                                        <TransformGroup>
+                                            <RotateTransform Angle="270"/>
+                                            <ScaleTransform ScaleX="1" />
+                                        </TransformGroup>
+                                    </Path.RenderTransform>
+                                </Path>
+                                <Path x:Name="LeftTail" DockPanel.Dock="Left" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
+                                        Stretch="Uniform" VerticalAlignment="Top" Margin="0,16,-2,0" 
+                                        Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                        Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
+                                    <Path.RenderTransform>
+                                        <TransformGroup>
+                                            <RotateTransform Angle="270"/>
+                                            <ScaleTransform ScaleX="-1" />
+                                        </TransformGroup>
+                                    </Path.RenderTransform>
+                                </Path>
+                                <Border CornerRadius="5" Background="{Binding BackgroundColor}">
+                                    <FlowDocumentScrollViewer Style="{x:Null}" 
+                                                            Document="{Binding Path=RenderedMessage}" 
+                                                            IsToolBarVisible="False" 
+                                                            VerticalScrollBarVisibility="Hidden"
+                                                            PreviewMouseWheel="ScrollToParentProcecssor">
+                                    </FlowDocumentScrollViewer>
+                                </Border>
                             </DockPanel>
-                        </hc:SimplePanel>
+                        </DockPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
                 <d:ListBox.ItemsSource>

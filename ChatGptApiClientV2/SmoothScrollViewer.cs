@@ -5,7 +5,7 @@ using System.Windows.Media;
 using System.Windows;
 using System.Reflection;
 using System.Windows.Controls;
-using SharpVectors.Dom.Css;
+using System.Diagnostics;
 
 namespace ChatGptApiClientV2;
 
@@ -15,8 +15,26 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     public bool AnimatedScrollingEnabled { get; set; } = true;
 
     private readonly IScrollInfo _child = child;
-    private double _computedVerticalOffset = 0;
-    private double _computedHorizontalOffset = 0;
+    private double _intendedVerticalOffset = 0;
+    private double IntendedVerticalOffset
+    {
+        get => _intendedVerticalOffset;
+        set
+        {
+            if(double.IsNaN(value)) { return; }
+            _intendedVerticalOffset = Math.Clamp(value, 0, ScrollOwner.ScrollableHeight);
+        }
+    }
+    private double _intendedHorizontalOffset = 0;
+    private double IntendedHorizontalOffset
+    {
+        get => _intendedHorizontalOffset;
+        set
+        {
+            if(double.IsNaN(value)) { return; }
+            _intendedHorizontalOffset = Math.Clamp(value, 0, ScrollOwner.ScrollableWidth);
+        }
+    }
     internal const double _scrollLineDelta = 16.0;
     internal const double _mouseWheelDelta = 48.0;
 
@@ -42,7 +60,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     public double HorizontalOffset => _child.HorizontalOffset;
     public double VerticalOffset => _child.VerticalOffset;
 
-    public System.Windows.Controls.ScrollViewer ScrollOwner
+    public ScrollViewer ScrollOwner
     {
         get => _child.ScrollOwner;
         set => _child.ScrollOwner = value;
@@ -57,7 +75,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset - _scrollLineDelta);
+            VerticalScroll(IntendedVerticalOffset - _scrollLineDelta);
         }
         else
         {
@@ -69,7 +87,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset + _scrollLineDelta);
+            VerticalScroll(IntendedVerticalOffset + _scrollLineDelta);
         }
         else
         {
@@ -81,7 +99,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset - _scrollLineDelta);
+            HorizontalScroll(IntendedHorizontalOffset - _scrollLineDelta);
         }
         else
         {
@@ -93,7 +111,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset + _scrollLineDelta);
+            HorizontalScroll(IntendedHorizontalOffset + _scrollLineDelta);
         }
         else
         {
@@ -105,7 +123,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset - _mouseWheelDelta);
+            VerticalScroll(IntendedVerticalOffset - _mouseWheelDelta);
         }
         else
         {
@@ -117,7 +135,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset + _mouseWheelDelta);
+            VerticalScroll(IntendedVerticalOffset + _mouseWheelDelta);
         }
         else
         {
@@ -129,7 +147,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset - _mouseWheelDelta);
+            HorizontalScroll(IntendedHorizontalOffset - _mouseWheelDelta);
         }
         else
         {
@@ -141,7 +159,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset + _mouseWheelDelta);
+            HorizontalScroll(IntendedHorizontalOffset + _mouseWheelDelta);
         }
         else
         {
@@ -153,7 +171,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset - ViewportHeight);
+            VerticalScroll(IntendedVerticalOffset - ViewportHeight);
         }
         else
         {
@@ -165,7 +183,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            VerticalScroll(_computedVerticalOffset + ViewportHeight);
+            VerticalScroll(IntendedVerticalOffset + ViewportHeight);
         }
         else
         {
@@ -177,7 +195,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset - ViewportWidth);
+            HorizontalScroll(IntendedHorizontalOffset - ViewportWidth);
         }
         else
         {
@@ -189,7 +207,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            HorizontalScroll(_computedHorizontalOffset + ViewportWidth);
+            HorizontalScroll(IntendedHorizontalOffset + ViewportWidth);
         }
         else
         {
@@ -197,13 +215,39 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
         }
     }
 
+    public void ToHome()
+    {
+        if (AnimatedScrollingEnabled)
+        {
+            VerticalScroll(0);
+            HorizontalScroll(0);
+        }
+        else
+        {
+            ScrollOwner.ScrollToHome();
+        }
+    }
+
+    public void ToEnd()
+    {
+        if (AnimatedScrollingEnabled)
+        {
+            VerticalScroll(ScrollOwner.ScrollableHeight);
+            HorizontalScroll(ScrollOwner.ScrollableWidth);
+        }
+        else
+        {
+            ScrollOwner.ScrollToEnd();
+        }
+    }
+
     public void SetHorizontalOffset(double offset)
     {
         if (AnimatedScrollingEnabled)
         {
-            _computedHorizontalOffset = offset;
+            IntendedHorizontalOffset = offset;
             // here we use 0 duration, or it will lag when user drags scrollbar thumb
-            Animate(HorizontalScrollOffsetProperty, offset, AnimateAxis.Horizontal, 0);
+            Animate(AnimateAxis.Horizontal, 0);
         }
         else
         {
@@ -215,21 +259,9 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     {
         if (AnimatedScrollingEnabled)
         {
-            _computedVerticalOffset = offset;
+            IntendedVerticalOffset = offset;
             // here we use 0 duration, or it will lag when user drags scrollbar thumb
-            Animate(VerticalScrollOffsetProperty, offset, AnimateAxis.Vertical, 0); 
-        }
-        else
-        {
-            _child.SetVerticalOffset(offset);
-        }
-    }
-
-    public void AnimatedScrollToVerticalOffset(double offset)
-    {
-        if (AnimatedScrollingEnabled)
-        {
-            VerticalScroll(offset);
+            Animate(AnimateAxis.Vertical, 0); 
         }
         else
         {
@@ -253,106 +285,115 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     private enum AnimateAxis { Horizontal, Vertical }
     private readonly Storyboard _horizontalStoryboard = new();
     private readonly Storyboard _verticalStoryboard = new();
-    private double _previousHorizontalAnimationStartOffset = 0;
-    private double _previousVerticalAnimationStartOffset = 0;
-    private void Animate(DependencyProperty property, double targetValue, AnimateAxis axis, double duration = -1)
+    private double _lastHorizontalAnimationStartOffset = 0;
+    private double LastHorizontalAnimationStartOffset
     {
-        var storyboard = axis == AnimateAxis.Horizontal ? _horizontalStoryboard : _verticalStoryboard;
-        var previousBaseValue = axis == AnimateAxis.Horizontal ? _previousHorizontalAnimationStartOffset : _previousVerticalAnimationStartOffset;
-
-        var currentValue = (double)GetValue(property);
-        if (axis == AnimateAxis.Horizontal)
+        get => _lastHorizontalAnimationStartOffset;
+        set
         {
-            _previousHorizontalAnimationStartOffset = currentValue;
+            if (double.IsNaN(value)) { return; }
+            _lastHorizontalAnimationStartOffset = Math.Clamp(value, 0, ScrollOwner.ScrollableWidth);
         }
-        else
+    }
+    private double _lastVerticalAnimationStartOffset = 0;
+    private double LastVerticalAnimationStartOffset
+    {
+        get => _lastVerticalAnimationStartOffset;
+        set
         {
-            _previousVerticalAnimationStartOffset = currentValue;
+            if (double.IsNaN(value)) { return; }
+            _lastVerticalAnimationStartOffset = Math.Clamp(value, 0, ScrollOwner.ScrollableHeight);
         }
-
-        if (duration < 0)
+    }
+    private void Animate(AnimateAxis axis, double duration = -1)
+    { 
+        Application.Current.Dispatcher.BeginInvoke( () =>
         {
-            var durationFactor = 1 - Math.Exp((1 - Math.Abs(targetValue - currentValue) / _mouseWheelDelta) / 5);
-            duration = 300 + 300 * durationFactor;
-        }
-        var isAnimationRunning = storyboard.Children.Count != 0 && storyboard.GetCurrentState() == ClockState.Active;
-        var currentSpeed = 0.0;
-        if (isAnimationRunning)
-        {
-            var previousAnimation = (DoubleAnimationUsingKeyFrames)storyboard.Children[0];
-            var previousDuration = previousAnimation.Duration.TimeSpan.TotalMilliseconds;
-            var previousSplineKeyFrame = previousAnimation.KeyFrames[0];
-            var previousProgress = storyboard.GetCurrentProgress();
-            var InterpolateValueCore = typeof(DoubleKeyFrame).GetMethod("InterpolateValueCore", BindingFlags.NonPublic | BindingFlags.Instance);
-            const double tick = 0.01;
-            var valueTickLater = (double?)InterpolateValueCore?.Invoke(previousSplineKeyFrame, new object[] { previousBaseValue, previousProgress + tick });
-            currentSpeed = ((valueTickLater - currentValue) / (tick * previousDuration)) ?? 0.0;
-        }
+            DependencyProperty property = axis == AnimateAxis.Horizontal ? HorizontalScrollOffsetProperty : VerticalScrollOffsetProperty;
+            var storyboard = axis == AnimateAxis.Horizontal ? _horizontalStoryboard : _verticalStoryboard;
+            var lastStartOffset = axis == AnimateAxis.Horizontal ? LastHorizontalAnimationStartOffset : LastVerticalAnimationStartOffset;
+            var targetValue = axis == AnimateAxis.Horizontal ? IntendedHorizontalOffset : IntendedVerticalOffset;
 
-        const double firstControlPointX = 0.3;
-        var firstControlPointY = (currentSpeed * firstControlPointX * duration) / (targetValue - currentValue);
-        const double secondControlPointX = 0.5;
+            double currentValue;
+            if (axis == AnimateAxis.Horizontal)
+            {
+                LastHorizontalAnimationStartOffset = (double)GetValue(property);
+                currentValue = LastHorizontalAnimationStartOffset;
+            }
+            else
+            {
+                LastVerticalAnimationStartOffset = (double)GetValue(property);
+                currentValue = LastVerticalAnimationStartOffset;
+            }
 
-        //make a smooth animation that starts and ends slowly
-        var keyFramesAnimation = new DoubleAnimationUsingKeyFrames
-        {
-            Duration = TimeSpan.FromMilliseconds(duration)
-        };
-        var spline = new SplineDoubleKeyFrame(
-                targetValue,
-                KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(duration)),
-                new KeySpline(firstControlPointX, firstControlPointY, secondControlPointX, 1.0)
-                );
-        keyFramesAnimation.KeyFrames.Add(spline);
-        storyboard.Children.Clear();
-        storyboard.Children.Add(keyFramesAnimation);
-        Storyboard.SetTarget(storyboard, this);
-        Storyboard.SetTargetProperty(storyboard, new PropertyPath(property));
-        storyboard.Begin();
+            if (Math.Abs(targetValue - currentValue) < 0.1)
+            {
+                return;
+            }
+
+            if (duration < 0)
+            {
+                var durationFactor = 1 - Math.Exp(-Math.Abs(targetValue - currentValue) / _mouseWheelDelta / 5);
+                durationFactor = double.IsNaN(durationFactor) ? 0 : Math.Clamp(durationFactor, 0, 1);
+                duration = 300 + 300 * durationFactor;
+            }
+            var isAnimationRunning = storyboard.Children.Count != 0 && storyboard.GetCurrentState() == ClockState.Active;
+            var currentSpeed = 0.0;
+            if (isAnimationRunning)
+            {
+                var previousAnimation = (DoubleAnimationUsingKeyFrames)storyboard.Children[0];
+                var previousDuration = previousAnimation.Duration.TimeSpan.TotalMilliseconds;
+                var previousSplineKeyFrame = previousAnimation.KeyFrames[0];
+                var previousProgress = storyboard.GetCurrentProgress();
+                var InterpolateValueCore = typeof(DoubleKeyFrame).GetMethod("InterpolateValueCore", BindingFlags.NonPublic | BindingFlags.Instance);
+                const double tick = 0.01;
+                var valueTickLater = (double?)InterpolateValueCore?.Invoke(previousSplineKeyFrame, new object[] { lastStartOffset, previousProgress + tick });
+                currentSpeed = ((valueTickLater - currentValue) / (tick * previousDuration)) ?? 0.0;
+                currentSpeed = double.IsNaN(currentSpeed) ? 0.0 : currentSpeed;
+            }
+
+            const double firstControlPointX = 0.5;
+            var firstControlPointY = (currentSpeed * firstControlPointX * duration) / (targetValue - currentValue);
+            const double secondControlPointX = 0.5;
+
+            //make a smooth animation that starts and ends slowly
+            var keyFramesAnimation = new DoubleAnimationUsingKeyFrames
+            {
+                Duration = TimeSpan.FromMilliseconds(duration)
+            };
+            var spline = new SplineDoubleKeyFrame(
+                    targetValue,
+                    KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(duration)),
+                    new KeySpline(firstControlPointX, firstControlPointY, secondControlPointX, 1.0)
+                    );
+            keyFramesAnimation.KeyFrames.Add(spline);
+            storyboard.Stop();
+            storyboard.Children.Clear();
+            storyboard.Children.Add(keyFramesAnimation);
+            Storyboard.SetTarget(storyboard, this);
+            Storyboard.SetTargetProperty(storyboard, new PropertyPath(property));
+            storyboard.Begin();
+        }, System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void VerticalScroll(double val)
     {
-        if (Math.Abs(_computedVerticalOffset - ValidateVerticalOffset(val)) > 0.1)//prevent restart of animation in case of frequent event fire
+        if (Math.Abs(val - IntendedVerticalOffset) < 0.1)
         {
-            _computedVerticalOffset = ValidateVerticalOffset(val);
-            Animate(VerticalScrollOffsetProperty, _computedVerticalOffset, AnimateAxis.Vertical);
+            return;
         }
+        IntendedVerticalOffset = val;
+        Animate(AnimateAxis.Vertical);
     }
 
     private void HorizontalScroll(double val)
     {
-        if (Math.Abs(_computedHorizontalOffset - ValidateHorizontalOffset(val)) > 0.1)//prevent restart of animation in case of frequent event fire
+        if (Math.Abs(val - IntendedHorizontalOffset) < 0.1)
         {
-            _computedHorizontalOffset = ValidateHorizontalOffset(val);
-            Animate(HorizontalScrollOffsetProperty, _computedHorizontalOffset, AnimateAxis.Horizontal);
+            return;
         }
-    }
-
-    private double ValidateVerticalOffset(double verticalOffset)
-    {
-        if (verticalOffset < 0)
-        {
-            return 0;
-        }
-        if (verticalOffset > _child.ScrollOwner.ScrollableHeight)
-        {
-            return _child.ScrollOwner.ScrollableHeight;
-        }
-        return verticalOffset;
-    }
-
-    private double ValidateHorizontalOffset(double horizontalOffset)
-    {
-        if (horizontalOffset < 0)
-        {
-            return 0;
-        }
-        if (horizontalOffset > _child.ScrollOwner.ScrollableWidth)
-        {
-            return _child.ScrollOwner.ScrollableWidth;
-        }
-        return horizontalOffset;
+        IntendedHorizontalOffset = val;
+        Animate(AnimateAxis.Horizontal);
     }
     #endregion
 
@@ -360,7 +401,12 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     internal double VerticalScrollOffset
     {
         get => (double)GetValue(VerticalScrollOffsetProperty);
-        set => SetValue(VerticalScrollOffsetProperty, value);
+        set
+        {
+            if (double.IsNaN(value)) { return; }
+            var newValue = Math.Clamp(value, 0, ScrollOwner.ScrollableHeight);
+            SetValue(VerticalScrollOffsetProperty, newValue);
+        }
     }
     internal static readonly DependencyProperty VerticalScrollOffsetProperty =
         DependencyProperty.Register("VerticalScrollOffset", typeof(double), typeof(SmoothScrollInfoAdapter),
@@ -369,14 +415,19 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     private static void OnVerticalScrollOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var smoothScrollViewer = (SmoothScrollInfoAdapter)d;
-        var newValue = smoothScrollViewer.ValidateVerticalOffset((double)e.NewValue);
+        var newValue = (double)e.NewValue;
         smoothScrollViewer._child.SetVerticalOffset(newValue);
     }
 
     internal double HorizontalScrollOffset
     {
         get => (double)GetValue(HorizontalScrollOffsetProperty);
-        set => SetValue(HorizontalScrollOffsetProperty, value);
+        set
+        {
+            if (double.IsNaN(value)) { return; }
+            var newValue = Math.Clamp(value, 0, ScrollOwner.ScrollableWidth);
+            SetValue(HorizontalScrollOffsetProperty, newValue);
+        }
     }
     internal static readonly DependencyProperty HorizontalScrollOffsetProperty =
         DependencyProperty.Register("HorizontalScrollOffset", typeof(double), typeof(SmoothScrollInfoAdapter),
@@ -384,7 +435,7 @@ public class SmoothScrollInfoAdapter(IScrollInfo child) : UIElement, IScrollInfo
     private static void OnHorizontalScrollOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var smoothScrollViewer = (SmoothScrollInfoAdapter)d;
-        var newValue = smoothScrollViewer.ValidateHorizontalOffset((double)e.NewValue);
+        var newValue = (double)e.NewValue;
         smoothScrollViewer._child.SetHorizontalOffset(newValue);
     }
     #endregion
