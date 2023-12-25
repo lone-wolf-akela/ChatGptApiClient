@@ -70,8 +70,8 @@ public partial class Settings
         
         window.Loaded += (_, _) =>
         {
-            var targetElement = picker;
-            if (showBackground == false)
+            var targetElement = (Visual)sender;
+            if (!showBackground)
             {
                 // from HandyControl.Tools.ArithmeticHelper.CalSafePoint
                 var point = targetElement.PointToScreen(new Point(0, 0));
