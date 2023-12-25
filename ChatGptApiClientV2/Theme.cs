@@ -31,16 +31,34 @@ namespace ChatGptApiClientV2
                 action(window);
             }
         }
+        private static void ForAllHandyControlWindows(Action<HandyControl.Controls.Window> action)
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is HandyControl.Controls.Window hcWindow)
+                {
+                    action(hcWindow);
+                }
+            }
+        }
+        private static void TryEnableMica(HandyControl.Controls.Window window)
+        {
+            const BackdropType backdrop = BackdropType.Mica;
+            if (!MicaHelper.IsSupported(backdrop)) { return; }
+            window.SystemBackdropType = backdrop;
+        }
         private static void SetupDarkTheme()
         {
             Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromRgb(0x2b, 0x2b, 0x2b));
             Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0x34, 0x34, 0x34));
+            ForAllHandyControlWindows(TryEnableMica);
             ForAllWindows(MicaHelper.ApplyDarkMode);
         }
         private static void SetupLightTheme()
         {
             Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromRgb(0xfb, 0xfb, 0xfb));
             Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xf6, 0xf6, 0xf6));
+            ForAllHandyControlWindows(TryEnableMica);
             ForAllWindows(MicaHelper.RemoveDarkMode);
         }
         public delegate void ThemeChangedEventHandler();

@@ -7,8 +7,9 @@
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
-        mc:Ignorable="d" SystemBackdropType="Mica" Icon="/chatgpt-icon.ico"
-        Title="ChatWindow" Height="600" Width="1000">
+        mc:Ignorable="d" Icon="/chatgpt-icon.ico"
+        Title="ChatWindow" Height="600" Width="1000"
+        Loaded="Window_Loaded">
     <FrameworkElement.CommandBindings>
         <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
     </FrameworkElement.CommandBindings>

@@ -24,7 +24,7 @@ public partial class Config : ObservableObject
     private ThemeType theme;
     partial void OnThemeChanged(ThemeType value)
     {
-        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+        RefreshTheme();
         SaveConfig();
     }
 
@@ -32,7 +32,7 @@ public partial class Config : ObservableObject
     private bool enableCustomThemeColor;
     partial void OnEnableCustomThemeColorChanged(bool value)
     {
-        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+        RefreshTheme();
         SaveConfig();
     }
 
@@ -40,7 +40,7 @@ public partial class Config : ObservableObject
     private SolidColorBrush customThemeColor;
     partial void OnCustomThemeColorChanged(SolidColorBrush value)
     {
-        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+        RefreshTheme();
         SaveConfig();
     }
 
@@ -301,7 +301,7 @@ public partial class Config : ObservableObject
         theme = ThemeType.System;
         enableCustomThemeColor = false;
         customThemeColor = new SolidColorBrush(Color.FromRgb(0x2e, 0x6c, 0xf3));
-        ThemeUpdater.UpdateTheme(Theme, null);
+        RefreshTheme();
         ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
 
         userNickName = string.Empty;
@@ -331,13 +331,13 @@ public partial class Config : ObservableObject
         UpdateModelOptionList();
         UpdateModelVersionList();
     }
-
+    public void RefreshTheme()
+    {
+        ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
+    }
     private void SystemThemeChanged(object? sender, HandyControl.Data.FunctionEventArgs<ThemeManager.SystemTheme> e)
     {
-        if (Theme == ThemeType.System)
-        {
-            ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
-        }
+        RefreshTheme();
     }
 
     private void SaveConfig()

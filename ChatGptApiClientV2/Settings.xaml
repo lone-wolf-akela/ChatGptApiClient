@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        mc:Ignorable="d" SystemBackdropType="Mica" Icon="/chatgpt-icon.ico"
+        mc:Ignorable="d" Icon="/chatgpt-icon.ico"
         Title="Settings" Height="600" Width="1080"
-        Unloaded="Window_Unloaded">
+        Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <hc:SimplePanel DataContext="{Binding ElementName=Window, Mode=OneWay}">
         <DockPanel Margin="10,10,10,10">
             <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>

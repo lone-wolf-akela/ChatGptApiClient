@@ -67,7 +67,7 @@ public partial class Settings
         };
 
         const bool showBackground = false;
-
+        
         window.Loaded += (_, _) =>
         {
             var targetElement = picker;
@@ -103,5 +103,10 @@ public partial class Settings
             };
         picker.Canceled += (_, _) => window.Close();
         window.ShowDialog(BtnColorPicker, showBackground);
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        Config.RefreshTheme();
     }
 }

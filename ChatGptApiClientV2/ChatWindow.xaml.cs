@@ -787,6 +787,11 @@ public partial class ChatWindow
         settingsDialog.ShowDialog();
     }
 
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        State.Config.RefreshTheme();
+    }
+
     private void LstMsg_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Up)
