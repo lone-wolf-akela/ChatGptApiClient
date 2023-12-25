@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.IO;
 
 namespace ChatGptApiClientV2
 {
@@ -80,10 +81,18 @@ namespace ChatGptApiClientV2
             btnPanel.Visibility = Visibility.Collapsed;
         }
 
-        private void BtnOpenImageViewer_Click(object sender, RoutedEventArgs e)
+        private async void BtnOpenImageViewer_Click(object sender, RoutedEventArgs e)
         {
-            var viewer = new ImageViewer(Image);
-            viewer.ShowDialog();
+            var tmpName = Path.GetTempFileName();
+            await using (var fs = File.Create(tmpName))
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(Image));
+                encoder.Save(fs);
+            }
+            var imageName = Path.ChangeExtension(tmpName, "png");
+            File.Move(tmpName, imageName);
+            Process.Start(new ProcessStartInfo(imageName) { UseShellExecute = true });
         }
     }
 }

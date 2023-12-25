@@ -9,7 +9,7 @@
     <Grid x:Name="imageGrid" HorizontalAlignment="Left" MouseEnter="ImageGrid_MouseEnter" MouseLeave="ImageGrid_MouseLeave">
         <Image x:Name="image" Source="{Binding Image, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:ImageDisplayer}}}" Stretch="Uniform" MaxHeight="{Binding ImageMaxHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:ImageDisplayer}}}" />
         <StackPanel x:Name="btnPanel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10" Visibility="Collapsed">
-            <Button x:Name="btnOpenImageViewer" Width="150" Content="在单独窗口中打开" Margin="0,0,0,5" Click="BtnOpenImageViewer_Click"/>
+            <Button x:Name="btnOpenImageViewer" Width="150" Content="在图像查看程序中打开" Margin="0,0,0,5" Click="BtnOpenImageViewer_Click"/>
             <ToggleButton x:Name="TgglDetails" Width="150">
                 <StackPanel>
                     <TextBlock Text="查看图片信息"/>
