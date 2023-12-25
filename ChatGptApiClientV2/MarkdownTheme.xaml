@@ -14,12 +14,12 @@
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.CodeBlockStyleKey}">
         <Setter Property="Background" Value="#ffd3d3d3" />
         <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
+        <Setter Property="FontFamily" Value="./font/#Cascadia Mono, Microsoft YaHei UI" />
     </Style>
     <Style TargetType="{x:Type Run}" x:Key="{x:Static markdig:Styles.CodeStyleKey}">
         <Setter Property="Background" Value="#ffd3d3d3" />
         <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="FontFamily" Value="Consolas, Lucida Sans Typewriter, Courier New" />
+        <Setter Property="FontFamily" Value="./font/#Cascadia Mono, Microsoft YaHei UI" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading1StyleKey}">
         <Setter Property="FontSize" Value="18" />

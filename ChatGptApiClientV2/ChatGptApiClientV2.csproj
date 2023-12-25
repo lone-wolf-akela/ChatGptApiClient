@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="font\CascadiaMono.ttf" />
     <None Remove="font\Segoe Fluent Icons.ttf" />
     <None Remove="font\SourceHanSansCN-Regular.otf" />
     <None Remove="images\chatgpt-icon.png" />
@@ -47,6 +48,7 @@
 
   <ItemGroup>
     <Resource Include="chatgpt-icon.ico" />
+    <Resource Include="font\CascadiaMono.ttf" />
     <Resource Include="font\Segoe Fluent Icons.ttf" />
     <Resource Include="images\chatgpt-icon.svg" />
     <Resource Include="images\set-up-svgrepo-com.svg" />
