@@ -14,7 +14,8 @@ public static class AllToolCollections
         new DalleImageGen(),
         new GoogleSearch(),
         new BingSearch(),
-        new WolframAlpha()
+        new WolframAlpha(),
+        new PythonTool()
     ];
 }
 public interface IToolCollection

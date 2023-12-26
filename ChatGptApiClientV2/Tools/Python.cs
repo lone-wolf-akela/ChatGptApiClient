@@ -6,10 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Documents;
+using Markdig;
+using Markdig.Wpf.ColorCode;
+using System.Threading;
 
 namespace ChatGptApiClientV2.Tools;
 
-public class Python : IToolCollection
+public class PythonTool : IToolCollection
 {
     public List<IToolFunction> Funcs =>
     [
@@ -21,12 +24,19 @@ public class Python : IToolCollection
 
 public class PythonFunc : IToolFunction
 {
-    public string? Description => throw new NotImplementedException();
+    public string? Description =>
+        """
+        You can execute a python script. 
+        - The script must contains a `main()` function. Python will respond with the returned value from that `main()` function, or time out after 60.0 seconds.
+        - The python standard library is available, but you cannot import any third-party libraries.
+        - Do not make external web requests in your python script.
+        - Do not make file I/O in your python script.
+        """;
 
     public string Name => "execute_python_code";
     public class Args
     {
-        [System.ComponentModel.Description("Python code to be executed.")]
+        [System.ComponentModel.Description("Python code to be executed. It must contains a `main()` function.")]
         public string Code { get; set; } = "";
     }
 
@@ -67,20 +77,27 @@ public class PythonFunc : IToolFunction
 
         try
         {
-            var executeResult = await Task.Run(() =>
+            var task = Task.Run(() =>
             {
                 var eng = IronPython.Hosting.Python.CreateEngine();
                 var scope = eng.CreateScope();
-                return eng.Execute(args.Code, scope);
+                eng.Execute(args.Code, scope);
+                return eng.Execute("str(main())", scope);
             });
+            if (await Task.WhenAny(task, Task.Delay(60000)) != task)
+            {
+                msgContents[0].Text += "Error: Python execution timed out.\n\n";
+                return msg;
+            }
+            var executeResult = await task;
+            msgContents[0].Text += $"Python execution result: {executeResult}\n\n";
+            return msg;
         }
         catch (Exception e)
         {
             msgContents[0].Text += $"Python error: {e.Message}\n\n";
             return msg;
         }
-
-        throw new NotImplementedException();
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
@@ -113,14 +130,47 @@ public class PythonFunc : IToolFunction
 
         var floater = Utils.CreateStickerFloater(stickers, toolcallId);
 
+
+        List<Block> blocks = [];
+
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(floater);
-        paragraph.Inlines.Add(new Run("Bing 搜索:"));
+        paragraph.Inlines.Add(new Run("运行 Python 代码:"));
         paragraph.Inlines.Add(new LineBreak());
-        paragraph.Inlines.Add(new LineBreak());
-        paragraph.Inlines.Add(new Run($"{args.Code}"));
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        blocks.Add(paragraph);
+
+        var codeText =
+            $"""
+            ```python
+            {args.Code}
+            ```
+            """;
+
+        if (state.Config.EnableMarkdown)
+        {
+            var doc = Markdig.Wpf.Markdown.ToFlowDocument(
+                codeText,
+                new MarkdownPipelineBuilder()
+                    .UseAdvancedExtensions()
+                    .UseColorCodeWpf()
+                    .UseTaskLists()
+                    .UseGridTables()
+                    .UsePipeTables()
+                    .UseEmphasisExtras()
+                    .UseAutoLinks()
+                    .Build());
+            blocks.AddRange(doc.Blocks.ToList());
+        }
+        else
+        {
+            var paragraph2 = new Paragraph();
+            paragraph2.Inlines.Add(new Run(codeText));
+            paragraph2.Inlines.Add(new LineBreak());
+            paragraph2.Inlines.Add(new LineBreak());
+            blocks.Add(paragraph2);
+        }
+        return blocks;
     }
 }
