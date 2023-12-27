@@ -10,6 +10,7 @@ using PuppeteerSharp;
 using System.Windows.Documents;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -27,9 +28,9 @@ public class GoogleSearchFunc : IToolFunction
 {
     public class Args
     {
-        [System.ComponentModel.Description("The search query.")]
+        [Description("The search query.")]
         public string Query { get; set; } = "";
-        [System.ComponentModel.Description("The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
+        [Description("The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
         public uint StartIndex { get; set; } = 1;
     }
     public string Description => "Look for info on the Internet using Google search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
@@ -171,7 +172,7 @@ public class WebsiteAccessFunc : IToolFunction
     private const int ContentPageLimit = 2048;
     public class Args
     {
-        [System.ComponentModel.Description("The URL of the website to access.")]
+        [Description("The URL of the website to access.")]
         public string Url { get; set; } = "";
     }
     public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
@@ -303,7 +304,7 @@ public class WebsiteNextPageFunc : IToolFunction
     public string Name => "website_nextpage";
     public class Args
     {
-        [System.ComponentModel.Description("The URL of the website to access. Must be a URL that has been called with website_access previously.")]
+        [Description("The URL of the website to access. Must be a URL that has been called with website_access previously.")]
         public string Url { get; set; } = "";
     }
     public Type ArgsType => typeof(Args);

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
 using System.Windows.Documents;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -24,9 +25,9 @@ public class BingSearchFunc : IToolFunction
 {
     public class Args
     {
-        [System.ComponentModel.Description("The search query.")]
+        [Description("The search query.")]
         public string Query { get; set; } = "";
-        [System.ComponentModel.Description("The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]
+        [Description("The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]
         public uint StartOffset { get; set; } = 0;
     }
     public string Description => "Look for info on the Internet using Bing search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";

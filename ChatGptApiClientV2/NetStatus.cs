@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
 namespace ChatGptApiClientV2;
@@ -24,14 +25,14 @@ public partial class NetStatus : ObservableObject
         StatusEnum.Idle => "空闲，等待输入。",
         StatusEnum.Sending => "正在发送数据……",
         StatusEnum.Receiving => "正在接收数据……",
-        _ => throw new System.ComponentModel.InvalidEnumArgumentException()
+        _ => throw new InvalidOperationException()
     };
     public Brush StatusColor => Status switch
     {
-        StatusEnum.Idle => (Brush)System.Windows.Application.Current.FindResource("PrimaryTextBrush"),
-        StatusEnum.Sending => (Brush)System.Windows.Application.Current.FindResource("InfoBrush"),
-        StatusEnum.Receiving => (Brush)System.Windows.Application.Current.FindResource("SuccessBrush"),
-        _ => throw new System.ComponentModel.InvalidEnumArgumentException()
+        StatusEnum.Idle => System.Windows.Application.Current.FindResource("PrimaryTextBrush") as Brush ?? Brushes.Black,
+        StatusEnum.Sending => System.Windows.Application.Current.FindResource("InfoBrush") as Brush ?? Brushes.DeepSkyBlue,
+        StatusEnum.Receiving => System.Windows.Application.Current.FindResource("SuccessBrush") as Brush ?? Brushes.LimeGreen,
+        _ => throw new InvalidOperationException()
     };
 
     public NetStatus()

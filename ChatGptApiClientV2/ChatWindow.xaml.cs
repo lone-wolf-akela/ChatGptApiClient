@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -23,10 +21,6 @@ using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.IO;
 using System.Threading.Tasks;
-using HandyControl.Themes;
-using HandyControl.Tools;
-using System.Reflection.Metadata;
-using System.Linq.Expressions;
 
 namespace ChatGptApiClientV2;
 
@@ -181,7 +175,6 @@ public class ChatWindowMessage : ObservableObject
             messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
         });
         OnPropertyChanged(nameof(RenderedMessage));
-        return;
     }
     public async Task AddImage(BitmapImage image, string? tooltip)
     {
@@ -276,19 +269,21 @@ public class ChatWindowMessage : ObservableObject
     public RoleType Role { get; set; }
     public static string UserAvatarSource => Environment.UserName;
 
+    private const string ChatGPTIcon = "pack://application:,,,/images/chatgpt-icon.svg";
+    private const string ToolIcon = "pack://application:,,,/images/set-up-svgrepo-com.svg";
     public Uri Avatar => Role switch
     {
-        RoleType.Assistant => new Uri("pack://application:,,,/images/chatgpt-icon.svg"),
-        RoleType.Tool => new Uri("pack://application:,,,/images/set-up-svgrepo-com.svg"),
-        _ => new Uri("pack://application:,,,/images/chatgpt-icon.svg")
+        RoleType.Assistant => new Uri(ChatGPTIcon),
+        RoleType.Tool => new Uri(ToolIcon),
+        _ => new Uri(ChatGPTIcon)
     };
     public Brush ForegroundColor => Role switch
     {
-        RoleType.User => new SolidColorBrush(Color.FromRgb(0, 0, 0)),
-        RoleType.System => new SolidColorBrush(Color.FromRgb(255, 255, 255)),
-        RoleType.Assistant => new SolidColorBrush(Color.FromRgb(0, 0, 0)),
-        RoleType.Tool => new SolidColorBrush(Color.FromRgb(255, 255, 255)),
-        _ => throw new NotImplementedException()
+        RoleType.User => Brushes.Black,
+        RoleType.System => Brushes.White,
+        RoleType.Assistant => Brushes.Black,
+        RoleType.Tool => Brushes.White,
+        _ => throw new InvalidOperationException()
     };
     public Brush BackgroundColor => Role switch
     {
@@ -296,7 +291,7 @@ public class ChatWindowMessage : ObservableObject
         RoleType.Assistant => new SolidColorBrush(Color.FromRgb(232, 230, 231)),
         RoleType.System => new SolidColorBrush(Color.FromRgb(77, 150, 244)),
         RoleType.Tool => new SolidColorBrush(Color.FromRgb(255, 173, 61)),
-        _ => throw new NotImplementedException()
+        _ => throw new InvalidOperationException()
     };
     public bool ShowLeftAvatar => Role switch
     {
@@ -304,7 +299,7 @@ public class ChatWindowMessage : ObservableObject
         RoleType.Assistant => true,
         RoleType.System => false,
         RoleType.Tool => true,
-        _ => throw new NotImplementedException()
+        _ => throw new InvalidOperationException()
     };
     public bool ShowRightAvatar => Role switch
     {
@@ -312,7 +307,7 @@ public class ChatWindowMessage : ObservableObject
         RoleType.Assistant => false,
         RoleType.System => false,
         RoleType.Tool => false,
-        _ => throw new NotImplementedException()
+        _ => throw new InvalidOperationException()
     };
 
     public bool ShowLeftBlank => Role switch
@@ -328,7 +323,7 @@ public class ChatWindowMessage : ObservableObject
     };
 }
 
-public partial class ChatWindowMessageList : ObservableObject
+public class ChatWindowMessageList : ObservableObject
 {
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
     public void AddStreamText(string text)
@@ -428,7 +423,7 @@ public partial class ChatWindowMessageList : ObservableObject
                     // no avatar
                     break;
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException();
             }
 
             var rendered = msg.RenderedMessage;
@@ -456,7 +451,7 @@ public partial class ChatWindow
     [ObservableProperty]
     private SystemState state;
     [ObservableProperty]
-    private bool isLoading = false;
+    private bool isLoading;
     private void SetIsLoading(bool loading)
     {
         Application.Current.Dispatcher.Invoke(() =>
@@ -516,7 +511,7 @@ public partial class ChatWindow
         {
             Key = Key.Enter,
             Modifiers = ModifierKeys.Control,
-            Command = new RelayCommand(() => btn_send_Click(this, new RoutedEventArgs(ButtonBase.ClickEvent)))
+            Command = new RelayCommand(() => BtnSend_Click(this, new RoutedEventArgs(ButtonBase.ClickEvent)))
         };
         InputBindings.Add(sendKeyBinding);        
     }
@@ -590,7 +585,7 @@ public partial class ChatWindow
         }
     }
 
-    private async void btn_send_Click(object sender, RoutedEventArgs e)
+    private async void BtnSend_Click(object sender, RoutedEventArgs e)
     {
         var input = TxtInput.Text;
         var files = (from fileinfo in FileAttachments select fileinfo.Path).ToList();
@@ -599,12 +594,12 @@ public partial class ChatWindow
         await State.UserSendText(input, files);
     }
 
-    private async void btn_reset_Click(object sender, RoutedEventArgs e)
+    private async void BtnReset_Click(object sender, RoutedEventArgs e)
     {
         await State.ClearSession();
     }
 
-    private async void btn_print_Click(object sender, RoutedEventArgs e)
+    private async void BtnPrint_Click(object sender, RoutedEventArgs e)
     {
         PrintDialog printDialog = new();
         if (printDialog.ShowDialog() != true)
@@ -634,10 +629,10 @@ public partial class ChatWindow
 
     private class RenderScrollViewerResult(RenderTargetBitmap bitmap, int offsetY)
     {
-        public RenderTargetBitmap Bitmap = bitmap;
-        public int OffsetY = offsetY;
+        public readonly RenderTargetBitmap Bitmap = bitmap;
+        public readonly int OffsetY = offsetY;
     }
-    static RenderScrollViewerResult RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
+    private static RenderScrollViewerResult RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
     {
         // rounding to integer pixels to make sure sharp font rendering
         var offsetY = Math.Floor(viewer.VerticalOffset * dpiScaleY);
@@ -652,25 +647,23 @@ public partial class ChatWindow
             PixelFormats.Pbgra32
         );
         renderTargetBitmap.Render(viewer);
-        return new(renderTargetBitmap, (int)offsetY);
+        return new RenderScrollViewerResult(renderTargetBitmap, (int)offsetY);
     }
 
-    void btn_screenshot_Click(object sender, RoutedEventArgs e)
+    private const string SaveScreenshotDialogGuid =  "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
+    private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
         var scrollViewer = GetScrollViewer(LstMsg);
         if (scrollViewer is null) { return; }
 
-        var source = PresentationSource.FromVisual(this);
-        if (source is null) { return; }
-        var dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
-        var dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
+        var dpi = VisualTreeHelper.GetDpi(this);
 
         var dlg = new SaveFileDialog
         {
             FileName = "screenshot",
             DefaultExt = ".png",
             Filter = "PNG images|*.png",
-            ClientGuid = new Guid("49CEC7E0-C84B-4B69-8238-B6EFB608D7DC")
+            ClientGuid = new Guid(SaveScreenshotDialogGuid)
         };
         if (dlg.ShowDialog() != true) { return; }
 
@@ -686,14 +679,14 @@ public partial class ChatWindow
         List<RenderScrollViewerResult> bitmaps = [];
 
         // scroll 3/4 of a page a time
-        var PageHeight = scrollViewer.ActualHeight * 3 / 4;
-        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
-        int lastOffsetY = -1;
+        var pageHeight = scrollViewer.ActualHeight * 3 / 4;
+        bitmaps.Add(RenderScrollViewer(scrollViewer, dpi.DpiScaleX, dpi.DpiScaleY));
+        var lastOffsetY = -1;
         while(true)
         {
-            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + PageHeight);
+            scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + pageHeight);
             scrollViewer.UpdateLayout();
-            var newScreenShot = RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY);
+            var newScreenShot = RenderScrollViewer(scrollViewer, dpi.DpiScaleX, dpi.DpiScaleY);
             if(newScreenShot.OffsetY == lastOffsetY)
             {
                 // we have reached the end and cannot scroll further down
@@ -703,14 +696,14 @@ public partial class ChatWindow
             lastOffsetY = newScreenShot.OffsetY;
         }
 
-        bitmaps.Add(RenderScrollViewer(scrollViewer, dpiScaleX, dpiScaleY));
+        bitmaps.Add(RenderScrollViewer(scrollViewer, dpi.DpiScaleX, dpi.DpiScaleY));
 
         // concat bitmaps
         var fullBitmap = new RenderTargetBitmap(
-            (int)(bitmaps.Last().Bitmap.Width * dpiScaleX),
-            (int)(bitmaps.Last().OffsetY + bitmaps.Last().Bitmap.Height * dpiScaleY),
-            96 * dpiScaleX,
-            96 * dpiScaleY,
+            (int)(bitmaps.Last().Bitmap.Width * dpi.DpiScaleX),
+            (int)(bitmaps.Last().OffsetY + bitmaps.Last().Bitmap.Height * dpi.DpiScaleY),
+            96 * dpi.DpiScaleX,
+            96 * dpi.DpiScaleY,
             PixelFormats.Pbgra32
         );
         var drawingVisual = new DrawingVisual();
@@ -719,7 +712,7 @@ public partial class ChatWindow
             foreach (var renderResult in bitmaps)
             {
                 drawingContext.DrawImage(renderResult.Bitmap,
-                    new Rect(0, renderResult.OffsetY / dpiScaleY,
+                    new Rect(0, renderResult.OffsetY / dpi.DpiScaleY,
                     renderResult.Bitmap.Width, renderResult.Bitmap.Height)
                 );
             }
@@ -728,7 +721,7 @@ public partial class ChatWindow
         // save as png
         PngBitmapEncoder png = new();
         png.Frames.Add(BitmapFrame.Create(fullBitmap));
-        using Stream stm = File.Create(dlg.FileName);
+        await using Stream stm = File.Create(dlg.FileName);
         png.Save(stm);
 
         scrollViewer.ScrollToVerticalOffset(oldScrollOffset);
@@ -739,22 +732,23 @@ public partial class ChatWindow
         }
     }
 
-    private void btn_save_Click(object sender, RoutedEventArgs e)
+    private async void BtnSave_Click(object sender, RoutedEventArgs e)
     {
-        State.SaveSession();
+        await State.SaveSession();
     }
 
-    private async void btn_load_Click(object sender, RoutedEventArgs e)
+    private async void BtnLoad_Click(object sender, RoutedEventArgs e)
     {
         await State.LoadSession();
     }
 
-    private void btn_addfile_Click(object sender, RoutedEventArgs e)
+    private const string OpenFileAttachmentDialogGuid = "B8F42507-693B-4713-8671-A76F02ED5ADB";
+    private void BtnAddfile_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog
         {
             Filter = "Any Files|*.*",
-            ClientGuid = new Guid("B8F42507-693B-4713-8671-A76F02ED5ADB")
+            ClientGuid = new Guid(OpenFileAttachmentDialogGuid)
         };
         if (dlg.ShowDialog() == true)
         {
@@ -762,7 +756,7 @@ public partial class ChatWindow
         }
     }
 
-    private void btn_removefile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void BtnRemovefile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         var fileAttachmentInfo = (FileAttachmentInfo)((ContentControl)sender).DataContext;
         FileAttachments.Remove(fileAttachmentInfo);
@@ -773,12 +767,12 @@ public partial class ChatWindow
         TgglPrompt.IsChecked = false;
     }
 
-    private async void chk_markdown_Click(object sender, RoutedEventArgs e)
+    private async void ChkMarkdown_Click(object sender, RoutedEventArgs e)
     {
         await State.RefreshSession();
     }
 
-    private void btn_settings_Click(object sender, RoutedEventArgs e)
+    private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
         var settingsDialog = new Settings(State.Config)
         {
@@ -794,32 +788,32 @@ public partial class ChatWindow
 
     private void LstMsg_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Up)
+        if (e.Key is Key.Up)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.LineUp();
         }
-        else if (e.Key == Key.Down)
+        else if (e.Key is Key.Down)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.LineDown();
         }
-        else if (e.Key == Key.PageUp)
+        else if (e.Key is Key.PageUp)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.PageUp();
         }
-        else if (e.Key == Key.PageDown || e.Key == Key.Space)
+        else if (e.Key is Key.PageDown or Key.Space)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.PageDown();
         }
-        else if (e.Key == Key.Home)
+        else if (e.Key is Key.Home)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.ToHome();
         }
-        else if (e.Key == Key.End)
+        else if (e.Key is Key.End)
         {
             e.Handled = true;
             msgSmoothScrollInfoAdapter?.ToEnd();

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
 using System.Windows.Documents;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -22,7 +23,7 @@ public class WolframAlphaFunc : IToolFunction
 {
     public class Args
     {
-        [System.ComponentModel.Description("Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
+        [Description("Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
         public string Query { get; set; } = "";
     }
     public string Description => 

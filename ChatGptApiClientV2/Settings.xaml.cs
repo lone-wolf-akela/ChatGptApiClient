@@ -2,7 +2,6 @@
 using HandyControl.Controls;
 using HandyControl.Tools;
 using System.ComponentModel;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
 
@@ -32,7 +31,7 @@ public partial class Settings
         InitializeComponent();
     }
 
-    private void Button_Click(object sender, RoutedEventArgs e)
+    private void BtnClose_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
@@ -42,13 +41,13 @@ public partial class Settings
         Config.PropertyChanged -= ConfigServiceProviderPropertyChanged;
     }
 
-    private void btn_add_azure_deployment_id_Click(object sender, RoutedEventArgs e)
+    private void BtnAddAzureDeploymentId_Click(object sender, RoutedEventArgs e)
     {
         Config.AzureDeploymentList.Add(TxtbxAddAzureDeploymentId.Text);
         TxtbxAddAzureDeploymentId.Text = "";
     }
 
-    private void btn_del_azure_deployment_id_Click(object sender, RoutedEventArgs e)
+    private void BtnDelAzureDeploymentId_Click(object sender, RoutedEventArgs e)
     {
         if (LstAzureDeploymentIds.SelectedItem is string id)
         {

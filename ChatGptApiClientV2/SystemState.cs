@@ -221,7 +221,7 @@ public partial class SystemState : ObservableObject
             await ChatSessionChangedEvent.Invoke(CurrentSession);
         }
 
-        SaveSessionToPath("./latest_session.json");
+        await SaveSessionToPath("./latest_session.json");
 
         return CurrentSession;
     }
@@ -474,19 +474,21 @@ public partial class SystemState : ObservableObject
             let mime = MimeTypes.GetMimeType(file)
             where mime.StartsWith("image/")
             select file).ToList();
-            
-        var imgContents = from file in imgfiles
-            select new IMessage.ImageContent
+        
+        foreach (var file in imgfiles)
+        {
+            var imgContent = new IMessage.ImageContent
             {
                 ImageUrl = new IMessage.ImageContent.ImageUrlType
                 {
-                    Url = Utils.ImageFileToBase64(file),
+                    Url = await Utils.ImageFileToBase64(file),
                     Detail = Config.UploadHiresImage
                         ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
                         : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
                 }
             };
-        contentList.AddRange(imgContents);
+            contentList.Add(imgContent);
+        }
 
         var userMsg = new UserMessage
         {
@@ -506,23 +508,24 @@ public partial class SystemState : ObservableObject
             ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id) 
             : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
 
-    private void SaveSessionToPath(string path)
+    private async Task SaveSessionToPath(string path)
     {
         var savedSession = CurrentSession?.Save();
-        File.WriteAllText(path, savedSession);
+        await File.WriteAllTextAsync(path, savedSession);
     }
-    public void SaveSession()
+    private const string OpenSaveSessionDialogGuid = "32F3FF84-A923-4D69-9ABD-11DC14074AC6";
+    public async Task SaveSession()
     {
         var dlg = new SaveFileDialog
         {
             FileName = "session",
             DefaultExt = ".json",
             Filter = "JSON documents|*.json",
-            ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6")
+            ClientGuid = new Guid(OpenSaveSessionDialogGuid)
         };
         if (dlg.ShowDialog() == true)
         {
-            SaveSessionToPath(dlg.FileName);
+            await SaveSessionToPath(dlg.FileName);
         }
     }
 
@@ -534,7 +537,7 @@ public partial class SystemState : ObservableObject
         {
             DefaultExt = ".json",
             Filter = "JSON documents|*.json",
-            ClientGuid = new Guid("32F3FF84-A923-4D69-9ABD-11DC14074AC6")
+            ClientGuid = new Guid(OpenSaveSessionDialogGuid)
         };
         if (dlg.ShowDialog() != true)
         {
@@ -543,7 +546,7 @@ public partial class SystemState : ObservableObject
 
         SetIsLoadingHandlerEvent?.Invoke(true);
 
-        var savedJson = File.ReadAllText(dlg.FileName);
+        var savedJson = await File.ReadAllTextAsync(dlg.FileName);
 
         var loadedSession = await Task.Run(() =>
         {

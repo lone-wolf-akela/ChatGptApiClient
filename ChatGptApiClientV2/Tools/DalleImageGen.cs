@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Threading;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -38,7 +39,7 @@ public class DalleImageGenFunc : IToolFunction
     }
     public class Args
     {
-        [System.ComponentModel.Description(
+        [Description(
             """
             The user's original image description, potentially modified to abide by the following policies:
             1. Prompts must be in English. Translate to English if needed.
@@ -48,7 +49,7 @@ public class DalleImageGenFunc : IToolFunction
             5. If the user requested modifications to previous images, the prompt should not simply be longer, but rather it should be refactored to integrate the suggestions into the prompt.
             """)]
         public string Prompts { get; set; } = "";
-        [System.ComponentModel.Description("The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits. Always include this parameter in the request.")]
+        [Description("The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits. Always include this parameter in the request.")]
         public ImageSize Size { get; set; } = ImageSize.Sqaure;
     }
 
@@ -118,7 +119,7 @@ public class DalleImageGenFunc : IToolFunction
         };
 
         state.NewMessage(RoleType.Tool);
-        state.StreamText($"Generating...\n\n");
+        state.StreamText("生成中...\n\n");
 
         var requestbody = new Request
         {
@@ -173,14 +174,14 @@ public class DalleImageGenFunc : IToolFunction
             return msg;
         }
 
-        state.StreamText($"Downloading image from {imgDownloadUrl}\n");
+        state.StreamText($"下载图像： {imgDownloadUrl}\n");
         DispatcherOperation? progressTextOperation = null;
         var progress = new Progress<HttpDownloadProgressData>(progress =>
         {
             progressTextOperation = Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 state.SetStreamProgress(progress.Percent,
-                    $"Downloading image: {progress.Percent * 100:0.00}% ({progress.Current}/{progress.Total} Bytes)");
+                    $"进度: {progress.Percent * 100:0.00}% ({progress.Current}/{progress.Total} Bytes)");
             });
         });
 
@@ -203,7 +204,7 @@ public class DalleImageGenFunc : IToolFunction
         var imageFileExt = Utils.GetFileExtensionFromUrl(imgDownloadUrl);
         var imageName = Path.ChangeExtension(tmpName, imageFileExt);
         File.Move(tmpName, imageName);
-        var imageUrl = Utils.ImageFileToBase64(imageName);
+        var imageUrl = await Utils.ImageFileToBase64(imageName);
         var imageDesc =
             $"""
              Original Prompts: {args.Prompts}

@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.IO;
 
 namespace ChatGptApiClientV2.Controls;
@@ -19,7 +9,7 @@ namespace ChatGptApiClientV2.Controls;
 /// <summary>
 /// ImageDisplayer.xaml 的交互逻辑
 /// </summary>
-public partial class ImageDisplayer : UserControl
+public partial class ImageDisplayer
 {
     public static readonly DependencyProperty ImageProperty = DependencyProperty.Register(
         nameof(Image),
@@ -45,19 +35,19 @@ public partial class ImageDisplayer : UserControl
     public BitmapSource Image
     {
         get => (BitmapSource)GetValue(ImageProperty);
-        set => SetValue(ImageProperty, value);
+        init => SetValue(ImageProperty, value);
     }
 
     public string ImageTooltip
     {
         get => (string)GetValue(ImageTooltipProperty);
-        set => SetValue(ImageTooltipProperty, value);
+        init => SetValue(ImageTooltipProperty, value);
     }
 
     public double ImageMaxHeight
     {
         get => (double)GetValue(ImageMaxHeightProperty);
-        set => SetValue(ImageMaxHeightProperty, value);
+        init => SetValue(ImageMaxHeightProperty, value);
     }
 
     public ImageDisplayer()
@@ -73,12 +63,12 @@ public partial class ImageDisplayer : UserControl
 
     private void ImageGrid_MouseEnter(object sender, MouseEventArgs e)
     {
-        btnPanel.Visibility = Visibility.Visible;
+        BtnPanel.Visibility = Visibility.Visible;
     }
 
     private void ImageGrid_MouseLeave(object sender, MouseEventArgs e)
     {
-        btnPanel.Visibility = Visibility.Collapsed;
+        BtnPanel.Visibility = Visibility.Collapsed;
     }
 
     private async void BtnOpenImageViewer_Click(object sender, RoutedEventArgs e)

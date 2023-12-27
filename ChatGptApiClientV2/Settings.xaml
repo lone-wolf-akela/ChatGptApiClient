@@ -10,7 +10,7 @@
         Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <hc:SimplePanel DataContext="{Binding ElementName=Window, Mode=OneWay}">
         <DockPanel Margin="10,10,10,10">
-            <Button DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="Button_Click"/>
+            <Button x:Name="BtnClose" DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="BtnClose_Click"/>
             <StackPanel>
                 <hc:Divider Margin="0" Content="UI选项" HorizontalContentAlignment="Left"/>
                 <Grid Margin="0,0,0,5">
@@ -120,7 +120,7 @@
                         <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtPresencePenalty" Text="{Binding ElementName=SlidPresencePenalty,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
                         <Slider x:Name="SlidPresencePenalty" Minimum="-2" Maximum="2" LargeChange="0.4" Value="{Binding Path=Config.PresencePenalty, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
-                    <DockPanel Grid.Row="2" Grid.Column="95">
+                    <DockPanel Grid.Row="2" Grid.Column="9">
                         <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTopP" Text="{Binding ElementName=SlidTopP,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
                         <Slider x:Name="SlidTopP" Maximum="1" LargeChange="0.1" Value="{Binding Path=Config.TopP, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
@@ -180,8 +180,8 @@
                                 <Label Content="Azure 部署 ID"  VerticalAlignment="Stretch" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
                                 <ListBox x:Name="LstAzureDeploymentIds" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"/>
                                 <DockPanel>
-                                    <Button x:Name="BtnDelAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="btn_del_azure_deployment_id_Click"/>
-                                    <Button x:Name="BtnAddAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="btn_add_azure_deployment_id_Click"/>
+                                    <Button x:Name="BtnDelAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="BtnDelAzureDeploymentId_Click"/>
+                                    <Button x:Name="BtnAddAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="BtnAddAzureDeploymentId_Click"/>
                                     <TextBox x:Name="TxtbxAddAzureDeploymentId"  Margin="0,0,5,0" />
                                 </DockPanel>
                             </StackPanel>

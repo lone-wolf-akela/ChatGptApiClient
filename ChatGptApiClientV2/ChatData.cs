@@ -492,26 +492,6 @@ public class ChatCompletionRequest
         var result = JsonConvert.SerializeObject(this, settings);
         return result;
     }
-    public List<string> GetImageUrlList()
-    {
-        var imageList = new List<string>();
-        foreach(var msg in Messages)
-        {
-            foreach(var content in msg.Content)
-            {
-                if (content is IMessage.ImageContent imgContent)
-                {
-                    imageList.Add(imgContent.ImageUrl.Url);
-                }
-            }
-            if (msg is ToolMessage toolMsg)
-            {
-                var imgUrls = from img in toolMsg.GeneratedImages select img.ImageBase64Url;
-                imageList.AddRange(imgUrls);
-            }
-        }
-        return imageList;
-    }
     public static ChatCompletionRequest BuildFromInitPrompts(IEnumerable<IMessage>? initPrompts, DateTime knowledgeCutoff)
     {
         var request = new ChatCompletionRequest();

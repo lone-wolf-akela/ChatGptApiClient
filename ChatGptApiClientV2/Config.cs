@@ -8,9 +8,7 @@ using System.IO;
 using System.Windows;
 using System.ComponentModel;
 using Flurl;
-using Newtonsoft.Json.Linq;
 using HandyControl.Themes;
-using System.Reflection;
 using System.Windows.Media;
 
 namespace ChatGptApiClientV2;

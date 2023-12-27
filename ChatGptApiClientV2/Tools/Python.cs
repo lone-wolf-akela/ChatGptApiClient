@@ -3,12 +3,11 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using Markdig;
 using Markdig.Wpf.ColorCode;
-using System.Threading;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -24,7 +23,7 @@ public class PythonTool : IToolCollection
 
 public class PythonFunc : IToolFunction
 {
-    public string? Description =>
+    public string Description =>
         """
         You can execute a python script. 
         - The script must contains a `main()` function. Python will respond with the returned value from that `main()` function, or time out after 60.0 seconds.
@@ -36,7 +35,7 @@ public class PythonFunc : IToolFunction
     public string Name => "execute_python_code";
     public class Args
     {
-        [System.ComponentModel.Description("Python code to be executed. It must contains a `main()` function.")]
+        [Description("Python code to be executed. It must contains a `main()` function.")]
         public string Code { get; set; } = "";
     }
 

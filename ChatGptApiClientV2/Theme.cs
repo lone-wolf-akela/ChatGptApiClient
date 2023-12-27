@@ -1,13 +1,7 @@
 ﻿using HandyControl.Themes;
 using HandyControl.Tools;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
@@ -44,7 +38,7 @@ namespace ChatGptApiClientV2
         private static void TryEnableMica(HandyControl.Controls.Window window)
         {
             const BackdropType backdrop = BackdropType.Mica;
-            if (!MicaHelper.IsSupported(backdrop)) { return; }
+            if (!backdrop.IsSupported()) { return; }
             window.SystemBackdropType = backdrop;
         }
         private static void SetupDarkTheme()
@@ -88,7 +82,7 @@ namespace ChatGptApiClientV2
                     SetupDarkTheme();
                     break;
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException();
             }
             ThemeChanged?.Invoke();
         }

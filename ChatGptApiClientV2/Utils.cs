@@ -17,15 +17,14 @@ using static ChatGptApiClientV2.EnumHelper;
 using System.Windows;
 using System.Windows.Documents;
 using System.Diagnostics;
-using System.Xml;
-using System.Reflection;
+using System.Threading.Tasks;
 
 namespace ChatGptApiClientV2;
 
 // from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
 public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is int i)
         {
@@ -33,7 +32,7 @@ public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
         }
         return Visibility.Collapsed;
     }
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is Visibility v)
         {
@@ -47,12 +46,12 @@ public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
 // from https://stackoverflow.com/questions/397556/how-to-bind-radiobuttons-to-an-enum
 public class ComparisonConverter : MarkupExtension, IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         return value?.Equals(parameter) ?? false;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         return value?.Equals(true) == true ? parameter : Binding.DoNothing;
     }
@@ -74,10 +73,7 @@ public static class EnumHelper
         {
             return ((DescriptionAttribute)attributes.First()).Description;
         }
-        // If no description is found, the least we can do is replace underscores with spaces
-        // You can add your own custom default formatting logic here
-        // TextInfo ti = CultureInfo.CurrentCulture.TextInfo;
-        // return ti.ToTitleCase(ti.ToLower(value.ToString().Replace("_", " ")));
+        // If no description is found
         return value.ToString();
     }
     public static IEnumerable<EnumValueDescription> GetAllValuesAndDescriptions(Type t)
@@ -160,22 +156,14 @@ public class UrlValidationRule : ValidationRule
 
 internal static partial class Utils
 {
-    public static UIElement CloneUiElement(UIElement old)
-    {
-        var str = XamlWriter.Save(old);
-        var strReader = new StringReader(str);
-        var xmlReader = XmlReader.Create(strReader);
-        var clonedElement = (UIElement)XamlReader.Load(xmlReader);
-        return clonedElement;
-    }
-    public static string ImageFileToBase64(string filename)
+    public static async Task<string> ImageFileToBase64(string filename)
     {
         var mime = MimeTypes.GetMimeType(filename);
         if (!mime.StartsWith("image/"))
         {
             throw new ArgumentException("The file is not an image.");
         }
-        var base64 = Convert.ToBase64String(File.ReadAllBytes(filename));
+        var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(filename));
         return $"data:{mime};base64,{base64}";
     }
 
