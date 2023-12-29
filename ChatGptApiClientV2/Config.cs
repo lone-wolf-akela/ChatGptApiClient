@@ -239,17 +239,18 @@ public partial class Config : ObservableObject
         {
             foreach(var id in AzureDeploymentList)
             {
-                DateTime knowledgeCutoff = 
+                var knowledgeCutoff = 
                     id.Contains("gpt-4") && id.Contains("1106") 
                         ? new DateTime(2023, 4, 1) 
                         : new DateTime(2021, 9, 1);
+                var functionCallSupported = !(id.Contains("0301") || id.Contains("vision") || id.Contains("0314"));
                 ModelVersionOptions.Add(new ModelVersionInfo
                 {
                     ModelType = "azure",
                     Name = id,
                     Description = id,
                     KnowledgeCutoff = knowledgeCutoff,
-                    FunctionCallSupported = true
+                    FunctionCallSupported = functionCallSupported
                 });
             }
         }

@@ -34,10 +34,10 @@ public class ModelVersionInfo
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-1106-preview", Description = "2023-11-06", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-vision-preview", Description = "2023-11-06 w/ vision", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = false },
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k", Description = "current (06-13)", KnowledgeCutoff = new(2021, 9, 1), FunctionCallSupported = true }
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k", Description = "current (06-13)", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = true }
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4-0613", Description = "2023-06-13", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0613", Description = "2023-06-13", KnowledgeCutoff = new(2021, 9, 1), FunctionCallSupported = true }
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0613", Description = "2023-06-13", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = true }
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4-0314", Description = "2023-03-14", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = false }
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0314", Description = "2023-03-14", KnowledgeCutoff = new(2021, 9, 1), FunctionCallSupported = false }
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0314", Description = "2023-03-14", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = false }
     ];
 }
