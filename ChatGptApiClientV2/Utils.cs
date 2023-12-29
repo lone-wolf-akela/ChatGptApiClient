@@ -6,7 +6,6 @@ using System.IO;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Windows.Media.Imaging;
 using System.Globalization;
 using System.Windows.Data;
@@ -18,6 +17,10 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
 namespace ChatGptApiClientV2;
 
@@ -265,5 +268,18 @@ internal static partial class Utils
         };
 
         return floater;
+    }
+
+    public static string PdfFileToText(string filename)
+    {
+        using var reader = new PdfReader(filename);
+        using var doc = new PdfDocument(reader);
+        StringBuilder text = new();
+        ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
+        for (var i = 1; i <= doc.GetNumberOfPages(); i++)
+        {
+            text.Append(PdfTextExtractor.GetTextFromPage(doc.GetPage(i), strategy));
+        }
+        return text.ToString();
     }
 }

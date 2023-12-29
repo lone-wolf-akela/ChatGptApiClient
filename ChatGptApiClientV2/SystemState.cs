@@ -452,18 +452,35 @@ public partial class SystemState : ObservableObject
 
         StringBuilder inputTxt = new();
         inputTxt.Append(text);
-
-        var txtfiles = from file in files
-            let mime = MimeTypes.GetMimeType(file)
-            where mime.StartsWith("text/")
-            select file;
         var textAttachmentCount = 0;
-        foreach (var file in txtfiles)
         {
-            textAttachmentCount += 1;
-            inputTxt.AppendLine("");
-            inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
-            inputTxt.AppendLine(await File.ReadAllTextAsync(file));
+            var txtfiles = from file in files
+                let mime = MimeTypes.GetMimeType(file)
+                where mime.StartsWith("text/")
+                select file;
+            foreach (var file in txtfiles)
+            {
+                textAttachmentCount += 1;
+                inputTxt.AppendLine("");
+                inputTxt.AppendLine("");
+                inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
+                inputTxt.AppendLine(await File.ReadAllTextAsync(file));
+            }
+        }
+
+        {
+            var pdffiles = from file in files
+                let mime = MimeTypes.GetMimeType(file)
+                where mime.StartsWith("application/pdf")
+                select file;
+            foreach (var file in pdffiles)
+            {
+                textAttachmentCount += 1;
+                inputTxt.AppendLine("");
+                inputTxt.AppendLine("");
+                inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
+                inputTxt.AppendLine(Utils.PdfFileToText(file));
+            }
         }
 
         var textContent = new IMessage.TextContent { Text = inputTxt.ToString() };
