@@ -11,6 +11,8 @@ using Flurl;
 using HandyControl.Themes;
 using System.Windows.Media;
 
+// ReSharper disable UnusedParameterInPartialMethod
+
 namespace ChatGptApiClientV2;
 
 public partial class Config : ObservableObject
@@ -109,10 +111,11 @@ public partial class Config : ObservableObject
         ServiceProviderType.OpenAI => false,
         ServiceProviderType.Azure => true,
         ServiceProviderType.Others => true,
-        _ => throw new NotImplementedException()
+        _ => throw new InvalidOperationException()
     };
 
     [ObservableProperty]
+    // ReSharper disable once InconsistentNaming
     private string _API_KEY;
     partial void OnAPI_KEYChanged(string value) => SaveConfig();
 
