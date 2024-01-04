@@ -77,14 +77,30 @@
                     <StackPanel>
                         <TextBlock Text="选择插件"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True" StaysOpen="False">
-                            <Border CornerRadius="5" BorderThickness="1" BorderBrush="{DynamicResource RegionBrush}" Background="{DynamicResource RegionBrush}" Margin="0,0,8,8" Padding="2">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
-                                </Border.Effect>
-                                <ListBox x:Name="LstPlugin" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
+                            <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
+                                    BorderThickness="{DynamicResource BorderThickness}" 
+                                    BorderBrush="{DynamicResource BorderBrush}" 
+                                    Background="{DynamicResource SolidRegionBrush}" 
+                                    Effect="{StaticResource EffectShadow2}" 
+                                    Margin="8,0,8,8">
+                                <ListBox x:Name="LstPlugin" 
+                                         Style="{StaticResource DropDownListStyle}"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" 
+                                         ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" 
+                                         IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                            <Setter Property="Background" Value="Transparent" />
                                             <Setter Property="Padding" Value="3,3,3,3"/>
+                                            <Style.Triggers>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="False" />
+                                                        <Condition Property="IsMouseOver" Value="True" />
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="{DynamicResource SolidRegionSecondaryRegionBrush}" />
+                                                </MultiTrigger>
+                                            </Style.Triggers>
                                         </Style>
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
@@ -101,17 +117,28 @@
                     <StackPanel>
                         <TextBlock Text="初始提示词"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPrompt}" AllowsTransparency="True" StaysOpen="False">
-                            <Border CornerRadius="5" BorderThickness="1" BorderBrush="{DynamicResource RegionBrush}" Background="{DynamicResource RegionBrush}" Margin="0,0,8,8" Padding="2">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
-                                </Border.Effect>
+                            <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
+                                    BorderThickness="{DynamicResource BorderThickness}" 
+                                    BorderBrush="{DynamicResource BorderBrush}" 
+                                    Background="{DynamicResource SolidRegionBrush}" 
+                                    Effect="{StaticResource EffectShadow2}" 
+                                    Margin="8,0,8,8">
                                 <ListBox x:Name="LstPrompt" 
-                                          ItemsSource="{Binding State.InitialPrompts.PromptsOptions}"
-                                          SelectedItem="{Binding State.InitialPrompts.SelectedOption}">
+                                         Style="{StaticResource DropDownListStyle}"
+                                         ItemsSource="{Binding State.InitialPrompts.PromptsOptions}"
+                                         SelectedItem="{Binding State.InitialPrompts.SelectedOption}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                             <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup"/>
+                                            <Setter Property="Background" Value="Transparent" />
                                             <Style.Triggers>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsSelected" Value="False" />
+                                                        <Condition Property="IsMouseOver" Value="True" />
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="Background" Value="{DynamicResource SolidRegionSecondaryRegionBrush}" />
+                                                </MultiTrigger>
                                                 <Trigger Property="IsSelected" Value="True">
                                                     <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
                                                     <Setter Property="Foreground" Value="{DynamicResource TextIconBrush}"/>
@@ -182,7 +209,7 @@
                 </StackPanel>
                 <hc:SimplePanel>
                     <TextBox x:Name="TxtInput" FontFamily="Segoe UI, Microsoft YaHei UI" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="5"/>
-                    <TextBlock x:Name="TxtInputPlaceholder" Text="在此输入对话内容" FontFamily="Segoe UI, Microsoft YaHei UI" Foreground="Gray" Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" VerticalAlignment="Top" TextWrapping="WrapWithOverflow" Margin="5"/>
+                    <TextBlock x:Name="TxtInputPlaceholder" Text="在此输入对话内容" FontFamily="Segoe UI, Microsoft YaHei UI" Foreground="Gray" Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" VerticalAlignment="Top" TextWrapping="WrapWithOverflow" Margin="{Binding Padding, ElementName=TxtInput}"/>
                     <Button x:Name="BtnAddfile" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" VerticalAlignment="Bottom" Margin="0,0,5,5" Padding="0" HorizontalAlignment="Right" Height="30" Width="30" Click="BtnAddfile_Click"/>
                 </hc:SimplePanel>
             </DockPanel>
@@ -258,7 +285,9 @@
                         <local:ChatWindowMessage Role="User" Message="# User Messages 1"/>
                         <local:ChatWindowMessage Role="System" Message="System Messages 2"/>
                         <local:ChatWindowMessage Role="Tool" Message="Tool Messages 1"/>
+                        <!-- ReSharper disable MarkupAttributeTypo -->
                         <local:ChatWindowMessage Role="Assistant" Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
+                        <!-- ReSharper restore MarkupAttributeTypo -->
                     </x:Array>
                 </d:ListBox.ItemsSource>
             </ListBox>

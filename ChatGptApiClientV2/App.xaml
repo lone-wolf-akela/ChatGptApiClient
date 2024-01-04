@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:hc="https://handyorg.github.io/handycontrol"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              StartupUri="ChatWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -29,10 +30,130 @@
             <Style TargetType="StatusBar" BasedOn="{StaticResource StatusBarBaseStyle}">
                 <Setter Property="Background" Value="Transparent"/>
             </Style>
+            <Style x:Key="DropDownListStyle" TargetType="ListBox" BasedOn="{StaticResource ListBoxBaseStyle}">
+                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+            </Style>
             <Style x:Key="ButtonGroupSolidDynamicColor" BasedOn="{StaticResource ButtonGroupBaseStyle}" TargetType="hc:ButtonGroup">
                 <Setter Property="hc:VisualElement.HighlightBorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                 <Setter Property="hc:VisualElement.HighlightBackground" Value="{DynamicResource PrimaryBrush}"/>
                 <Setter Property="hc:VisualElement.HighlightForeground" Value="{DynamicResource TextIconBrush}"/>
+            </Style>
+            <ControlTemplate x:Key="SolidComboBoxTemplate" TargetType="ComboBox">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="border" Grid.ColumnSpan="2" CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" />
+                    <hc:ToggleBlock Grid.Column="1" Padding="1,0" Background="Transparent" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                        <hc:ToggleBlock.UnCheckedContent>
+                            <Path Data="{StaticResource DownGeometry}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="14" Stretch="Uniform" Fill="{TemplateBinding BorderBrush}" Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
+                        </hc:ToggleBlock.UnCheckedContent>
+                        <hc:ToggleBlock.CheckedContent>
+                            <Path Data="{StaticResource UpGeometry}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="14" Stretch="Uniform" Fill="{TemplateBinding BorderBrush}" Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
+                        </hc:ToggleBlock.CheckedContent>
+                    </hc:ToggleBlock>
+                    <hc:ToggleBlock Grid.Column="0" Grid.ColumnSpan="2" Background="Transparent" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" ToggleGesture="LeftClick" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                    <ContentPresenter Grid.Column="0" Margin="{TemplateBinding Padding}" x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    <Popup Grid.Column="0" x:Name="PART_Popup" PlacementTarget="{Binding ElementName=border}" AllowsTransparency="true" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{StaticResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom">
+                        <Decorator Margin="8 0">
+                            <Border BorderThickness="0,1,0,0" 
+                                    Effect="{StaticResource EffectShadow2}" 
+                                    Margin="0,0,0,8" 
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" 
+                                    x:Name="dropDownBorder" 
+                                    MinWidth="{Binding ActualWidth, ElementName=border}" 
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}" 
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    Background="{DynamicResource SolidRegionBrush}">
+                                <hc:ToggleBlock IsChecked="{Binding HasItems,RelativeSource={RelativeSource TemplatedParent},Mode=OneWay}" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                    <hc:ToggleBlock.CheckedContent>
+                                        <ScrollViewer Margin="2">
+                                            <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </ScrollViewer>
+                                    </hc:ToggleBlock.CheckedContent>
+                                    <hc:ToggleBlock.UnCheckedContent>
+                                        <hc:Empty />
+                                    </hc:ToggleBlock.UnCheckedContent>
+                                </hc:ToggleBlock>
+                            </Border>
+                        </Decorator>
+                    </Popup>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="HasItems" Value="false">
+                        <Setter Property="Height" TargetName="dropDownBorder" Value="95"/>
+                    </Trigger>
+                    <Trigger Property="hc:DropDownElement.ConsistentWidth" Value="True">
+                        <Setter Property="MaxWidth" TargetName="dropDownBorder" Value="{Binding ActualWidth, ElementName=border}"/>
+                        <Setter Property="MinWidth" TargetName="dropDownBorder" Value="{Binding ActualWidth, ElementName=border}"/>
+                    </Trigger>
+                    <Trigger Property="hc:DropDownElement.AutoWidth" Value="True">
+                        <Setter Property="MaxWidth" TargetName="dropDownBorder" Value="{x:Static system:Double.MaxValue}" />
+                        <Setter Property="MinWidth" TargetName="dropDownBorder" Value="{Binding ActualHeight, ElementName=border}" />
+                    </Trigger>
+                    <MultiTrigger>
+                        <MultiTrigger.Conditions>
+                            <Condition Property="IsMouseOver" Value="true"/>
+                            <Condition Property="IsOpen" Value="false" SourceName="PART_Popup"/>
+                        </MultiTrigger.Conditions>
+                        <Setter Property="BorderBrush" Value="{DynamicResource SecondaryBorderBrush}"/>
+                    </MultiTrigger>
+                    <Trigger Property="IsOpen" Value="True" SourceName="PART_Popup">
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                    </Trigger>
+                    <Trigger Property="IsFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="false">
+                        <Setter Property="Opacity" Value="0.4"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="SolidComboBoxItemStyle" BasedOn="{StaticResource ComboBoxItemBaseStyle}" TargetType="ComboBoxItem">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="Bd" 
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsSelected" Value="False" />
+                                        <Condition Property="IsMouseOver" Value="True" />
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource SolidRegionSecondaryRegionBrush}" />
+                                </MultiTrigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsSelected" Value="True" />
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource PrimaryBrush}" />
+                                    <Setter Property="Foreground" Value="White" />
+                                </MultiTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style BasedOn="{StaticResource InputElementBaseStyle}" TargetType="ComboBox">
+                <Setter Property="ItemContainerStyle" Value="{StaticResource SolidComboBoxItemStyle}"/>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+                <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
+                <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+                <Setter Property="Template" Value="{StaticResource SolidComboBoxTemplate}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEditable" Value="true">
+                        <Setter Property="IsTabStop" Value="false"/>
+                        <Setter Property="Template" Value="{StaticResource ComboBoxEditableTemplate}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <Geometry x:Key="StraightBubbleTailGeometry">M-6.5253045E-55,0 L29.9,0.2 29.9,0.066666668 C33,15.466667 38.166667,23.1 44.966667,35 L44.966667,35.133333 C25.766667,28.433333 7.35,15.625 -6.5253045E-55,0 z</Geometry>
         </ResourceDictionary>

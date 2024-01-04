@@ -43,15 +43,19 @@ namespace ChatGptApiClientV2
         }
         private static void SetupDarkTheme()
         {
-            Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromRgb(0x2b, 0x2b, 0x2b));
-            Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0x34, 0x34, 0x34));
+            Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromArgb(0x0f, 0xff, 0xff, 0xff));
+            Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromArgb(0x1f, 0xff, 0xff, 0xff));
+            Application.Current.Resources["SolidRegionBrush"] = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20));
+            Application.Current.Resources["SolidRegionSecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0x34, 0x34, 0x34));
             ForAllHandyControlWindows(TryEnableMica);
             ForAllWindows(MicaHelper.ApplyDarkMode);
         }
         private static void SetupLightTheme()
         {
-            Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromRgb(0xfb, 0xfb, 0xfb));
-            Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xf6, 0xf6, 0xf6));
+            Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromArgb(0xb3, 0xff, 0xff, 0xff));
+            Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromArgb(0x80, 0xf9, 0xf9, 0xf9));
+            Application.Current.Resources["SolidRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xfa, 0xfa, 0xfa));
+            Application.Current.Resources["SolidRegionSecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xf6, 0xf6, 0xf6));
             ForAllHandyControlWindows(TryEnableMica);
             ForAllWindows(MicaHelper.RemoveDarkMode);
         }
