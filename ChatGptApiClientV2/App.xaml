@@ -23,7 +23,6 @@
                 <ResourceDictionary Source="MarkdownTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="Label" BasedOn="{StaticResource LabelBaseStyle}">
-                <!--<Setter Property="Background" Value="{DynamicResource SecondaryRegionBrush}"/>-->
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
             </Style>
