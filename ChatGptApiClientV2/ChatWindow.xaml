@@ -194,8 +194,9 @@
                      KeyboardNavigation.TabNavigation="None"
                      KeyboardNavigation.ControlTabNavigation="None"
                      KeyboardNavigation.DirectionalNavigation="None"
-                     ScrollViewer.CanContentScroll="False"
-                     Keyboard.PreviewKeyDown="LstMsg_KeyDown">
+                     ScrollViewer.CanContentScroll="True"
+                     VirtualizingPanel.IsContainerVirtualizable="True"
+                     VirtualizingPanel.ScrollUnit="Pixel">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Background" Value="Transparent" />

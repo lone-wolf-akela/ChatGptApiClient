@@ -538,25 +538,12 @@ public partial class ChatWindow
     {
         var scrollViewer = GetScrollViewer(LstMsg);
         scrollViewer?.UpdateLayout();
-        // we cannot use scrollViewer.ScrollToEnd() because it is not animated
-        if (scrollViewer is not null && msgSmoothScrollInfoAdapter is not null)
-        {
-            msgSmoothScrollInfoAdapter.Dispatcher.Invoke(() =>
-            {
-                msgSmoothScrollInfoAdapter.ToEnd();
-            });
-        }
+        scrollViewer?.ScrollToEnd();
     }
 
-    private SmoothScrollInfoAdapter? msgSmoothScrollInfoAdapter;
     private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown)
     {
         await MessageList.SyncChatSession(session, State, enableMarkdown);
-
-        LstMsg.UpdateLayout(); // need this, or the scrollviewer can be null
-        var scrollViewer = GetScrollViewer(LstMsg);
-        msgSmoothScrollInfoAdapter = SmoothScrolling.Enable(scrollViewer);
-
         ScrollToEnd();
     }
     private void AddStreamText(string text)
@@ -667,10 +654,6 @@ public partial class ChatWindow
         };
         if (dlg.ShowDialog() != true) { return; }
 
-        if (msgSmoothScrollInfoAdapter is not null)
-        {
-            msgSmoothScrollInfoAdapter.AnimatedScrollingEnabled = false;
-        }
         var oldScrollOffset = scrollViewer.VerticalOffset;
 
         scrollViewer.ScrollToTop();
@@ -726,10 +709,6 @@ public partial class ChatWindow
 
         scrollViewer.ScrollToVerticalOffset(oldScrollOffset);
         scrollViewer.UpdateLayout();
-        if (msgSmoothScrollInfoAdapter is not null)
-        {
-            msgSmoothScrollInfoAdapter.AnimatedScrollingEnabled = true;
-        }
     }
 
     private async void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -784,39 +763,5 @@ public partial class ChatWindow
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         State.Config.RefreshTheme();
-    }
-
-    private void LstMsg_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key is Key.Up)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.LineUp();
-        }
-        else if (e.Key is Key.Down)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.LineDown();
-        }
-        else if (e.Key is Key.PageUp)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.PageUp();
-        }
-        else if (e.Key is Key.PageDown or Key.Space)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.PageDown();
-        }
-        else if (e.Key is Key.Home)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.ToHome();
-        }
-        else if (e.Key is Key.End)
-        {
-            e.Handled = true;
-            msgSmoothScrollInfoAdapter?.ToEnd();
-        }
     }
 }
