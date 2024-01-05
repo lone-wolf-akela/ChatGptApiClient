@@ -118,7 +118,7 @@ public class ChatWindowMessage : ObservableObject
                         .UseEmphasisExtras()
                         .UseAutoLinks()
                         .Build());
-                return doc.Blocks.ToList();
+                return [.. doc.Blocks];
             }
             catch (Exception)
             {

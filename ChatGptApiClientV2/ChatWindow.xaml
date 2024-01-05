@@ -53,8 +53,8 @@
                 </TextBlock>
             </Button>
             <StackPanel Orientation="Horizontal">
-                <StackPanel Margin="0,0,10,0" Orientation="Horizontal">
-                    <Label MinWidth="50" Content="模型" Margin="0,0,0,0"/>
+                <StackPanel Margin="0,0,5,0" Orientation="Horizontal">
+                    <Label Content="模型"/>
                     <ComboBox x:Name="CbxModel" Width="200" ItemsSource="{Binding State.Config.ModelOptions}" SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -63,8 +63,8 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <StackPanel Margin="0,0,25,0" Orientation="Horizontal">
-                    <Label MinWidth="50" Content="版本" Margin="0,0,0,0"/>
+                <StackPanel Margin="0,0,0,0" Orientation="Horizontal">
+                    <Label Content="版本"/>
                     <ComboBox x:Name="CbxModelVersion" Width="200" ItemsSource="{Binding State.Config.ModelVersionOptions}" SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -73,7 +73,8 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <ToggleButton x:Name="TgglPlugin" Margin="0,0,15,0">
+                <hc:Divider Orientation="Vertical" Margin="10,0,10,0"/>
+                <ToggleButton x:Name="TgglPlugin" Margin="0,0,10,0">
                     <StackPanel>
                         <TextBlock Text="选择插件"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True" StaysOpen="False">
@@ -113,7 +114,7 @@
                         </Popup>
                     </StackPanel>
                 </ToggleButton>
-                <ToggleButton x:Name="TgglPrompt" Margin="0,0,15,0">
+                <ToggleButton x:Name="TgglPrompt" Margin="0,0,0,0">
                     <StackPanel>
                         <TextBlock Text="初始提示词"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPrompt}" AllowsTransparency="True" StaysOpen="False">
@@ -156,6 +157,7 @@
                         </Popup>
                     </StackPanel>
                 </ToggleButton>
+                <hc:Divider Orientation="Vertical" Margin="10,0,10,0"/>
                 <CheckBox x:Name="ChkMarkdown" IsChecked="{Binding State.Config.EnableMarkdown}" Content="Markdown格式化" Click="ChkMarkdown_Click"/>
             </StackPanel>
         </DockPanel>
@@ -210,7 +212,9 @@
                 <hc:SimplePanel>
                     <TextBox x:Name="TxtInput" FontFamily="Segoe UI, Microsoft YaHei UI" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="5"/>
                     <TextBlock x:Name="TxtInputPlaceholder" Text="在此输入对话内容" FontFamily="Segoe UI, Microsoft YaHei UI" Foreground="Gray" Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" VerticalAlignment="Top" TextWrapping="WrapWithOverflow" Margin="{Binding Padding, ElementName=TxtInput}"/>
-                    <Button x:Name="BtnAddfile" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" VerticalAlignment="Bottom" Margin="0,0,5,5" Padding="0" HorizontalAlignment="Right" Height="30" Width="30" Click="BtnAddfile_Click"/>
+                    <hc:Badge VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,5,5" Value="{Binding FileAttachments.Count}" ShowBadge="{Binding FileAttachments.Count}" Style="{DynamicResource BadgePrimary}">
+                        <Button x:Name="BtnAddfile" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" Padding="0" Height="30" Width="30" Click="BtnAddfile_Click"/>
+                    </hc:Badge>
                 </hc:SimplePanel>
             </DockPanel>
         </DockPanel>
