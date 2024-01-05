@@ -21,30 +21,57 @@ using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.WindowsAPICodePack.Shell;
 
 namespace ChatGptApiClientV2;
 
-public class FileAttachmentInfo
+public class FileAttachmentInfo : ObservableObject
 {
     public FileAttachmentInfo(string path)
     {
         Path = path;
-        var icon = System.Drawing.Icon.ExtractAssociatedIcon(Path);
-        if (icon is not null)
+        Icon = null;
+
+        // we should not extract icon on UI thread, which may cause the UI to stop responding.
+        Task.Run(() =>
         {
-            Icon = Imaging.CreateBitmapSourceFromHIcon(
-                icon.Handle,
-                new Int32Rect(0, 0, icon.Width, icon.Height),
-                BitmapSizeOptions.FromEmptyOptions()
-            );
-        }
-        else
-        {
-            Icon = null;
-        }
+            // this is fast but cannot show file preview
+            var icon = Utils.Get256FileIcon(Path);
+            if (icon is not null)
+            {
+                var iconSrc = Imaging.CreateBitmapSourceFromHIcon(
+                    icon.Handle,
+                    new Int32Rect(0, 0, icon.Width, icon.Height),
+                    BitmapSizeOptions.FromEmptyOptions()
+                );
+                iconSrc.Freeze();
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Icon = iconSrc;
+                    OnPropertyChanged(nameof(Icon));
+                });
+            }
+
+            // shellFile Thumbnail can be slow for large file, but can show file preview
+            if (Utils.IsPathRemote(path))
+            {
+                // do not extract thumbnail for remote file
+                // as it can be very slow
+                return;
+            }
+
+            var shellFile = ShellFile.FromFilePath(path);
+            var thumbnail = shellFile?.Thumbnail?.ExtraLargeBitmapSource;
+            thumbnail?.Freeze();
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Icon = thumbnail ?? Icon;
+                OnPropertyChanged(nameof(Icon));
+            });
+        }).ConfigureAwait(false);
     }
     public string Path { get; }
-    public ImageSource? Icon { get; }
+    public ImageSource? Icon { get; private set; }
 }
 public class ChatWindowMessage : ObservableObject
 {
