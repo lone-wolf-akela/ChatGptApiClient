@@ -32,6 +32,9 @@
             <Style x:Key="DropDownListStyle" TargetType="ListBox" BasedOn="{StaticResource ListBoxBaseStyle}">
                 <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
             </Style>
+            <Style TargetType="ContextMenu" BasedOn="{StaticResource ContextMenuBaseStyle}">
+                <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+            </Style>
             <Style x:Key="SmoothScrollListBox" TargetType="ListBox" BasedOn="{StaticResource ListBoxBaseStyle}">
                 <Setter Property="Template">
                     <Setter.Value>
