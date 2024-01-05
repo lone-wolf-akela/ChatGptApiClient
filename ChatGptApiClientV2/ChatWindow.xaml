@@ -162,13 +162,13 @@
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
-                <UniformGrid Columns="3" Rows="2" Margin="0,0,0,10">
-                    <Button x:Name="BtnReset" Click="BtnReset_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Margin="0,0,2.5,2.5" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="BtnSave"  Click="BtnSave_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe78c;" ToolTip="保存对话历史" Margin="2.5,0,2.5,2.5" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="BtnLoad"  Click="BtnLoad_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe8da;" ToolTip="载入对话历史" Margin="2.5,0,0,2.5" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="BtnPrint"  Click="BtnPrint_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="打印对话历史" Margin="0,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
-                    <Button x:Name="BtnScreenshot"  Click="BtnScreenshot_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe91b;" ToolTip="导出长截图" Margin="2.5,2.5,2.5,0" Height="30" Width="30" Padding="0"/>
-                </UniformGrid>
+                <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5" VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
+                    <Button x:Name="BtnReset" Click="BtnReset_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Padding="0" Width="30" Height="30"/>
+                    <Button x:Name="BtnSave"  Click="BtnSave_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe78c;" ToolTip="保存对话历史" Padding="0" Width="30" Height="30"/>
+                    <Button x:Name="BtnLoad"  Click="BtnLoad_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe8da;" ToolTip="载入对话历史" Padding="0" Width="30" Height="30"/>
+                    <Button x:Name="BtnPrint"  Click="BtnPrint_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="打印对话历史" Padding="0" Width="30" Height="30"/>
+                    <Button x:Name="BtnScreenshot"  Click="BtnScreenshot_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe91b;" ToolTip="导出长截图" Padding="0" Width="30" Height="30"/>
+                </hc:UniformSpacingPanel>
                 <Button x:Name="BtnSend" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="BtnSend_Click">
                     <TextBlock TextAlignment="Center">
                         发送<LineBreak/>Ctrl + Enter
