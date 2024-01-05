@@ -464,6 +464,9 @@ public partial class ChatWindow
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
     public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
+    public bool HasImageFileAttachment => FileAttachments.Select(file => MimeTypes.GetMimeType(file.Path))
+                                                         .Any(mime => mime.StartsWith("image/"));
+
     private void ScrollToParentProcecssor(object? sender, MouseWheelEventArgs e)
     {
         if (e.Handled || sender is not DependencyObject senderObj)
@@ -505,6 +508,7 @@ public partial class ChatWindow
         FileAttachments.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(IsFileAttachmentsEmpty));
+            OnPropertyChanged(nameof(HasImageFileAttachment));
         };
 
         var sendKeyBinding = new KeyBinding

@@ -207,7 +207,7 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0"/>
+                    <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
                 </StackPanel>
                 <hc:SimplePanel>
                     <TextBox x:Name="TxtInput" FontFamily="Segoe UI, Microsoft YaHei UI" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="5"/>
