@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows.Documents;
 using NJsonSchema;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -32,7 +33,7 @@ public interface IToolFunction
     {
         get
         {
-            var settings = new JsonSchemaGeneratorSettings();
+            var settings = new NewtonsoftJsonSchemaGeneratorSettings();
             var schema = new JsonSchema();
             var resolver = new JsonSchemaResolver(schema, settings);
             var generator = new JsonSchemaGenerator(settings);

@@ -8,10 +8,43 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="ImageGrid" HorizontalAlignment="Left" MouseEnter="ImageGrid_MouseEnter" MouseLeave="ImageGrid_MouseLeave">
-        <Image x:Name="ImageBox" Source="{Binding Image, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}" Stretch="Uniform" MaxHeight="{Binding ImageMaxHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}" />
+        <Image x:Name="ImageBox" 
+               Source="{Binding Image, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}" 
+               Stretch="Uniform" 
+               MaxHeight="{Binding ImageMaxHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}"
+               RenderOptions.BitmapScalingMode="Fant"/>
         <StackPanel x:Name="BtnPanel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10" Visibility="Collapsed">
-            <Button x:Name="BtnOpenImageViewer" Width="150" Content="在图像查看程序中打开" Margin="0,0,0,5" Click="BtnOpenImageViewer_Click"/>
+            <Button x:Name="BtnOpenImageViewer" 
+                    Width="150" 
+                    Content="在图像查看程序中打开" 
+                    Margin="0,0,0,5" 
+                    Click="BtnOpenImageViewer_Click">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                        <Setter Property="Opacity" Value="0.9"/>
+                        <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
             <ToggleButton x:Name="TgglDetails" Width="150">
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton" BasedOn="{StaticResource ToggleButtonDefault}">
+                        <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                        <Setter Property="Opacity" Value="0.9"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+                                <Setter Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ToggleButton.Style>
                 <StackPanel>
                     <TextBlock Text="查看图片信息"/>
                     <Popup x:Name="WindowPopUp" IsOpen="{Binding IsChecked, ElementName=TgglDetails}" AllowsTransparency="True" StaysOpen="False">
