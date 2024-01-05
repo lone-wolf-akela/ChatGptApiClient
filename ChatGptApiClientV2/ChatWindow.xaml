@@ -215,15 +215,14 @@
             </DockPanel>
         </DockPanel>
         <hc:SimplePanel Grid.Row="1" Margin="0,0,0,5" >
-            <ListBox x:Name="LstMsg" Background="{DynamicResource RegionBrush}" 
+            <ListBox x:Name="LstMsg" 
+                     Style="{StaticResource SmoothScrollListBox}"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ItemsSource="{Binding Path=MessageList.Messages, Mode=OneWay}"
                      KeyboardNavigation.TabNavigation="None"
                      KeyboardNavigation.ControlTabNavigation="None"
                      KeyboardNavigation.DirectionalNavigation="None"
-                     ScrollViewer.CanContentScroll="True"
-                     VirtualizingPanel.IsContainerVirtualizable="True"
-                     VirtualizingPanel.ScrollUnit="Pixel">
+                     ScrollViewer.CanContentScroll="False">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Background" Value="Transparent" />

@@ -1,7 +1,6 @@
 ﻿using HandyControl.Tools;
 using System;
 using System.Windows;
-using System.Windows.Media.Animation;
 
 
 namespace ChatGptApiClientV2
