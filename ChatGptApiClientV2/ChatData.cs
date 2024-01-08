@@ -9,6 +9,7 @@ using System.Text;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
+using System.Linq.Expressions;
 
 namespace ChatGptApiClientV2;
 
@@ -282,6 +283,64 @@ public class ChatCompletion
         return completion;
     }
 }
+
+public class MessageConverter : JsonConverter<IMessage>
+{
+    private bool canWrite = true;
+    private bool canRead = true;
+    public override bool CanWrite => canWrite;
+    public override bool CanRead => canRead;
+    public override void WriteJson(JsonWriter writer, IMessage? value, JsonSerializer serializer)
+    {
+        canWrite = false;
+
+        if (value is null)
+        {
+            writer.WriteNull();
+        }
+        else
+        {
+            switch (value.Role)
+            {
+                case RoleType.System:
+                    serializer.Serialize(writer, (SystemMessage)value);
+                    break;
+                case RoleType.User:
+                    serializer.Serialize(writer, (UserMessage)value);
+                    break;
+                case RoleType.Assistant:
+                    serializer.Serialize(writer, (AssistantMessage)value);
+                    break;
+                case RoleType.Tool:
+                    serializer.Serialize(writer, (ToolMessage)value);
+                    break;
+                default:
+                    throw new JsonSerializationException();
+            }
+        }
+        canWrite = true;
+    }
+
+    public override IMessage ReadJson(JsonReader reader, Type objectType, IMessage? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        canRead = false;
+        var jobj = JObject.Load(reader);
+        var role = jobj["role"]?.ToObject<RoleType>();
+        
+        IMessage result = role switch
+        {
+            RoleType.System => jobj.ToObject<SystemMessage>(serializer) ?? throw new JsonSerializationException(),
+            RoleType.User => jobj.ToObject<UserMessage>(serializer) ?? throw new JsonSerializationException(),
+            RoleType.Assistant => jobj.ToObject<AssistantMessage>(serializer) ?? throw new JsonSerializationException(),
+            RoleType.Tool => jobj.ToObject<ToolMessage>(serializer) ?? throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException(),
+        };
+        canRead = true;
+        return result;
+    }
+}
+
+[JsonConverter(typeof(MessageConverter))]
 public interface IMessage : ICloneable
 {
     [JsonConverter(typeof(StringEnumConverter))]
@@ -292,6 +351,52 @@ public interface IMessage : ICloneable
         [EnumMember(Value = "image_url")]
         ImageUrl
     }
+    public class ContentConverter : JsonConverter<IContent>
+    {
+        private bool canWrite = true;
+        private bool canRead = true;
+        public override bool CanWrite => canWrite;
+        public override bool CanRead => canRead;
+        public override void WriteJson(JsonWriter writer, IContent? value, JsonSerializer serializer)
+        {
+            canWrite = false;
+            if (value is null)
+            {
+                writer.WriteNull();
+            }
+            else
+            {
+                switch (value.Type)
+                {
+                    case ContentCategory.Text:
+                        serializer.Serialize(writer, (TextContent)value);
+                        break;
+                    case ContentCategory.ImageUrl:
+                        serializer.Serialize(writer, (ImageContent)value);
+                        break;
+                    default:
+                        throw new JsonSerializationException();
+                }
+            }
+            canWrite = true;
+        }
+
+        public override IContent ReadJson(JsonReader reader, Type objectType, IContent? existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            canRead = false;
+            var jobj = JObject.Load(reader);
+            var type = jobj["type"]?.ToObject<ContentCategory>();
+            IContent result = type switch
+            {
+                ContentCategory.Text => jobj.ToObject<TextContent>(serializer) ?? throw new JsonSerializationException(),
+                ContentCategory.ImageUrl => jobj.ToObject<ImageContent>(serializer) ?? throw new JsonSerializationException(),
+                _ => throw new JsonSerializationException(),
+            };
+            canRead = true;
+            return result;
+        }
+    }
+    [JsonConverter(typeof(ContentConverter))]
     public interface IContent : ICloneable
     {
         public ContentCategory Type { get; }
@@ -364,13 +469,14 @@ public class SystemMessage : IMessage
 
 public class UserMessageConverter: JsonConverter<UserMessage>
 {
-    bool canWrite = true;
+    private bool canWrite = true;
     public override bool CanWrite => canWrite;
 
     public override void WriteJson(JsonWriter writer, UserMessage? value, JsonSerializer serializer)
     {
         if(value is null)
         {
+            writer.WriteNull();
             return;
         }
         var content = (List<IMessage.IContent>)value.Content;
@@ -524,8 +630,7 @@ public class ChatCompletionRequest
             ContractResolver = contractResolver,
             Formatting = Formatting.Indented,
             StringEscapeHandling = StringEscapeHandling.Default,
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto
+            NullValueHandling = NullValueHandling.Ignore
         };
         var result = JsonConvert.SerializeObject(this, settings);
         foreach (var msg in Messages)

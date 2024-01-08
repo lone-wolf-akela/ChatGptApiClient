@@ -459,16 +459,16 @@ public partial class SystemState : ObservableObject
             {
                 textAttachments.Add(new AttachmentInfo
                 {
-                    FileName = file,
-                    Content = await File.ReadAllTextAsync(file)
+                    FileName = Path.GetFileName(file),
+                    Content = (await File.ReadAllTextAsync(file)).Trim()
                 });
             }
             else if (mime.StartsWith("application/pdf"))
             {
                 textAttachments.Add(new AttachmentInfo
                 {
-                    FileName = file,
-                    Content = Utils.PdfFileToText(file)
+                    FileName = Path.GetFileName(file),
+                    Content = Utils.PdfFileToText(file).Trim()
                 });
             }
         }

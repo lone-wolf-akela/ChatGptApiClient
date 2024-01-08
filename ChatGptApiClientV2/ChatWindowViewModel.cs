@@ -119,7 +119,8 @@ public class ChatWindowMessage : ObservableObject
         {
             Text,
             Image,
-            Blocks
+            Blocks,
+            TextFile,
         }
         public RichMessageType Type { get; init; } = RichMessageType.Text;
         /**** Text Type ****/
@@ -133,6 +134,9 @@ public class ChatWindowMessage : ObservableObject
         /***** Blocks Type *****/
         public IEnumerable<Block>? Blocks { get; init; }
         /***********************/
+        /***** TextFile Type *****/
+        public string? FileName { get; init; }
+        public string? FileContent { get; init; }
 
         private List<Block>? cachedRenderResult;
         private List<Block> RenderMarkdownText()
@@ -190,6 +194,33 @@ public class ChatWindowMessage : ObservableObject
                             cachedRenderResult = Blocks!.ToList();
                             return cachedRenderResult;
                         }
+                    case RichMessageType.TextFile:
+                        {
+                            var header = new TextBlock();
+                            header.Inlines.Add(new Run("\uE723") 
+                            { 
+                                FontFamily = new FontFamily(new Uri("pack://application:,,,/font/"), "Segoe Fluent Icons")
+                            });
+                            header.Inlines.Add(" ");
+                            header.Inlines.Add(FileName!);
+
+                            var expander = new Expander
+                            {
+                                Header = header,
+                                IsExpanded = false,
+                                Content = new TextBox
+                                {
+                                    Text = FileContent!,
+                                    IsReadOnly = true,
+                                    MaxHeight = 300,
+                                    TextWrapping = TextWrapping.Wrap,
+                                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                                    HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden
+                                }
+                            };
+                            cachedRenderResult = [new BlockUIContainer(expander)];
+                            return cachedRenderResult;
+                        }
                     default:
                         {
                             cachedRenderResult = [];
@@ -204,6 +235,15 @@ public class ChatWindowMessage : ObservableObject
         await Task.Run(() =>
         {
             messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
+        });
+        OnPropertyChanged(nameof(RenderedMessage));
+    }
+
+    public async Task AddTextFile(string fileName, string content)
+    {
+        await Task.Run(() =>
+        {
+            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.TextFile, FileName = fileName, FileContent = content });
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
@@ -396,7 +436,14 @@ public class ChatWindowMessageList : ObservableObject
                     await chatMsg.AddImage(imgContent.ImageUrl.Url, null);
                 }
             }
-            if (msg is AssistantMessage assistantMsg)
+            if (msg is UserMessage userMsg)
+            {
+                foreach(var file in userMsg.Attachments)
+                {
+                    await chatMsg.AddTextFile(file.FileName, file.Content);
+                }
+            }
+            else if (msg is AssistantMessage assistantMsg)
             {
                 foreach (var toolcall in assistantMsg.ToolCalls ?? [])
                 {
@@ -619,6 +666,9 @@ public partial class ChatWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task SwitchMarkdownRenderingAsync()
     {
-        await State.RefreshSession();
+        if (SessionNotNull)
+        {
+            await State.RefreshSession();
+        }
     }
 }
