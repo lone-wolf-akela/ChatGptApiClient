@@ -85,7 +85,7 @@
                         <TextBlock Text="选择插件"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True" StaysOpen="False">
                             <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
-                                    BorderThickness="{StaticResource BorderThickness}" 
+                                    BorderThickness="{DynamicResource BorderThickness}" 
                                     BorderBrush="{DynamicResource BorderBrush}" 
                                     Background="{DynamicResource SolidRegionBrush}" 
                                     Effect="{StaticResource EffectShadow2}" 

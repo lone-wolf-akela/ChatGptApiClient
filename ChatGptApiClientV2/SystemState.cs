@@ -16,6 +16,7 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Threading;
 using ChatGptApiClientV2.Tools;
+using static ChatGptApiClientV2.UserMessage;
 
 namespace ChatGptApiClientV2;
 
@@ -450,40 +451,29 @@ public partial class SystemState : ObservableObject
             Config.Seed = Random.Next();
         }
 
-        StringBuilder inputTxt = new();
-        inputTxt.Append(text);
-        var textAttachmentCount = 0;
+        List<AttachmentInfo> textAttachments = [];
+        foreach(var file in files)
         {
-            var txtfiles = from file in files
-                let mime = MimeTypes.GetMimeType(file)
-                where mime.StartsWith("text/")
-                select file;
-            foreach (var file in txtfiles)
+            var mime = MimeTypes.GetMimeType(file);
+            if(mime.StartsWith("text/"))
             {
-                textAttachmentCount += 1;
-                inputTxt.AppendLine("");
-                inputTxt.AppendLine("");
-                inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
-                inputTxt.AppendLine(await File.ReadAllTextAsync(file));
+                textAttachments.Add(new AttachmentInfo
+                {
+                    FileName = file,
+                    Content = await File.ReadAllTextAsync(file)
+                });
+            }
+            else if (mime.StartsWith("application/pdf"))
+            {
+                textAttachments.Add(new AttachmentInfo
+                {
+                    FileName = file,
+                    Content = Utils.PdfFileToText(file)
+                });
             }
         }
 
-        {
-            var pdffiles = from file in files
-                let mime = MimeTypes.GetMimeType(file)
-                where mime.StartsWith("application/pdf")
-                select file;
-            foreach (var file in pdffiles)
-            {
-                textAttachmentCount += 1;
-                inputTxt.AppendLine("");
-                inputTxt.AppendLine("");
-                inputTxt.AppendLine($"Attachment {textAttachmentCount}: ");
-                inputTxt.AppendLine(Utils.PdfFileToText(file));
-            }
-        }
-
-        var textContent = new IMessage.TextContent { Text = inputTxt.ToString() };
+        var textContent = new IMessage.TextContent { Text = text };
         var contentList = new List<IMessage.IContent> { textContent };
 
         var imgfiles = (
@@ -510,7 +500,8 @@ public partial class SystemState : ObservableObject
         var userMsg = new UserMessage
         {
             Content = contentList,
-            Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName
+            Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName,
+            Attachments = textAttachments
         };
 
         CurrentSession.Messages.Add(userMsg);

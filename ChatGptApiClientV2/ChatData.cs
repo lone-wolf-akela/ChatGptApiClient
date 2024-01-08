@@ -5,8 +5,10 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
+using System.Text;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json.Linq;
 
 namespace ChatGptApiClientV2;
 
@@ -359,14 +361,74 @@ public class SystemMessage : IMessage
         Name = Name
     };
 }
+
+public class UserMessageConverter: JsonConverter<UserMessage>
+{
+    bool canWrite = true;
+    public override bool CanWrite => canWrite;
+
+    public override void WriteJson(JsonWriter writer, UserMessage? value, JsonSerializer serializer)
+    {
+        if(value is null)
+        {
+            return;
+        }
+        var content = (List<IMessage.IContent>)value.Content;
+        var needCombineAttachments = !value.IsSavingToDisk && value.Attachments.Count != 0;
+        if (needCombineAttachments)
+        {
+            StringBuilder sb = new();
+            var count = 0;
+            foreach (var file in value.Attachments)
+            {
+                count += 1;
+                sb.AppendLine("");
+                sb.AppendLine("");
+                sb.AppendLine($"Attachment {count}: ");
+                sb.AppendLine(file.Content);
+            }
+
+            content.Add(new IMessage.TextContent
+            {
+                Text = sb.ToString()
+            });
+        }
+
+        canWrite = false;
+        serializer.Serialize(writer, value);
+        canWrite = true;
+        
+        if(needCombineAttachments)
+        {
+            content.RemoveAt(content.Count - 1);
+        }
+    }
+
+    public override UserMessage ReadJson(JsonReader reader, Type objectType, UserMessage? existingValue, bool hasExistingValue,
+        JsonSerializer serializer)
+    {
+        throw new InvalidOperationException();
+    }
+
+    public override bool CanRead => false;
+}
+
+[JsonConverter(typeof(UserMessageConverter))]
 public class UserMessage : IMessage
 {
+    public class AttachmentInfo
+    {
+        public string FileName { get; set; } = "";
+        public string Content { get; set; } = "";
+    }
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
     public RoleType Role => RoleType.User;
     public string? Name { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
     public bool ShouldSerializeHidden() => IsSavingToDisk;
+    public List<AttachmentInfo> Attachments { get; set; } = [];
+    public bool ShouldSerializeAttachments() => IsSavingToDisk;
     public object Clone() => new UserMessage
     {
         Content = from c in Content select c.Clone() as IMessage.IContent,
