@@ -5,24 +5,18 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using System.Text.RegularExpressions;
-using System.Drawing.Drawing2D;
 using System.Windows.Media.Imaging;
 using System.Globalization;
 using System.Windows.Data;
-using System.Windows.Controls;
 using System.ComponentModel;
 using System.Windows.Markup;
-using static ChatGptApiClientV2.EnumHelper;
 using System.Windows;
 using System.Windows.Documents;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Runtime.InteropServices;
-using System.Drawing.Imaging;
 using System.Runtime.InteropServices.Marshalling;
 
 namespace ChatGptApiClientV2;
@@ -72,7 +66,7 @@ public class EnumValueDescription(Enum value, string desc)
 }
 public static class EnumHelper
 {
-    public static string Description(this Enum value)
+    private static string Description(this Enum value)
     {
         var attributes = value.GetType().GetField(value.ToString())?.GetCustomAttributes(typeof(DescriptionAttribute), false);
         if (attributes is not null && attributes.Length != 0)
@@ -109,55 +103,12 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
         {
             return cached;
         }
-        var result = GetAllValuesAndDescriptions(value.GetType());
+        var result = EnumHelper.GetAllValuesAndDescriptions(value.GetType());
         cache[value.GetType()] = result;
         return result;
     }
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
-}
-public partial class RegexValidationRule : ValidationRule
-{
-    [GeneratedRegex("")]
-    private static partial Regex EmptyRegex();
-    
-    private string pattern = "";
-    private Regex regex = EmptyRegex();
-    public string ErrorMessage { get; set; } = "";
-
-    public string Pattern
-    {
-        get => pattern;
-        set
-        {
-            pattern = value;
-            regex = new Regex(pattern);
-        }
-    }
-
-    public override ValidationResult Validate(object? value, CultureInfo ultureInfo)
-    {
-        return regex.Match(value?.ToString() ?? "").Success 
-            ? new ValidationResult(true, null) 
-            : new ValidationResult(false, ErrorMessage);
-    }
-}
-
-public class UrlValidationRule : ValidationRule
-{
-    public string ErrorMessage { get; set; } = "";
-
-    public override ValidationResult Validate(object? value, CultureInfo ultureInfo)
-    {
-        var url = value?.ToString() ?? "";
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uriResult) 
-            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
-        {
-            return new ValidationResult(true, null);
-        }
-        return new ValidationResult(false, ErrorMessage);
-
-    }
 }
 
 internal static partial class Utils
@@ -175,17 +126,7 @@ internal static partial class Utils
 
     [GeneratedRegex("^data:(?<mime>[a-z]+\\/[a-z]+);base64,(?<data>.+)$")]
     private static partial Regex Base64UrlExtract();
-    public static string AssertIsBase64Url(string s)
-    {
-        var r = Base64UrlExtract();
-        var match = r.Match(s);
-        if (!match.Success)
-        {
-            throw new ArgumentException("The string is not a base64 image.");
-        }
-        return s;
-    }
-    public static string ExtractBase64FromUrl(string url)
+    private static string ExtractBase64FromUrl(string url)
     {
         var r = Base64UrlExtract();
         var match = r.Match(url);
@@ -210,31 +151,7 @@ internal static partial class Utils
         return bitmapImage;
     }
     
-    public static Bitmap Base64ToBitmap(string base64)
-    {
-        var data = ExtractBase64FromUrl(base64);
-        var bytes = Convert.FromBase64String(data);
-        using var ms = new MemoryStream(bytes);
-        var bitmap = new Bitmap(ms);
-        return bitmap;
-    }
 
-    public static Bitmap ResizeImage(Bitmap imgToResize, System.Drawing.Size size, PixelFormat format)
-    {
-        try
-        {
-            Bitmap b = new(size.Width, size.Height, format);
-            using var g = Graphics.FromImage(b);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.DrawImage(imgToResize, 0, 0, size.Width, size.Height);
-            return b;
-        }
-        catch
-        {
-            Debug.WriteLine("Bitmap could not be resized");
-            return imgToResize;
-        }
-    }
     public static string GetFileExtensionFromUrl(string url)
     {
         url = url.Split('?')[0];
@@ -242,7 +159,7 @@ internal static partial class Utils
         return url.Contains('.') ? url[url.LastIndexOf('.')..] : "";
     }
 
-    public static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
+    private static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
     {
         var bytes = Encoding.UTF8.GetBytes(hashsrc);
         var hash = System.Security.Cryptography.MD5.HashData(bytes);

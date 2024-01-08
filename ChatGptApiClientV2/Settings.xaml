@@ -8,9 +8,18 @@
         mc:Ignorable="d" Icon="/chatgpt-icon.ico"
         Title="Settings" Height="600" Width="1080"
         Loaded="Window_Loaded" Unloaded="Window_Unloaded">
-    <hc:SimplePanel DataContext="{Binding ElementName=Window, Mode=OneWay}">
+    <d:Window.DataContext>
+        <local:SettingsViewModel/>
+    </d:Window.DataContext>
+    <hc:SimplePanel>
         <DockPanel Margin="10,10,10,10">
-            <Button x:Name="BtnClose" DockPanel.Dock="Bottom" Content="关闭" HorizontalAlignment="Right" Width="100" Height="50" Click="BtnClose_Click"/>
+            <Button DockPanel.Dock="Bottom" 
+                    Content="关闭" 
+                    HorizontalAlignment="Right" 
+                    Width="100" 
+                    Height="50"
+                    Command="hc:ControlCommands.CloseWindow"
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
             <StackPanel>
                 <hc:Divider Margin="0" Content="UI选项" HorizontalContentAlignment="Left"/>
                 <Grid Margin="0,0,0,5">
@@ -49,7 +58,13 @@
                         <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统" IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}" Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0"/>
                         <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}">
                             <TextBox Width="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}"/>
-                            <Button x:Name="BtnColorPicker" Background="{Binding Config.CustomThemeColor}" hc:BorderElement.CornerRadius="0" VerticalAlignment="Stretch" Click="BtnColorPicker_Click" Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}" Margin="0,0,5,0"/>
+                            <Button Background="{Binding Config.CustomThemeColor}" 
+                                    hc:BorderElement.CornerRadius="0" 
+                                    VerticalAlignment="Stretch" 
+                                    Click="BtnShowColorPicker_Click"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                    Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}" 
+                                    Margin="0,0,5,0"/>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -94,16 +109,10 @@
                     <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     <Label Grid.Row="2" Grid.Column="4" Content="重复惩罚" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     <Label Grid.Row="2" Grid.Column="8" Content="Top P" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    
-                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname">
-                        <TextBox.Text>
-                            <Binding Path="Config.UserNickName" Mode="TwoWay">
-                                <Binding.ValidationRules>
-                                    <local:RegexValidationRule Pattern="^[a-zA-Z0-9_-]{0,64}$" ErrorMessage="用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）"/>
-                                </Binding.ValidationRules>
-                            </Binding>
-                        </TextBox.Text>
-                    </TextBox>
+
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname"
+                             Text="{Binding Config.UserNickName, UpdateSourceTrigger=PropertyChanged}"/>
+
                     <DockPanel Grid.Row="0" Grid.Column="5">
                         <CheckBox DockPanel.Dock="Right" Width="70" Content="随机" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
                         <TextBox x:Name="TxtSeed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
@@ -143,27 +152,19 @@
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxServiceurl" TextWrapping="Wrap" VerticalAlignment="Center" IsEnabled="{Binding Path=Config.ServiceURLEditable}">
-                                <TextBox.Text>
-                                    <Binding Path="Config.ServiceURL" Mode="TwoWay">
-                                        <Binding.ValidationRules>
-                                            <local:UrlValidationRule ErrorMessage="必须为合法的 Http 或 Https 地址"/>
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
+                            <TextBox x:Name="TxtbxServiceurl" 
+                                     TextWrapping="Wrap" 
+                                     VerticalAlignment="Center" 
+                                     IsEnabled="{Binding Path=Config.ServiceURLEditable}"
+                                     Text="{Binding Config.ServiceURL, UpdateSourceTrigger=PropertyChanged}" />
+
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxAzureendpoint" TextWrapping="Wrap" VerticalAlignment="Center">
-                                <TextBox.Text>
-                                    <Binding Path="Config.AzureEndpoint" Mode="TwoWay">
-                                        <Binding.ValidationRules>
-                                            <local:UrlValidationRule ErrorMessage="必须为合法的 Http 或 Https 地址"/>
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
+                            <TextBox x:Name="TxtbxAzureendpoint" 
+                                     TextWrapping="Wrap" 
+                                     VerticalAlignment="Center"
+                                     Text="{Binding Config.AzureEndpoint, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
@@ -178,11 +179,14 @@
                         <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <StackPanel>
                                 <Label Content="Azure 部署 ID"  VerticalAlignment="Stretch" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
-                                <ListBox x:Name="LstAzureDeploymentIds" Margin="0,0,0,5" Height="100" ItemsSource="{Binding Path=Config.AzureDeploymentList}"/>
+                                <ListBox Margin="0,0,0,5" 
+                                         Height="100" 
+                                         ItemsSource="{Binding Config.AzureDeploymentList}"
+                                         SelectedIndex="{Binding SelectedAzureDeploymentIdIndex}"/>
                                 <DockPanel>
-                                    <Button x:Name="BtnDelAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Click="BtnDelAzureDeploymentId_Click"/>
-                                    <Button x:Name="BtnAddAzureDeploymentId" MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Click="BtnAddAzureDeploymentId_Click"/>
-                                    <TextBox x:Name="TxtbxAddAzureDeploymentId"  Margin="0,0,5,0" />
+                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Command="{Binding BtnDelAzureDeploymentIdCommand}"/>
+                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Command="{Binding BtnAddAzureDeploymentIdCommand}"/>
+                                    <TextBox Text="{Binding TextAddAzureDeploymentId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,5,0" />
                                 </DockPanel>
                             </StackPanel>
                         </Border>

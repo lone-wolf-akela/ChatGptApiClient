@@ -7,6 +7,7 @@ using System.Linq;
 using System.IO;
 using System.Windows;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Flurl;
 using HandyControl.Themes;
 using System.Windows.Media;
@@ -15,7 +16,7 @@ using System.Windows.Media;
 
 namespace ChatGptApiClientV2;
 
-public partial class Config : ObservableObject
+public partial class Config : ObservableValidator
 {
     [JsonIgnore]
     private static string ConfigPath => "config.json";
@@ -45,6 +46,9 @@ public partial class Config : ObservableObject
     }
 
     [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [StringLength(maximumLength: 64, MinimumLength = 0, ErrorMessage = "昵称长度必须在 0 到 64 之间")]
+    [RegularExpression("^[a-zA-Z0-9_-]*$", ErrorMessage = "用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）")]
     private string userNickName;
     partial void OnUserNickNameChanged(string value) => SaveConfig();
 
@@ -67,12 +71,16 @@ public partial class Config : ObservableObject
     private ServiceProviderType serviceProvider;
     partial void OnServiceProviderChanged(ServiceProviderType value)
     {
+        ValidateProperty(ServiceURL, nameof(ServiceURL));
+        ValidateProperty(AzureEndpoint, nameof(AzureEndpoint));
         UpdateModelOptionList();
         UpdateModelVersionList();
         SaveConfig();
     }
         
     private string serviceURL;
+
+    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     public string ServiceURL
     {
         get => ServiceProvider switch
@@ -83,13 +91,15 @@ public partial class Config : ObservableObject
         };
         set
         {
-            if (SetProperty(ref serviceURL, value))
+            if (SetProperty(ref serviceURL, value, true))
             {
                 SaveConfig();
             }
         }
     }
     [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     private string azureEndpoint;
 
     [JsonIgnore]

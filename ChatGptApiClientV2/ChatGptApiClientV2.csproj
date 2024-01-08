@@ -10,6 +10,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <!-- Below is workaround for ENC0003 error in hotreload. 
+         See https://github.com/dotnet/sdk/issues/36666 
+         Remove it when we update to dotnet-8.0.200
+     -->
+    <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,10 +10,16 @@
         mc:Ignorable="d" Icon="/chatgpt-icon.ico"
         Title="ChatWindow" Height="600" Width="1000"
         Loaded="Window_Loaded">
+    <d:Window.DataContext>
+        <local:ChatWindowViewModel/>
+    </d:Window.DataContext>
     <FrameworkElement.CommandBindings>
         <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
     </FrameworkElement.CommandBindings>
-    <Grid Margin="10,10,10,0" DataContext="{Binding ElementName=Window, Mode=OneWay}">
+    <Grid Margin="10,10,10,0">
+        <Grid.InputBindings>
+            <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding SendCommand}"/>
+        </Grid.InputBindings>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*" MinHeight="100"/>
@@ -22,7 +28,7 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,5">
-            <Button x:Name="BtnSettings" DockPanel.Dock="Right" Click="BtnSettings_Click" ToolTip="其他设置">
+            <Button Click="BtnSettings_Click" ToolTip="其他设置" DockPanel.Dock="Right">
                 <Button.Triggers>
                     <EventTrigger RoutedEvent="MouseEnter">
                         <BeginStoryboard>
@@ -79,7 +85,7 @@
                         <TextBlock Text="选择插件"/>
                         <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True" StaysOpen="False">
                             <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
-                                    BorderThickness="{DynamicResource BorderThickness}" 
+                                    BorderThickness="{StaticResource BorderThickness}" 
                                     BorderBrush="{DynamicResource BorderBrush}" 
                                     Background="{DynamicResource SolidRegionBrush}" 
                                     Effect="{StaticResource EffectShadow2}" 
@@ -158,20 +164,42 @@
                     </StackPanel>
                 </ToggleButton>
                 <hc:Divider Orientation="Vertical" Margin="10,0,10,0"/>
-                <CheckBox x:Name="ChkMarkdown" IsChecked="{Binding State.Config.EnableMarkdown}" Content="Markdown格式化" Click="ChkMarkdown_Click"/>
+                <CheckBox IsChecked="{Binding State.Config.EnableMarkdown}" 
+                          Content="Markdown格式化" 
+                          Command="{Binding SwitchMarkdownRenderingCommand}"/>
             </StackPanel>
         </DockPanel>
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
                 <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5" VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
-                    <Button x:Name="BtnReset" Click="BtnReset_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE72C;" ToolTip="重置对话（清空当前对话历史）" Padding="0" Width="30" Height="30"/>
-                    <Button x:Name="BtnSave"  Click="BtnSave_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe78c;" ToolTip="保存对话历史" Padding="0" Width="30" Height="30"/>
-                    <Button x:Name="BtnLoad"  Click="BtnLoad_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe8da;" ToolTip="载入对话历史" Padding="0" Width="30" Height="30"/>
-                    <Button x:Name="BtnPrint"  Click="BtnPrint_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe749;" ToolTip="打印对话历史" Padding="0" Width="30" Height="30"/>
-                    <Button x:Name="BtnScreenshot"  Click="BtnScreenshot_Click" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xe91b;" ToolTip="导出长截图" Padding="0" Width="30" Height="30"/>
+                    <hc:UniformSpacingPanel.Style>
+                        <Style TargetType="hc:UniformSpacingPanel">
+                            <Style.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Width" Value="30"/>
+                                    <Setter Property="Height" Value="30"/>
+                                    <Setter Property="FontSize" Value="{StaticResource SubHeadFontSize}"/>
+                                    <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons"/>
+                                </Style>
+                            </Style.Resources>
+                        </Style>
+                    </hc:UniformSpacingPanel.Style>
+                    <Button Command="{Binding ResetCommand}" ToolTip="重置对话（清空当前对话历史）" Content="&#xE72C;" />
+                    <Button Command="{Binding SaveCommand}" ToolTip="保存对话历史" Content="&#xe78c;" />
+                    <Button Command="{Binding LoadCommand}" ToolTip="载入对话历史" Content="&#xe8da;" />
+                    <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;"  />
+                    <Button Click="BtnScreenshot_Click" 
+                            ToolTip="导出长截图" 
+                            IsEnabled="{Binding Items.IsEmpty, ElementName=LstMsg, Converter={StaticResource Boolean2BooleanReConverter}}" 
+                            Content="&#xe91b;" />
                 </hc:UniformSpacingPanel>
-                <Button x:Name="BtnSend" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" MinHeight="50" MinWidth="100" Click="BtnSend_Click">
+                <Button Command="{Binding SendCommand}" 
+                        VerticalAlignment="Bottom" 
+                        HorizontalAlignment="Stretch" 
+                        MinHeight="50" 
+                        MinWidth="100">
                     <TextBlock TextAlignment="Center">
                         发送<LineBreak/>Ctrl + Enter
                     </TextBlock>
@@ -203,9 +231,15 @@
                             <DataTemplate>
                                 <hc:SimplePanel>
                                     <Image Source="{Binding Icon}" Height="64" Width="64" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,10,5,0"/>
-                                    <ContentControl x:Name="btn_removefile" MouseLeftButtonUp="BtnRemovefile_MouseLeftButtonUp">
+                                    <Button Command="{Binding RemoveFileCommand}"
+                                            Background="Transparent" 
+                                            BorderBrush="Transparent" 
+                                            VerticalAlignment="Top"
+                                            HorizontalAlignment="Right"
+                                            Padding="0" 
+                                            Margin="0,0,-5,0">
                                         <hc:SimplePanel Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                                        Margin="0,0,-5,0">
+                                                        >
                                             <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
@@ -232,7 +266,7 @@
                                                 </TextBlock.Style>
                                             </TextBlock>
                                         </hc:SimplePanel>
-                                    </ContentControl>
+                                    </Button>
                                 </hc:SimplePanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -240,10 +274,35 @@
                     <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
                 </StackPanel>
                 <hc:SimplePanel>
-                    <TextBox x:Name="TxtInput" FontFamily="Segoe UI, Microsoft YaHei UI" VerticalContentAlignment="Top" TextWrapping="WrapWithOverflow" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="5"/>
-                    <TextBlock x:Name="TxtInputPlaceholder" Text="在此输入对话内容" FontFamily="Segoe UI, Microsoft YaHei UI" Foreground="Gray" Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" VerticalAlignment="Top" TextWrapping="WrapWithOverflow" Margin="{Binding Padding, ElementName=TxtInput}"/>
-                    <hc:Badge VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,5,5" Value="{Binding FileAttachments.Count}" ShowBadge="{Binding FileAttachments.Count}" Style="{DynamicResource BadgePrimary}">
-                        <Button x:Name="BtnAddfile" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}" Content="&#xE723;" ToolTip="添加附件（图片或TXT文档）" Padding="0" Height="30" Width="30" Click="BtnAddfile_Click"/>
+                    <TextBox x:Name="TxtInput" 
+                             Text="{Binding TextInput, UpdateSourceTrigger=PropertyChanged}"
+                             FontFamily="Segoe UI, Microsoft YaHei UI"
+                             VerticalContentAlignment="Top" 
+                             TextWrapping="WrapWithOverflow" 
+                             AcceptsReturn="True" 
+                             VerticalScrollBarVisibility="Auto" 
+                             Padding="5"/>
+                    <TextBlock Text="在此输入对话内容" 
+                               FontFamily="Segoe UI, Microsoft YaHei UI" 
+                               Foreground="Gray" 
+                               Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" 
+                               VerticalAlignment="Top" 
+                               TextWrapping="WrapWithOverflow"
+                               Margin="{Binding Padding, ElementName=TxtInput}"/>
+                    <hc:Badge VerticalAlignment="Bottom" 
+                              HorizontalAlignment="Right" 
+                              Margin="0,0,5,5"
+                              Value="{Binding FileAttachments.Count}" 
+                              ShowBadge="{Binding FileAttachments.Count}" 
+                              Style="{DynamicResource BadgePrimary}">
+                        <Button Command="{Binding AddfileCommand}"
+                                ToolTip="添加附件（图片或TXT文档）"
+                                FontFamily="./font/#Segoe Fluent Icons"
+                                FontSize="{StaticResource SubHeadFontSize}"
+                                Content="&#xE723;"
+                                Padding="0"
+                                Height="30"
+                                Width="30"/>
                     </hc:Badge>
                 </hc:SimplePanel>
             </DockPanel>
@@ -325,7 +384,7 @@
                 </d:ListBox.ItemsSource>
             </ListBox>
             <hc:SimplePanel Background="#88ffffff" Visibility="{Binding IsLoading, Converter={StaticResource Boolean2VisibilityConverter}}" d:IsHidden="True">
-                <hc:LoadingCircle x:Name="LoadingCircle" IsRunning="True" Width="64" Height="64" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <hc:LoadingCircle IsRunning="True" Width="64" Height="64" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </hc:SimplePanel>
         </hc:SimplePanel>
         <StatusBar Grid.Row="4" Margin="0,5,0,0">
