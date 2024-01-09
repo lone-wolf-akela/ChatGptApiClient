@@ -279,6 +279,7 @@ public class ChatWindowMessage : ObservableObject
     /**** stream (temp) data ****/
     private readonly List<IRichMessage> messageList = [];
     private StringBuilder? streamMessage;
+    public StringBuilder? StreamMessage => streamMessage;
     public void AddStreamText(string text)
     {
         streamMessage ??= new StringBuilder();
@@ -402,6 +403,19 @@ public class ChatWindowMessageList : ObservableObject
     public void AddStreamText(string text)
     {
         Messages.Last().AddStreamText(text);
+    }
+    public int GetCurrentStreamTokenNum()
+    {
+        if(Messages.Count == 0)
+        {
+            return 0;
+        }
+        var lastMsg = Messages.Last();
+        if(lastMsg.StreamMessage is null)
+        {
+            return 0;
+        }
+        return Utils.GetStringTokenNum(lastMsg.StreamMessage.ToString());
     }
     public void AddMessage(RoleType role)
     {
@@ -584,11 +598,16 @@ public partial class ChatWindowViewModel : ObservableObject
 
         PrintCommand.NotifyCanExecuteChanged();
         SaveCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(SessionTokenNum));
     }
+
+    public int SessionTokenNum => State.GetSessionTokens() + MessageList.GetCurrentStreamTokenNum();
+
     private void AddStreamText(string text)
     {
         MessageList.AddStreamText(text);
         ScrollToEndEvent?.Invoke();
+        OnPropertyChanged(nameof(SessionTokenNum));
     }
     private void AddMessage(RoleType role)
     {
@@ -603,7 +622,11 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
     private string textInput = "";
+
+    public int TextInputTokenNum => Utils.GetStringTokenNum(TextInput);
+
     [RelayCommand]
     private async Task SendAsync()
     {

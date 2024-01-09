@@ -592,4 +592,10 @@ public partial class SystemState : ObservableObject
     {
         await ResetSession(CurrentSession);
     }
+
+    public int GetSessionTokens()
+    {
+        var count = CurrentSession?.CountTokens() ?? 0;
+        return count;
+    }
 }

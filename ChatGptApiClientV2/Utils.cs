@@ -18,6 +18,7 @@ using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using SharpToken;
 
 namespace ChatGptApiClientV2;
 
@@ -128,6 +129,14 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
 
 internal static partial class Utils
 {
+    private static GptEncoding? tokenEncoding;
+    public static int GetStringTokenNum(string str)
+    {
+        tokenEncoding ??= GptEncoding.GetEncoding("cl100k_base");
+        var token = tokenEncoding.Encode(str);
+        return token.Count;
+    }
+
     public static async Task<string> ImageFileToBase64(string filename)
     {
         var mime = MimeTypes.GetMimeType(filename);

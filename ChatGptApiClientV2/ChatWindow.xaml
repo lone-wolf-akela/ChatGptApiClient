@@ -289,6 +289,19 @@
                                VerticalAlignment="Top" 
                                TextWrapping="WrapWithOverflow"
                                Margin="{Binding Padding, ElementName=TxtInput}"/>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Bottom"
+                                Margin="{Binding Padding, ElementName=TxtInput}">
+                        <TextBlock Text="{Binding TextInputTokenNum, Mode=OneWay}"
+                                   FontFamily="Segoe UI, Microsoft YaHei UI" 
+                                   Foreground="Gray"
+                                   TextWrapping="WrapWithOverflow"
+                                   Margin="0,0,5,0"/>
+                        <TextBlock Text="Tokens"
+                                   FontFamily="Segoe UI, Microsoft YaHei UI" 
+                                   Foreground="Gray"
+                                   TextWrapping="WrapWithOverflow"/>
+                    </StackPanel>
                     <hc:Badge VerticalAlignment="Bottom" 
                               HorizontalAlignment="Right" 
                               Margin="0,0,5,5"
@@ -389,10 +402,15 @@
         </hc:SimplePanel>
         <StatusBar Grid.Row="4" Margin="0,5,0,0">
             <StatusBarItem Content="状态："/>
-            <StatusBarItem Content="{Binding Path=State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="200"/>
+            <StatusBarItem Content="{Binding State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="150"/>
             <Separator/>
             <StatusBarItem Content="系统指纹："/>
-            <StatusBarItem Content="{Binding Path=State.NetStatus.SystemFingerprint}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+            <StatusBarItem Content="{Binding State.NetStatus.SystemFingerprint}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="100"/>
+            <Separator/>
+            <StatusBarItem Content="Token数："/>
+            <StatusBarItem>
+                <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:0,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+            </StatusBarItem>
         </StatusBar>
     </Grid>
 </hc:Window>

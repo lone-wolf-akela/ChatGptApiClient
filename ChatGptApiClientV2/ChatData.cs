@@ -398,10 +398,16 @@ public interface IMessage : ICloneable
     public interface IContent : ICloneable
     {
         public ContentCategory Type { get; }
+        public int CountToken();
     }
     public class TextContent : IContent
     {
         public ContentCategory Type => ContentCategory.Text;
+        public int CountToken()
+        {
+            return Utils.GetStringTokenNum(Text);
+        }
+
         public string Text { get; set; } = "";
         public object Clone() => new TextContent
         {
@@ -424,6 +430,12 @@ public interface IMessage : ICloneable
             public ImageDetail Detail { get; set; } = ImageDetail.Low;
         }
         public ContentCategory Type => ContentCategory.ImageUrl;
+        public int CountToken()
+        {
+            // TODO: Count Image Token Number
+            return 0;
+        }
+
         public ImageUrlType ImageUrl { get; set; } = new();
         public object Clone() => new ImageContent
         {
@@ -449,6 +461,8 @@ public interface IMessage : ICloneable
     [JsonIgnore]
     public bool IsSavingToDisk { set; }
     public bool Hidden { get; }
+
+    public int CountToken();
 }
 public class SystemMessage : IMessage
 {
@@ -457,6 +471,20 @@ public class SystemMessage : IMessage
     public string? Name { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
+    public int CountToken()
+    {
+        var count = 3;
+        foreach(var c in Content)
+        {
+            count += c.CountToken();
+        }
+        if(Name is not null)
+        {
+            count += 1 + Utils.GetStringTokenNum(Name);
+        }
+        return count;
+    }
+
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone() => new SystemMessage
     {
@@ -610,6 +638,29 @@ public class UserMessage : IMessage
     public string? Name { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
+    public int CountToken()
+    {
+        var count = 3;
+        foreach (var c in Content)
+        {
+            count += c.CountToken();
+        }
+        if (Name is not null)
+        {
+            count += 1 + Utils.GetStringTokenNum(Name);
+        }
+        foreach (var file in Attachments)
+        {
+            count += file switch
+            {
+                TextAttachmentInfo textFile => Utils.GetStringTokenNum($"\n\nAttachment:\n\n{textFile.Content}"),
+                ImageAttachmentInfo imageFile => 0, // TODO: Count image tokens
+                _ => throw new InvalidOperationException()
+            };
+        }
+        return count;
+    }
+
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public List<IAttachmentInfo> Attachments { get; set; } = [];
     public bool ShouldSerializeAttachments() => IsSavingToDisk;
@@ -627,6 +678,20 @@ public class AssistantMessage : IMessage
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
+    public int CountToken()
+    {
+        var count = 3;
+        foreach (var c in Content)
+        {
+            count += c.CountToken();
+        }
+        if (Name is not null)
+        {
+            count += 1 + Utils.GetStringTokenNum(Name);
+        }
+        return count;
+    }
+
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone() => new AssistantMessage
     {
@@ -650,6 +715,20 @@ public class ToolMessage : IMessage
     public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden { get; set; }
+    public int CountToken()
+    {
+        var count = 3;
+        foreach (var c in Content)
+        {
+            count += c.CountToken();
+        }
+        if (Name is not null)
+        {
+            count += 1 + Utils.GetStringTokenNum(Name);
+        }
+        return count;
+    }
+
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone() => new ToolMessage
     {
@@ -763,5 +842,15 @@ public class ChatCompletionRequest
         request.Messages = messages;
 
         return request;
+    }
+
+    public int CountTokens()
+    {
+        var count = 0;
+        foreach(var msg in Messages)
+        {
+            count += msg.CountToken();
+        }
+        return count;
     }
 }
