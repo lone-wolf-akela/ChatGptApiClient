@@ -411,7 +411,7 @@
             <Separator/>
             <StatusBarItem Content="Token数："/>
             <StatusBarItem>
-                <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:0,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+                <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>
