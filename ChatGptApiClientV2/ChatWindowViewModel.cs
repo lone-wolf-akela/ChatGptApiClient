@@ -178,8 +178,7 @@ public class ChatWindowMessage : ObservableObject
                             var imageGrid = new Controls.ImageDisplayer
                             {
                                 Image = Image!,
-                                ImageTooltip = ImageTooltip ?? "",
-                                ImageMaxHeight = 300
+                                ImageTooltip = ImageTooltip ?? ""
                             };
 
                             cachedRenderResult = [new BlockUIContainer(imageGrid)];

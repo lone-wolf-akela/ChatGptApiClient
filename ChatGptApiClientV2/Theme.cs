@@ -55,7 +55,7 @@ namespace ChatGptApiClientV2
             Application.Current.Resources["RegionBrush"] = new SolidColorBrush(Color.FromArgb(0xb3, 0xff, 0xff, 0xff));
             Application.Current.Resources["SecondaryRegionBrush"] = new SolidColorBrush(Color.FromArgb(0x80, 0xf9, 0xf9, 0xf9));
             Application.Current.Resources["SolidRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xfa, 0xfa, 0xfa));
-            Application.Current.Resources["SolidSecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xf6, 0xf6, 0xf6));
+            Application.Current.Resources["SolidSecondaryRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xf0, 0xf0, 0xf0));
             ForAllHandyControlWindows(TryEnableMica);
             ForAllWindows(MicaHelper.RemoveDarkMode);
         }

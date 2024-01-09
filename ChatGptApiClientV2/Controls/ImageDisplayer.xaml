@@ -6,19 +6,18 @@
              xmlns:local="clr-namespace:ChatGptApiClientV2"
              xmlns:controls="clr-namespace:ChatGptApiClientV2.Controls"
              mc:Ignorable="d" 
+             DataContext="{Binding RelativeSource={RelativeSource Self}}"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid x:Name="ImageGrid" HorizontalAlignment="Left" MouseEnter="ImageGrid_MouseEnter" MouseLeave="ImageGrid_MouseLeave">
-        <Image x:Name="ImageBox" 
-               Source="{Binding Image, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}" 
+    <Grid HorizontalAlignment="Left" MouseEnter="ImageGrid_MouseEnter" MouseLeave="ImageGrid_MouseLeave">
+        <Image Source="{Binding Image}" 
                Stretch="Uniform" 
-               MaxHeight="{Binding ImageMaxHeight, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}"
+               MaxHeight="{Binding ImageMaxHeight}"
                RenderOptions.BitmapScalingMode="Fant"/>
         <StackPanel x:Name="BtnPanel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10" Visibility="Collapsed">
-            <Button x:Name="BtnOpenImageViewer" 
-                    Width="150" 
+            <Button Click="BtnOpenImageViewer_Click"
                     Content="在图像查看程序中打开" 
-                    Margin="0,0,0,5" 
-                    Click="BtnOpenImageViewer_Click">
+                    Width="150" 
+                    Margin="0,0,0,5" >
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
                         <Setter Property="Opacity" Value="0.9"/>
@@ -47,12 +46,22 @@
                 </ToggleButton.Style>
                 <StackPanel>
                     <TextBlock Text="查看图片信息"/>
-                    <Popup x:Name="WindowPopUp" IsOpen="{Binding IsChecked, ElementName=TgglDetails}" AllowsTransparency="True" StaysOpen="False">
-                        <Border CornerRadius="5" BorderThickness="1" BorderBrush="White" Background="White" Margin="0,0,8,8" Padding="5">
+                    <Popup IsOpen="{Binding IsChecked, ElementName=TgglDetails}" 
+                           AllowsTransparency="True" 
+                           StaysOpen="False">
+                        <Border CornerRadius="5" 
+                                BorderThickness="1" 
+                                BorderBrush="White" 
+                                Background="White" 
+                                Margin="0,0,8,8" 
+                                Padding="5">
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
                             </Border.Effect>
-                            <TextBox x:Name="TxtImageTooltip" MaxWidth="600" TextWrapping="Wrap" IsReadOnly="True" Text="{Binding ImageTooltip, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type controls:ImageDisplayer}}}" />
+                            <TextBox Text="{Binding ImageTooltip}"
+                                     MaxWidth="600" 
+                                     TextWrapping="Wrap" 
+                                     IsReadOnly="True"/>
                         </Border>
                     </Popup>
                 </StackPanel>
