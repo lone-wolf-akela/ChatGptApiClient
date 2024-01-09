@@ -26,10 +26,10 @@ public partial class ChatWindow
             return;
         }
         
-        if (e.Source is TextBox srcTextBox)
+        if (e.Source is Controls.TextFileDisplayer textFile)
         {
             // pass scroll to parent only if already at the top/bottom
-            var scrollViewer = GetScrollViewer(srcTextBox);
+            var scrollViewer = GetScrollViewer(textFile);
             var canSrcScroll = scrollViewer?.ComputedVerticalScrollBarVisibility == Visibility.Visible;
             var isAtTop = scrollViewer?.VerticalOffset <= 0;
             var isAtBottom = scrollViewer?.VerticalOffset >= scrollViewer?.ScrollableHeight;

@@ -21,6 +21,21 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace ChatGptApiClientV2;
 
+public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return value switch
+        {
+            double d => new CornerRadius(0, 0, d, d),
+            CornerRadius r => new CornerRadius(0, 0, r.BottomRight, r.BottomLeft),
+            _ => new CornerRadius(0)
+        };
+    }
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value;
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
 // from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
 public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
 {

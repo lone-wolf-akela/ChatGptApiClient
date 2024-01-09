@@ -5,14 +5,20 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:ChatGptApiClientV2"
              xmlns:controls="clr-namespace:ChatGptApiClientV2.Controls"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
              mc:Ignorable="d" 
+             MinWidth="300"
              DataContext="{Binding RelativeSource={RelativeSource Self}}"
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Expander HorizontalAlignment="Left" MinWidth="300" IsExpanded="{Binding IsExpanded}" d:IsExpanded="True">
+             d:DesignHeight="300">
+    <UserControl.Resources>
+        <!-- see https://stackoverflow.com/questions/4805351/use-ivalueconverter-with-dynamicresource -->
+        <hc:BindingProxy x:Key="CornerRadiusProxy" Value="{DynamicResource DefaultCornerRadius}" />
+    </UserControl.Resources>
+    <Expander HorizontalAlignment="Left" MinWidth="{Binding MinWidth}" IsExpanded="{Binding IsExpanded}" d:IsExpanded="True">
         <Expander.Header>
             <TextBlock>
                 <Run Text="&#xe91b;" FontFamily="/font/#Segoe Fluent Icons" BaselineAlignment="Center"/>
-                <Run Text="  "/>
+                <Run Text=" "/>
                 <Run>
                     <Run.Style>
                         <Style TargetType="Run">
@@ -27,66 +33,78 @@
                 </Run>
             </TextBlock>
         </Expander.Header>
-        <Grid MouseEnter="ImageGrid_MouseEnter" MouseLeave="ImageGrid_MouseLeave" Background="{DynamicResource RegionBrush}">
-            <Image Source="{Binding Image}" 
-                   Stretch="Uniform" 
-                   MaxHeight="{Binding ImageMaxHeight}"
-                   RenderOptions.BitmapScalingMode="Fant"
-                   d:Source="/images/格蕾修_在做了.png"/>
-            <StackPanel x:Name="BtnPanel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10" Visibility="Collapsed">
-                <Button Click="BtnOpenImageViewer_Click"
+        <Border BorderBrush="{DynamicResource BorderBrush}" 
+                CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}"
+                Background="{DynamicResource RegionBrush}"
+                BorderThickness="1">
+            <Grid MouseEnter="ImageGrid_MouseEnter" 
+              MouseLeave="ImageGrid_MouseLeave">
+                <Border x:Name="ImageMask"
+                        Background="White"
+                        CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}"/>
+                <Image Source="{Binding Image}" 
+                       Stretch="Uniform" 
+                       MaxHeight="{Binding ImageMaxHeight}"
+                       RenderOptions.BitmapScalingMode="Fant">
+                    <Image.OpacityMask>
+                        <VisualBrush Visual="{Binding ElementName=ImageMask}"/>
+                    </Image.OpacityMask>
+                </Image>
+                <StackPanel x:Name="BtnPanel" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10" Visibility="Collapsed">
+                    <Button Click="BtnOpenImageViewer_Click"
                     Content="在图像查看程序中打开" 
                     Width="150" 
                     Margin="0,0,0,5" >
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
-                            <Setter Property="Opacity" Value="0.9"/>
-                            <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
-                                    <Setter Property="Opacity" Value="1"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <ToggleButton x:Name="TgglDetails" Width="150">
-                    <ToggleButton.Style>
-                        <Style TargetType="ToggleButton" BasedOn="{StaticResource ToggleButtonDefault}">
-                            <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
-                            <Setter Property="Opacity" Value="0.9"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
-                                    <Setter Property="Opacity" Value="1"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ToggleButton.Style>
-                    <StackPanel>
-                        <TextBlock Text="查看图片信息"/>
-                        <Popup IsOpen="{Binding IsChecked, ElementName=TgglDetails}" 
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                                <Setter Property="Opacity" Value="0.9"/>
+                                <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+                                        <Setter Property="Opacity" Value="1"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <ToggleButton x:Name="TgglDetails" Width="150">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton" BasedOn="{StaticResource ToggleButtonDefault}">
+                                <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                                <Setter Property="Opacity" Value="0.9"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+                                        <Setter Property="Opacity" Value="1"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                        <StackPanel>
+                            <TextBlock Text="查看图片信息"/>
+                            <Popup IsOpen="{Binding IsChecked, ElementName=TgglDetails}" 
                            AllowsTransparency="True" 
                            StaysOpen="False">
-                            <Border CornerRadius="5" 
+                                <Border CornerRadius="5" 
                                 BorderThickness="1" 
                                 BorderBrush="White" 
                                 Background="White" 
                                 Margin="0,0,8,8" 
                                 Padding="5">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
-                                </Border.Effect>
-                                <TextBox Text="{Binding ImageTooltip}"
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="5" Opacity="0.4"/>
+                                    </Border.Effect>
+                                    <TextBox Text="{Binding ImageTooltip}"
                                      MaxWidth="600" 
                                      TextWrapping="Wrap" 
                                      IsReadOnly="True"/>
-                            </Border>
-                        </Popup>
-                    </StackPanel>
-                </ToggleButton>
-            </StackPanel>
-        </Grid>
+                                </Border>
+                            </Popup>
+                        </StackPanel>
+                    </ToggleButton>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Expander>
 </UserControl>

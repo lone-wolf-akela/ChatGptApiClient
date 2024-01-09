@@ -195,29 +195,12 @@ public class ChatWindowMessage : ObservableObject
                         }
                     case RichMessageType.TextFile:
                         {
-                            var header = new TextBlock();
-                            header.Inlines.Add(new Run("\uE723") 
-                            { 
-                                FontFamily = new FontFamily(new Uri("pack://application:,,,/font/"), "Segoe Fluent Icons")
-                            });
-                            header.Inlines.Add(" ");
-                            header.Inlines.Add(FileName!);
-
-                            var expander = new Expander
+                            var textGrid = new Controls.TextFileDisplayer
                             {
-                                Header = header,
-                                IsExpanded = false,
-                                Content = new TextBox
-                                {
-                                    Text = FileContent!,
-                                    IsReadOnly = true,
-                                    MaxHeight = 300,
-                                    TextWrapping = TextWrapping.Wrap,
-                                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                                    HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden
-                                }
+                                FileName = FileName!,
+                                TextContent = FileContent!
                             };
-                            cachedRenderResult = [new BlockUIContainer(expander)];
+                            cachedRenderResult = [new BlockUIContainer(textGrid)];
                             return cachedRenderResult;
                         }
                     default:
