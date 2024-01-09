@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Diagnostics;
 using Microsoft.Win32;
 using System.IO;
+using System.Windows.Documents;
 
 namespace ChatGptApiClientV2;
 
@@ -24,6 +25,24 @@ public partial class ChatWindow
         {
             return;
         }
+        
+        if (e.Source is TextBox srcTextBox)
+        {
+            // pass scroll to parent only if already at the top/bottom
+            var scrollViewer = GetScrollViewer(srcTextBox);
+            var canSrcScroll = scrollViewer?.ComputedVerticalScrollBarVisibility == Visibility.Visible;
+            var isAtTop = scrollViewer?.VerticalOffset <= 0;
+            var isAtBottom = scrollViewer?.VerticalOffset >= scrollViewer?.ScrollableHeight;
+            var isScrollingUp = e.Delta > 0;
+            var isScrollingDown = e.Delta < 0;
+            var passToParent = canSrcScroll && ((isAtTop && isScrollingUp) || (isAtBottom && isScrollingDown));
+
+            if (!passToParent)
+            {
+                return;
+            }
+        }
+
         e.Handled = true; // 防止事件再次触发
 
         // 创建一个新的MouseWheel事件，基于原来的事件
