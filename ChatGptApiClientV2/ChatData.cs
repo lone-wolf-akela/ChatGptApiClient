@@ -24,9 +24,9 @@ public enum RoleType
     Tool
 }
     
-public class ToolCallType : ICloneable
+public class ToolCallType
 {
-    public class FunctionType : ICloneable
+    public class FunctionType
     {
         /// <summary>
         /// The name of the function to call.
@@ -39,11 +39,6 @@ public class ToolCallType : ICloneable
         /// before calling your function.
         /// </summary>
         public string Arguments { get; set; } = "";
-        public object Clone() => new FunctionType
-        {
-            Name = Name,
-            Arguments = Arguments
-        };
     }
     public long Index { get; set; }
     /// <summary>
@@ -55,13 +50,6 @@ public class ToolCallType : ICloneable
     /// </summary>
     public string Type { get; set; } = "";
     public FunctionType Function { get; set; } = new();
-    public object Clone() => new ToolCallType
-    {
-        Index = Index,
-        Id = Id,
-        Type = Type,
-        Function = (FunctionType)Function.Clone()
-    };
     public static List<ToolCallType> MergeList(IEnumerable<ToolCallType>? toolCallListA, IEnumerable<ToolCallType>? toolCallListB)
     {
         var mergedList = new List<ToolCallType>();
@@ -339,7 +327,7 @@ public class MessageConverter : JsonConverter<IMessage>
 }
 
 [JsonConverter(typeof(MessageConverter))]
-public interface IMessage : ICloneable
+public interface IMessage
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum ContentCategory
@@ -395,7 +383,7 @@ public interface IMessage : ICloneable
         }
     }
     [JsonConverter(typeof(ContentConverter))]
-    public interface IContent : ICloneable
+    public interface IContent
     {
         public ContentCategory Type { get; }
         public int CountToken();
@@ -409,10 +397,6 @@ public interface IMessage : ICloneable
         }
 
         public string Text { get; set; } = "";
-        public object Clone() => new TextContent
-        {
-            Text = Text
-        };
     }
     public class ImageContent : IContent
     {
@@ -430,21 +414,54 @@ public interface IMessage : ICloneable
             public ImageDetail Detail { get; set; } = ImageDetail.Low;
         }
         public ContentCategory Type => ContentCategory.ImageUrl;
+        
+        [JsonIgnore]
+        public System.Drawing.Size? ImageSize { get; set; } // cache image size
         public int CountToken()
         {
-            // TODO: Count Image Token Number
-            return 0;
+            // see https://platform.openai.com/docs/guides/vision
+            const int baseTokenNum = 85;
+            const int tokenPerTile = 170;
+            const int tileSize = 512;
+
+            var count = baseTokenNum;
+
+            if (ImageUrl.Detail != ImageUrlType.ImageDetail.High)
+            {
+                return count;
+            }
+
+            if (ImageSize is null)
+            {
+                var image = Utils.Base64ToBitmapImage(ImageUrl.Url);
+                ImageSize = new System.Drawing.Size(image.PixelWidth, image.PixelHeight);
+            }
+            // if size is too large, scale down to fit in 2048x2048, keep aspect ratio
+            if (ImageSize.Value.Width > 2048 || ImageSize.Value.Height > 2048)
+            {
+                var ratio = Math.Min(2048.0 / ImageSize.Value.Width, 2048.0 / ImageSize.Value.Height);
+                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+            }
+            // further scale down to make the shortest side fit in 768px, keep aspect ratio
+            var isWidthShorter = ImageSize.Value.Width < ImageSize.Value.Height;
+            if (isWidthShorter && ImageSize.Value.Width > 768)
+            {
+               var ratio = 768.0 / ImageSize.Value.Width;
+               ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+            }
+            else if (!isWidthShorter && ImageSize.Value.Height > 768)
+            {
+                var ratio = 768.0 / ImageSize.Value.Height;
+                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+            }
+
+            var tileNum = Math.Ceiling((double)ImageSize.Value.Width / tileSize) * Math.Ceiling((double)ImageSize.Value.Height / tileSize);
+            count += (int)tileNum * tokenPerTile;
+
+            return count;
         }
 
         public ImageUrlType ImageUrl { get; set; } = new();
-        public object Clone() => new ImageContent
-        {
-            ImageUrl = new ImageUrlType
-            {
-                Url = ImageUrl.Url,
-                Detail = ImageUrl.Detail
-            }
-        };
     }
     /// <summary>
     /// The contents of the message.
@@ -462,6 +479,19 @@ public interface IMessage : ICloneable
     public bool IsSavingToDisk { set; }
     public bool Hidden { get; }
 
+    public int CountTokenBase()
+    {
+        var count = 3;
+        foreach (var c in Content)
+        {
+            count += c.CountToken();
+        }
+        if (Name is not null)
+        {
+            count += 1 + Utils.GetStringTokenNum(Name);
+        }
+        return count;
+    }
     public int CountToken();
 }
 public class SystemMessage : IMessage
@@ -471,26 +501,8 @@ public class SystemMessage : IMessage
     public string? Name { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
-    public int CountToken()
-    {
-        var count = 3;
-        foreach(var c in Content)
-        {
-            count += c.CountToken();
-        }
-        if(Name is not null)
-        {
-            count += 1 + Utils.GetStringTokenNum(Name);
-        }
-        return count;
-    }
-
+    public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
-    public object Clone() => new SystemMessage
-    {
-        Content = from c in Content select c.Clone() as IMessage.IContent,
-        Name = Name
-    };
 }
 
 public class UserMessageConverter: JsonConverter<UserMessage>
@@ -505,33 +517,17 @@ public class UserMessageConverter: JsonConverter<UserMessage>
             writer.WriteNull();
             return;
         }
-        var content = (List<IMessage.IContent>)value.Content;
-        List<IMessage.IContent> contentToAdd = [];
-        if (!value.IsSavingToDisk)
+
+        if(value.IsSavingToDisk)
         {
-            foreach(var file in value.Attachments)
-            {
-                IMessage.IContent msg = file switch
-                {
-                    UserMessage.TextAttachmentInfo textFile => new IMessage.TextContent
-                    {
-                        Text = $"\n\nAttachment:\n\n{textFile.Content}"
-                    },
-                    UserMessage.ImageAttachmentInfo imageFile => new IMessage.ImageContent
-                    {
-                        ImageUrl = new IMessage.ImageContent.ImageUrlType
-                        {
-                            Url = imageFile.ImageBase64Url,
-                            Detail = imageFile.HighResMode
-                                ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
-                                : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                        }
-                    },
-                    _ => throw new InvalidOperationException()
-                };
-                contentToAdd.Add(msg);
-            }
+            canWrite = false;
+            serializer.Serialize(writer, value);
+            canWrite = true;
+            return;
         }
+
+        var content = (List<IMessage.IContent>)value.Content;
+        var contentToAdd = value.GenerateAttachmentContentList().ToList();
 
         content.AddRange(contentToAdd);
 
@@ -539,12 +535,9 @@ public class UserMessageConverter: JsonConverter<UserMessage>
         serializer.Serialize(writer, value);
         canWrite = true;
         
-        if(!value.IsSavingToDisk)
+        foreach(var c in contentToAdd)
         {
-            foreach(var c in contentToAdd)
-            {
-                content.Remove(c);
-            }
+            content.Remove(c);
         }
     }
 
@@ -631,7 +624,8 @@ public class UserMessage : IMessage
         public IAttachmentInfo.AttachmentType Type => IAttachmentInfo.AttachmentType.Image;
         public string FileName { get; set; } = "";
         public string ImageBase64Url { get; set; } = "";
-        public bool HighResMode { get; set; } = false;
+        public bool HighResMode { get; set; }
+        public System.Drawing.Size? ImageSize { get; set; } // cache image size
     }
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
     public RoleType Role => RoleType.User;
@@ -640,35 +634,46 @@ public class UserMessage : IMessage
     public bool Hidden => false;
     public int CountToken()
     {
-        var count = 3;
-        foreach (var c in Content)
+        var count = ((IMessage)this).CountTokenBase();
+        var attachments = GenerateAttachmentContentList();
+        foreach (var c in attachments)
         {
             count += c.CountToken();
-        }
-        if (Name is not null)
-        {
-            count += 1 + Utils.GetStringTokenNum(Name);
-        }
-        foreach (var file in Attachments)
-        {
-            count += file switch
-            {
-                TextAttachmentInfo textFile => Utils.GetStringTokenNum($"\n\nAttachment:\n\n{textFile.Content}"),
-                ImageAttachmentInfo imageFile => 0, // TODO: Count image tokens
-                _ => throw new InvalidOperationException()
-            };
         }
         return count;
     }
 
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public List<IAttachmentInfo> Attachments { get; set; } = [];
-    public bool ShouldSerializeAttachments() => IsSavingToDisk;
-    public object Clone() => new UserMessage
+    public IEnumerable<IMessage.IContent> GenerateAttachmentContentList()
     {
-        Content = from c in Content select c.Clone() as IMessage.IContent,
-        Name = Name
-    };
+        List<IMessage.IContent> contents = [];
+        foreach (var file in Attachments)
+        {
+            IMessage.IContent msg = file switch
+            {
+                TextAttachmentInfo textFile => new IMessage.TextContent
+                {
+                    Text = $"\n\nAttachment:\n\n{textFile.Content}"
+                },
+                ImageAttachmentInfo imageFile => new IMessage.ImageContent
+                {
+                    ImageUrl = new IMessage.ImageContent.ImageUrlType
+                    {
+                        Url = imageFile.ImageBase64Url,
+                        Detail = imageFile.HighResMode
+                            ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
+                            : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
+                    },
+                    ImageSize = imageFile.ImageSize
+                },
+                _ => throw new InvalidOperationException()
+            };
+            contents.Add(msg);
+        }
+        return contents;
+    }
+    public bool ShouldSerializeAttachments() => IsSavingToDisk;
 }
 public class AssistantMessage : IMessage
 {
@@ -678,27 +683,8 @@ public class AssistantMessage : IMessage
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
-    public int CountToken()
-    {
-        var count = 3;
-        foreach (var c in Content)
-        {
-            count += c.CountToken();
-        }
-        if (Name is not null)
-        {
-            count += 1 + Utils.GetStringTokenNum(Name);
-        }
-        return count;
-    }
-
+    public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
-    public object Clone() => new AssistantMessage
-    {
-        Content = from c in Content select c.Clone() as IMessage.IContent,
-        Name = Name,
-        ToolCalls = (from tc in ToolCalls select tc.Clone() as ToolCallType).ToList()
-    };
 }
 public class ToolMessage : IMessage
 {
@@ -715,32 +701,8 @@ public class ToolMessage : IMessage
     public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden { get; set; }
-    public int CountToken()
-    {
-        var count = 3;
-        foreach (var c in Content)
-        {
-            count += c.CountToken();
-        }
-        if (Name is not null)
-        {
-            count += 1 + Utils.GetStringTokenNum(Name);
-        }
-        return count;
-    }
-
+    public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
-    public object Clone() => new ToolMessage
-    {
-        Content = from c in Content select c.Clone() as IMessage.IContent,
-        ToolCallId = ToolCallId,
-        Hidden = Hidden,
-        GeneratedImages = (from gi in GeneratedImages select new GeneratedImage
-        {
-            ImageBase64Url = gi.ImageBase64Url,
-            Description = gi.Description
-        }).ToList()
-    };
 }
 public class ChatCompletionRequest
 {
@@ -819,7 +781,28 @@ public class ChatCompletionRequest
     public static ChatCompletionRequest BuildFromInitPrompts(IEnumerable<IMessage>? initPrompts, DateTime knowledgeCutoff)
     {
         var request = new ChatCompletionRequest();
-        var messages = (from p in initPrompts select p.Clone() as IMessage).ToList();
+
+        // deep clone from initPrompts
+        var contractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy()
+        };
+        var settings = new JsonSerializerSettings
+        {
+            ContractResolver = contractResolver,
+        };
+        var initPromptsList = initPrompts?.ToList() ?? [];
+        foreach (var msg in initPromptsList)
+        {
+            msg.IsSavingToDisk = true;
+        }
+        var serializedInitPromptsList = JsonConvert.SerializeObject(initPromptsList, settings);
+        foreach (var msg in initPromptsList)
+        {
+            msg.IsSavingToDisk = false;
+        }
+        var messages = JsonConvert.DeserializeObject<List<IMessage>>(serializedInitPromptsList, settings) ?? [];
+
         foreach (var msg in messages)
         {
             var contentList = msg.Content.ToList();

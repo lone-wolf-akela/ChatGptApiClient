@@ -473,11 +473,15 @@ public partial class SystemState : ObservableObject
             }
             else if (mime.StartsWith("image/"))
             {
+                var base64 = await Utils.ImageFileToBase64(file);
+                var image = Utils.Base64ToBitmapImage(base64);
+                System.Drawing.Size imageSize = new(image.PixelWidth, image.PixelHeight);
                 Attachments.Add(new ImageAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     ImageBase64Url = await Utils.ImageFileToBase64(file),
-                    HighResMode = Config.UploadHiresImage
+                    HighResMode = Config.UploadHiresImage,
+                    ImageSize = imageSize
                 });
             }
         }
