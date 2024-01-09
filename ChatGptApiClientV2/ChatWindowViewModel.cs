@@ -442,7 +442,17 @@ public class ChatWindowMessageList : ObservableObject
             {
                 foreach(var file in userMsg.Attachments)
                 {
-                    await chatMsg.AddTextFile(file.FileName, file.Content);
+                    switch (file)
+                    {
+                        case UserMessage.TextAttachmentInfo textFile:
+                            await chatMsg.AddTextFile(textFile.FileName, textFile.Content);
+                            break;
+                        case UserMessage.ImageAttachmentInfo imageFile:
+                            await chatMsg.AddImage(imageFile.ImageBase64Url, imageFile.FileName, null);
+                            break;
+                        default:
+                            throw new InvalidOperationException();
+                    }
                 }
             }
             else if (msg is AssistantMessage assistantMsg)

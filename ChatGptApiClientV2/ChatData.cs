@@ -5,11 +5,9 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
-using System.Text;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
-using System.Linq.Expressions;
 
 namespace ChatGptApiClientV2;
 
@@ -480,33 +478,45 @@ public class UserMessageConverter: JsonConverter<UserMessage>
             return;
         }
         var content = (List<IMessage.IContent>)value.Content;
-        var needCombineAttachments = !value.IsSavingToDisk && value.Attachments.Count != 0;
-        if (needCombineAttachments)
+        List<IMessage.IContent> contentToAdd = [];
+        if (!value.IsSavingToDisk)
         {
-            StringBuilder sb = new();
-            var count = 0;
-            foreach (var file in value.Attachments)
+            foreach(var file in value.Attachments)
             {
-                count += 1;
-                sb.AppendLine("");
-                sb.AppendLine("");
-                sb.AppendLine($"Attachment {count}: ");
-                sb.AppendLine(file.Content);
+                IMessage.IContent msg = file switch
+                {
+                    UserMessage.TextAttachmentInfo textFile => new IMessage.TextContent
+                    {
+                        Text = $"\n\nAttachment:\n\n{textFile.Content}"
+                    },
+                    UserMessage.ImageAttachmentInfo imageFile => new IMessage.ImageContent
+                    {
+                        ImageUrl = new IMessage.ImageContent.ImageUrlType
+                        {
+                            Url = imageFile.ImageBase64Url,
+                            Detail = imageFile.HighResMode
+                                ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
+                                : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
+                        }
+                    },
+                    _ => throw new InvalidOperationException()
+                };
+                contentToAdd.Add(msg);
             }
-
-            content.Add(new IMessage.TextContent
-            {
-                Text = sb.ToString()
-            });
         }
+
+        content.AddRange(contentToAdd);
 
         canWrite = false;
         serializer.Serialize(writer, value);
         canWrite = true;
         
-        if(needCombineAttachments)
+        if(!value.IsSavingToDisk)
         {
-            content.RemoveAt(content.Count - 1);
+            foreach(var c in contentToAdd)
+            {
+                content.Remove(c);
+            }
         }
     }
 
@@ -522,10 +532,78 @@ public class UserMessageConverter: JsonConverter<UserMessage>
 [JsonConverter(typeof(UserMessageConverter))]
 public class UserMessage : IMessage
 {
-    public class AttachmentInfo
+    public class AttachmentInfoConverter : JsonConverter<IAttachmentInfo>
     {
+        private bool canWrite = true;
+        private bool canRead = true;
+        public override bool CanWrite => canWrite;
+        public override bool CanRead => canRead;
+
+        public override void WriteJson(JsonWriter writer, IAttachmentInfo? value, JsonSerializer serializer)
+        {
+            canWrite = false;
+            if (value is null)
+            {
+                writer.WriteNull();
+            }
+            else
+            {
+                switch (value.Type)
+                {
+                    case IAttachmentInfo.AttachmentType.Text:
+                        serializer.Serialize(writer, (TextAttachmentInfo)value);
+                        break;
+                    case IAttachmentInfo.AttachmentType.Image:
+                        serializer.Serialize(writer, (ImageAttachmentInfo)value);
+                        break;
+                    default:
+                        throw new JsonSerializationException();
+                }
+            }
+            canWrite = true;
+        }
+
+        public override IAttachmentInfo ReadJson(JsonReader reader, Type objectType, IAttachmentInfo? existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            canRead = false;
+            var jobj = JObject.Load(reader);
+            var type = jobj["type"]?.ToObject<IAttachmentInfo.AttachmentType>();
+            IAttachmentInfo result = type switch
+            {
+                IAttachmentInfo.AttachmentType.Text => jobj.ToObject<TextAttachmentInfo>(serializer) ?? throw new JsonSerializationException(),
+                IAttachmentInfo.AttachmentType.Image => jobj.ToObject<ImageAttachmentInfo>(serializer) ?? throw new JsonSerializationException(),
+                _ => throw new JsonSerializationException(),
+            };
+            canRead = true;
+            return result;
+        }
+    }
+    [JsonConverter(typeof(AttachmentInfoConverter))]
+    public interface IAttachmentInfo
+    {
+        [JsonConverter(typeof(StringEnumConverter))]
+        public enum AttachmentType
+        {
+            [EnumMember(Value = "text")]
+            Text,
+            [EnumMember(Value = "image")]
+            Image
+        }
+        public AttachmentType Type { get; }
+        public string FileName { get; }
+    }
+    public class TextAttachmentInfo : IAttachmentInfo
+    {
+        public IAttachmentInfo.AttachmentType Type => IAttachmentInfo.AttachmentType.Text;
         public string FileName { get; set; } = "";
         public string Content { get; set; } = "";
+    }
+    public class ImageAttachmentInfo : IAttachmentInfo
+    {
+        public IAttachmentInfo.AttachmentType Type => IAttachmentInfo.AttachmentType.Image;
+        public string FileName { get; set; } = "";
+        public string ImageBase64Url { get; set; } = "";
+        public bool HighResMode { get; set; } = false;
     }
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
     public RoleType Role => RoleType.User;
@@ -533,7 +611,7 @@ public class UserMessage : IMessage
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
     public bool ShouldSerializeHidden() => IsSavingToDisk;
-    public List<AttachmentInfo> Attachments { get; set; } = [];
+    public List<IAttachmentInfo> Attachments { get; set; } = [];
     public bool ShouldSerializeAttachments() => IsSavingToDisk;
     public object Clone() => new UserMessage
     {

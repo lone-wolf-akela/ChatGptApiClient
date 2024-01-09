@@ -451,13 +451,13 @@ public partial class SystemState : ObservableObject
             Config.Seed = Random.Next();
         }
 
-        List<AttachmentInfo> textAttachments = [];
+        List<IAttachmentInfo> Attachments = [];
         foreach(var file in files)
         {
             var mime = MimeTypes.GetMimeType(file);
             if(mime.StartsWith("text/"))
             {
-                textAttachments.Add(new AttachmentInfo
+                Attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     Content = (await File.ReadAllTextAsync(file)).Trim()
@@ -465,10 +465,19 @@ public partial class SystemState : ObservableObject
             }
             else if (mime.StartsWith("application/pdf"))
             {
-                textAttachments.Add(new AttachmentInfo
+                Attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     Content = Utils.PdfFileToText(file).Trim()
+                });
+            }
+            else if (mime.StartsWith("image/"))
+            {
+                Attachments.Add(new ImageAttachmentInfo
+                {
+                    FileName = Path.GetFileName(file),
+                    ImageBase64Url = await Utils.ImageFileToBase64(file),
+                    HighResMode = Config.UploadHiresImage
                 });
             }
         }
@@ -476,32 +485,11 @@ public partial class SystemState : ObservableObject
         var textContent = new IMessage.TextContent { Text = text };
         var contentList = new List<IMessage.IContent> { textContent };
 
-        var imgfiles = (
-            from file in files
-            let mime = MimeTypes.GetMimeType(file)
-            where mime.StartsWith("image/")
-            select file).ToList();
-        
-        foreach (var file in imgfiles)
-        {
-            var imgContent = new IMessage.ImageContent
-            {
-                ImageUrl = new IMessage.ImageContent.ImageUrlType
-                {
-                    Url = await Utils.ImageFileToBase64(file),
-                    Detail = Config.UploadHiresImage
-                        ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
-                        : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                }
-            };
-            contentList.Add(imgContent);
-        }
-
         var userMsg = new UserMessage
         {
             Content = contentList,
             Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName,
-            Attachments = textAttachments
+            Attachments = Attachments
         };
 
         CurrentSession.Messages.Add(userMsg);
