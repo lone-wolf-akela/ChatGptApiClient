@@ -288,9 +288,11 @@
                                Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" 
                                VerticalAlignment="Top" 
                                TextWrapping="WrapWithOverflow"
+                               IsHitTestVisible="False"
                                Margin="{Binding Padding, ElementName=TxtInput}"/>
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Bottom"
+                                IsHitTestVisible="False"
                                 Margin="{Binding Padding, ElementName=TxtInput}">
                         <TextBlock Text="{Binding TextInputTokenNum, Mode=OneWay}"
                                    FontFamily="Segoe UI, Microsoft YaHei UI" 
