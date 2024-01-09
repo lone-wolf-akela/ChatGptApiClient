@@ -106,44 +106,26 @@ public class ChatWindowMessage : ObservableObject
         init
         {
             messageList.Clear();
-            messageList.Add(new RichMessage
-            {
-                Type = RichMessage.RichMessageType.Text,
-                Text = value
-            });
+            messageList.Add(new TextMessage(value, true));
         }
     }
-    internal class RichMessage
+
+    private interface IRichMessage
     {
-        public enum RichMessageType
-        {
-            Text,
-            Image,
-            Blocks,
-            TextFile,
-        }
-        public RichMessageType Type { get; init; } = RichMessageType.Text;
-        /**** Text Type ****/
-        public string? Text { get; init; }
-        public bool EnableMarkdown { get; init; }
-        /*******************/
-        /**** Image Type ****/
-        public BitmapImage? Image { get; init; }
-        public string? ImageTooltip { get; init; }
-        /********************/
-        /***** Blocks Type *****/
-        public IEnumerable<Block>? Blocks { get; init; }
-        /***********************/
-        /***** TextFile Type *****/
-        public string? FileName { get; init; }
-        public string? FileContent { get; init; }
+        public IEnumerable<Block> Rendered { get; }
+    }
+
+    private class TextMessage(string text, bool enableMarkdown) : IRichMessage
+    {
+        private string Text { get; } = text;
+        private bool EnableMarkdown { get; } = enableMarkdown;
 
         private List<Block>? cachedRenderResult;
         private List<Block> RenderMarkdownText()
         {
             try
             {
-                var doc = Markdig.Wpf.Markdown.ToFlowDocument(Text ?? "",
+                var doc = Markdig.Wpf.Markdown.ToFlowDocument(Text,
                     new MarkdownPipelineBuilder()
                         .UseAdvancedExtensions()
                         .UseColorCodeWpf()
@@ -169,54 +151,97 @@ public class ChatWindowMessage : ObservableObject
                 {
                     return cachedRenderResult;
                 }
-
-                switch (Type)
-                {
-                    case RichMessageType.Text when !string.IsNullOrWhiteSpace(Text):
-                        {
-                            cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
-                            return cachedRenderResult;
-                        }
-                    case RichMessageType.Image:
-                        {
-                            var imageGrid = new Controls.ImageDisplayer
-                            {
-                                Image = Image!,
-                                ImageTooltip = ImageTooltip ?? ""
-                            };
-
-                            cachedRenderResult = [new BlockUIContainer(imageGrid)];
-                            return cachedRenderResult;
-                        }
-                    case RichMessageType.Blocks:
-                        {
-                            cachedRenderResult = Blocks!.ToList();
-                            return cachedRenderResult;
-                        }
-                    case RichMessageType.TextFile:
-                        {
-                            var textGrid = new Controls.TextFileDisplayer
-                            {
-                                FileName = FileName!,
-                                TextContent = FileContent!
-                            };
-                            cachedRenderResult = [new BlockUIContainer(textGrid)];
-                            return cachedRenderResult;
-                        }
-                    default:
-                        {
-                            cachedRenderResult = [];
-                            return cachedRenderResult;
-                        }
-                }
+                cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
+                return cachedRenderResult;
             }
         }
     }
+
+    private class ImageMessage(BitmapImage image, string? filename, string? tooltip) : IRichMessage
+    {
+        private BitmapImage Image { get; } = image;
+        private string FileName { get; } = filename ?? "";
+        private string ImageTooltip { get; } = tooltip ?? "";
+
+        private List<Block>? cachedRenderResult;
+        private List<Block> RenderImage()
+        {
+            var imageGrid = new Controls.ImageDisplayer
+            {
+                Image = Image,
+                FileName = FileName,
+                ImageTooltip = ImageTooltip
+            };
+
+            return [new BlockUIContainer(imageGrid)];
+        }
+        public IEnumerable<Block> Rendered
+        {
+            get
+            {
+                if (cachedRenderResult is not null)
+                {
+                    return cachedRenderResult;
+                }
+                cachedRenderResult = RenderImage();
+                return cachedRenderResult;
+            }
+        }
+    }
+
+    private class BlocksMessage(IEnumerable<Block> blocks) : IRichMessage
+    {
+        private IEnumerable<Block> Blocks { get; } = blocks;
+
+        private List<Block>? cachedRenderResult;
+        public IEnumerable<Block> Rendered
+        {
+            get
+            {
+                if (cachedRenderResult is not null)
+                {
+                    return cachedRenderResult;
+                }
+                cachedRenderResult = Blocks.ToList();
+                return cachedRenderResult;
+            }
+        }
+    }
+
+    private class TextFileMessage(string content, string? filename) : IRichMessage
+    {
+        private string FileName { get; } = filename ?? "";
+        private string FileContent { get; } = content;
+
+        private List<Block>? cachedRenderResult;
+        private List<Block> RenderTextFile()
+        {
+            var textGrid = new Controls.TextFileDisplayer
+            {
+                FileName = FileName,
+                TextContent = FileContent
+            };
+            return [new BlockUIContainer(textGrid)];
+        }
+        public IEnumerable<Block> Rendered
+        {
+            get
+            {
+                if (cachedRenderResult is not null)
+                {
+                    return cachedRenderResult;
+                }
+                cachedRenderResult = RenderTextFile();
+                return cachedRenderResult;
+            }
+        }
+    }
+
     public async Task AddText(string text, bool enableMarkdown)
     {
         await Task.Run(() =>
         {
-            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Text, Text = text, EnableMarkdown = enableMarkdown });
+            messageList.Add(new TextMessage(text, enableMarkdown));
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
@@ -225,39 +250,34 @@ public class ChatWindowMessage : ObservableObject
     {
         await Task.Run(() =>
         {
-            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.TextFile, FileName = fileName, FileContent = content });
+            messageList.Add(new TextFileMessage(content, fileName));
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
-    private async Task AddImage(BitmapImage image, string? tooltip)
+    private async Task AddImage(BitmapImage image, string? filename, string? tooltip)
     {
         await Task.Run(() =>
         {
-            messageList.Add(new RichMessage
-            {
-                Type = RichMessage.RichMessageType.Image,
-                Image = image,
-                ImageTooltip = tooltip
-            });
+            messageList.Add(new ImageMessage(image, filename, tooltip));
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
-    public async Task AddImage(string base64Url, string? tooltip)
+    public async Task AddImage(string base64Url, string? filename, string? tooltip)
     {
         var bitmap = Utils.Base64ToBitmapImage(base64Url);
-        await AddImage(bitmap, tooltip);
+        await AddImage(bitmap, filename, tooltip);
     }
     public async Task AddBlocks(IEnumerable<Block> blocks)
     {
         await Task.Run(() =>
         {
-            messageList.Add(new RichMessage { Type = RichMessage.RichMessageType.Blocks, Blocks = blocks });
+            messageList.Add(new BlocksMessage(blocks));
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
     /**** stream (temp) data ****/
-    private readonly List<RichMessage> messageList = [];
+    private readonly List<IRichMessage> messageList = [];
     private StringBuilder? streamMessage;
     public void AddStreamText(string text)
     {
@@ -415,7 +435,7 @@ public class ChatWindowMessageList : ObservableObject
                 }
                 else if (content is ImageContent imgContent)
                 {
-                    await chatMsg.AddImage(imgContent.ImageUrl.Url, null);
+                    await chatMsg.AddImage(imgContent.ImageUrl.Url, null, null);
                 }
             }
             if (msg is UserMessage userMsg)
@@ -436,7 +456,7 @@ public class ChatWindowMessageList : ObservableObject
             {
                 foreach (var img in toolMsg.GeneratedImages)
                 {
-                    await chatMsg.AddImage(img.ImageBase64Url, img.Description);
+                    await chatMsg.AddImage(img.ImageBase64Url, null, img.Description);
                 }
             }
             Messages.Add(chatMsg);
