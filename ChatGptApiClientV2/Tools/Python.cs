@@ -8,6 +8,7 @@ using System.Windows.Documents;
 using Markdig;
 using Markdig.Wpf.ColorCode;
 using System.ComponentModel;
+using Python.Runtime;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -27,7 +28,8 @@ public class PythonFunc : IToolFunction
         """
         You can execute a python script. 
         - The script must contains a `main()` function. Python will respond with the returned value from that `main()` function, or time out after 60.0 seconds.
-        - The python standard library is available, but you cannot import any third-party libraries.
+        - The python standard library is available. Apart from that, you can only import the third-party libraries listed below:
+          1. sympy 
         - Do not make external web requests in your python script.
         - Do not make file I/O in your python script.
         """;
@@ -41,6 +43,44 @@ public class PythonFunc : IToolFunction
 
     public Type ArgsType => typeof(Args);
 
+    private async Task PreparePython()
+    {
+        // todo
+    }
+    private async Task InstallPackage(string package, string version = "")
+    {
+        if (version != "")
+        {
+            version = $"=={version}";
+        }
+        const string code = """
+                            import pip
+
+                            def install(package):
+                                if hasattr(pip, 'main'):
+                                    pip.main(['install', package])
+                                else:
+                                    pip._internal.main(['install', package])
+                            """;
+        await Task.Run(() =>
+        {
+            using (Py.GIL())
+            {
+                using var scope = Py.CreateScope();
+                scope.Exec(code);
+                var install = scope.Get("install");
+                PyString param = new($"{package}{version}");
+                install.Invoke(param);
+            }
+        });
+    }
+    private async Task PreparePackage(string code)
+    {
+        if (code.Contains("sympy"))
+        {
+            await InstallPackage("sympy");
+        }
+    }
     public async Task<ToolMessage> Action(SystemState state, string argstr)
     {
         var msgContents = new List<IMessage.TextContent>();
@@ -76,17 +116,24 @@ public class PythonFunc : IToolFunction
 
         try
         {
+            await PreparePython();
+            await PreparePackage(args.Code);
             var task = Task.Run(() =>
             {
-                var eng = IronPython.Hosting.Python.CreateEngine();
-                var scope = eng.CreateScope();
-                eng.Execute(args.Code, scope);
-                return eng.Execute("str(main())", scope);
+                PythonEngine.Initialize();
+                using (Py.GIL())
+                {
+                    using var scope = Py.CreateScope();
+                    scope.Exec(args.Code);
+                    var main = scope.Get("main") ?? throw new Exception("code must contains a `main()` function.");
+                    var result = main.Invoke();
+                    return result.ToString();
+                }
+                
             });
             if (await Task.WhenAny(task, Task.Delay(60000)) != task)
             {
-                msgContents[0].Text += "Error: Python execution timed out.\n\n";
-                return msg;
+                throw new Exception("execution timed out.");
             }
             var executeResult = await task;
             msgContents[0].Text += $"Python execution result: {executeResult}\n\n";
