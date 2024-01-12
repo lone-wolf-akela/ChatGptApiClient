@@ -24,9 +24,9 @@ public enum RoleType
     Tool
 }
     
-public class ToolCallType
+public class ToolCallType : ICloneable
 {
-    public class FunctionType
+    public class FunctionType : ICloneable
     {
         /// <summary>
         /// The name of the function to call.
@@ -39,6 +39,14 @@ public class ToolCallType
         /// before calling your function.
         /// </summary>
         public string Arguments { get; set; } = "";
+        public object Clone()
+        {
+            return new FunctionType
+            {
+                Name = Name,
+                Arguments = Arguments
+            };
+        }
     }
     public long Index { get; set; }
     /// <summary>
@@ -70,6 +78,16 @@ public class ToolCallType
             }
         }
         return mergedList;
+    }
+    public object Clone()
+    {
+        return new ToolCallType
+        {
+            Index = Index,
+            Id = Id,
+            Type = Type,
+            Function = (FunctionType)Function.Clone()
+        };
     }
 }
 public class ChatCompletionChunk
@@ -327,7 +345,7 @@ public class MessageConverter : JsonConverter<IMessage>
 }
 
 [JsonConverter(typeof(MessageConverter))]
-public interface IMessage
+public interface IMessage : ICloneable
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum ContentCategory
@@ -383,7 +401,7 @@ public interface IMessage
         }
     }
     [JsonConverter(typeof(ContentConverter))]
-    public interface IContent
+    public interface IContent : ICloneable
     {
         public ContentCategory Type { get; }
         public int CountToken();
@@ -397,10 +415,17 @@ public interface IMessage
         }
 
         public string Text { get; set; } = "";
+        public object Clone()
+        {
+            return new TextContent
+            {
+                Text = Text
+            };
+        }
     }
     public class ImageContent : IContent
     {
-        public class ImageUrlType
+        public class ImageUrlType : ICloneable
         {
             [JsonConverter(typeof(StringEnumConverter))]
             public enum ImageDetail
@@ -412,6 +437,14 @@ public interface IMessage
             }
             public string Url { get; set; } = "";
             public ImageDetail Detail { get; set; } = ImageDetail.Low;
+            public object Clone()
+            {
+                return new ImageUrlType
+                {
+                    Url = Url,
+                    Detail = Detail
+                };
+            }
         }
         public ContentCategory Type => ContentCategory.ImageUrl;
         
@@ -460,8 +493,15 @@ public interface IMessage
 
             return count;
         }
-
         public ImageUrlType ImageUrl { get; set; } = new();
+        public object Clone()
+        {
+            return new ImageContent
+            {
+                ImageSize = ImageSize,
+                ImageUrl = (ImageUrlType)ImageUrl.Clone()
+            };
+        }
     }
     /// <summary>
     /// The contents of the message.
@@ -503,6 +543,14 @@ public class SystemMessage : IMessage
     public bool Hidden => false;
     public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
+    public object Clone()
+    {
+        return new SystemMessage
+        {
+            Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
+            Name = Name
+        };
+    }
 }
 
 public class UserMessageConverter: JsonConverter<UserMessage>
@@ -600,7 +648,7 @@ public class UserMessage : IMessage
         }
     }
     [JsonConverter(typeof(AttachmentInfoConverter))]
-    public interface IAttachmentInfo
+    public interface IAttachmentInfo : ICloneable
     {
         [JsonConverter(typeof(StringEnumConverter))]
         public enum AttachmentType
@@ -618,6 +666,14 @@ public class UserMessage : IMessage
         public IAttachmentInfo.AttachmentType Type => IAttachmentInfo.AttachmentType.Text;
         public string FileName { get; set; } = "";
         public string Content { get; set; } = "";
+        public object Clone()
+        {
+            return new TextAttachmentInfo
+            {
+                FileName = FileName,
+                Content = Content
+            };
+        }
     }
     public class ImageAttachmentInfo : IAttachmentInfo
     {
@@ -626,6 +682,16 @@ public class UserMessage : IMessage
         public string ImageBase64Url { get; set; } = "";
         public bool HighResMode { get; set; }
         public System.Drawing.Size? ImageSize { get; set; } // cache image size
+        public object Clone()
+        {
+            return new ImageAttachmentInfo
+            {
+                FileName = FileName,
+                ImageBase64Url = ImageBase64Url,
+                HighResMode = HighResMode,
+                ImageSize = ImageSize
+            };
+        }
     }
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
     public RoleType Role => RoleType.User;
@@ -642,7 +708,6 @@ public class UserMessage : IMessage
         }
         return count;
     }
-
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public List<IAttachmentInfo> Attachments { get; set; } = [];
     public IEnumerable<IMessage.IContent> GenerateAttachmentContentList()
@@ -674,6 +739,15 @@ public class UserMessage : IMessage
         return contents;
     }
     public bool ShouldSerializeAttachments() => IsSavingToDisk;
+    public object Clone()
+    {
+        return new UserMessage
+        {
+            Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
+            Name = Name,
+            Attachments = (from a in Attachments select (IAttachmentInfo)a.Clone()).ToList()
+        };
+    }
 }
 public class AssistantMessage : IMessage
 {
@@ -685,6 +759,15 @@ public class AssistantMessage : IMessage
     public bool Hidden => false;
     public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
+    public object Clone()
+    {
+        return new AssistantMessage
+        {
+            Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
+            Name = Name,
+            ToolCalls = (from t in ToolCalls select (ToolCallType)t.Clone()).ToList()
+        };
+    }
 }
 public class ToolMessage : IMessage
 {
@@ -692,10 +775,18 @@ public class ToolMessage : IMessage
     public RoleType Role => RoleType.Tool;
     public string? Name => null;
     public string ToolCallId { get; set; } = "";
-    public class GeneratedImage
+    public class GeneratedImage : ICloneable
     {
         public string ImageBase64Url { get; set; } = "";
         public string Description { get; set; } = "";
+        public object Clone()
+        {
+            return new GeneratedImage
+            {
+                ImageBase64Url = ImageBase64Url,
+                Description = Description
+            };
+        }
     }
     public List<GeneratedImage> GeneratedImages { get; set; } = [];
     public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
@@ -703,6 +794,16 @@ public class ToolMessage : IMessage
     public bool Hidden { get; set; }
     public int CountToken() => ((IMessage)this).CountTokenBase();
     public bool ShouldSerializeHidden() => IsSavingToDisk;
+    public object Clone()
+    {
+        return new ToolMessage
+        {
+            Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
+            ToolCallId = ToolCallId,
+            GeneratedImages = (from g in GeneratedImages select (GeneratedImage)g.Clone()).ToList(),
+            Hidden = Hidden
+        };
+    }
 }
 public class ChatCompletionRequest
 {
@@ -781,27 +882,7 @@ public class ChatCompletionRequest
     public static ChatCompletionRequest BuildFromInitPrompts(IEnumerable<IMessage>? initPrompts, DateTime knowledgeCutoff)
     {
         var request = new ChatCompletionRequest();
-
-        // deep clone from initPrompts
-        var contractResolver = new DefaultContractResolver
-        {
-            NamingStrategy = new SnakeCaseNamingStrategy()
-        };
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = contractResolver,
-        };
-        var initPromptsList = initPrompts?.ToList() ?? [];
-        foreach (var msg in initPromptsList)
-        {
-            msg.IsSavingToDisk = true;
-        }
-        var serializedInitPromptsList = JsonConvert.SerializeObject(initPromptsList, settings);
-        foreach (var msg in initPromptsList)
-        {
-            msg.IsSavingToDisk = false;
-        }
-        var messages = JsonConvert.DeserializeObject<List<IMessage>>(serializedInitPromptsList, settings) ?? [];
+        var messages = (from msg in initPrompts select (IMessage)msg.Clone()).ToList();
 
         foreach (var msg in messages)
         {

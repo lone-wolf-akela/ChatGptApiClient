@@ -558,7 +558,6 @@ public partial class SystemState : ObservableObject
                 };
                 var settings = new JsonSerializerSettings
                 {
-                    TypeNameHandling = TypeNameHandling.Auto,
                     ContractResolver = contractResolver
                 };
 
