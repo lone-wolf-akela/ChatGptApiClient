@@ -153,8 +153,9 @@ public class PythonFunc : IToolFunction
                     using var scope = Py.CreateScope();
                     scope.Exec(args.Code);
                     var main = scope.Get("main") ?? throw new Exception("code must contains a `main()` function.");
-                    var result = main.Invoke();
-                    return result.ToString();
+                    var r = main.Invoke();
+                    // ReSharper disable once SpecifyACultureInStringConversionExplicitly
+                    return r.ToString();
                 }
                 
             });
