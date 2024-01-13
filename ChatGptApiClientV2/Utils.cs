@@ -18,6 +18,7 @@ using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
+using Newtonsoft.Json;
 using SharpToken;
 
 namespace ChatGptApiClientV2;
@@ -127,7 +128,7 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
-internal static partial class Utils
+public static partial class Utils
 {
     private static GptEncoding? tokenEncoding;
     public static int GetStringTokenNum(string str)
@@ -509,5 +510,105 @@ internal static partial class Utils
         var ico = (Icon)Icon.FromHandle(hIcon.Value).Clone();
         Shell32.DestroyIcon(hIcon.Value); // don't forget to cleanup
         return ico;
+    }
+    private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)
+    {
+        foreach (var folder in folders)
+        {
+            if (File.Exists(Path.Combine(folder, fileName)))
+            {
+                yield return folder;
+            }
+        }
+    }
+    private static IEnumerable<string> FindPathContains(string fileName)
+    {
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (path is null)
+        {
+            yield break;
+        }
+        var folders = path.Split(';');
+        foreach (var folder in FindFolderContains(fileName, folders))
+        {
+            yield return folder;
+        }
+    }
+    public class PythonEnv
+    {
+        [JsonConstructor]
+        public PythonEnv(string homePath, string executablePath, string dllPath)
+        {
+            HomePath = homePath;
+            ExecutablePath = executablePath;
+            DllPath = dllPath;
+        }
+
+        public string HomePath { get;}
+        public string ExecutablePath { get; }
+        public string DllPath { get; }
+    }
+    private static PythonEnv? DetectPythonInFolder(string folder)
+    {
+        var exe = Path.Combine(folder, "python.exe");
+        if(!File.Exists(exe))
+        {
+            return null;
+        }
+        var dlls = Directory.GetFiles(folder, "python3*.dll").ToList();
+        // remove python3.dll
+        dlls.RemoveAll(x => x.EndsWith("python3.dll"));
+        if(dlls.Count == 0)
+        {
+            return null;
+        }
+        return new PythonEnv(folder, exe, dlls[0]);
+    }
+    public static IEnumerable<PythonEnv> FindPythonEnvs()
+    {
+        // system installed python
+        foreach (var folder in FindPathContains("python.exe"))
+        {
+            var env = DetectPythonInFolder(folder);
+            if (env is not null)
+            {
+                yield return env;
+            }
+        }
+        // find conda installed path
+        var condaExeBase = FindPathContains("conda.exe");
+        var condaBatBase = FindPathContains("conda.bat");
+        var condaBases = condaExeBase.Concat(condaBatBase).Distinct();
+        var condaEnvsPath = (from path in condaBases
+                            let envsPath = Path.GetFullPath(Path.Combine(path, "..", "envs"))
+                            where Directory.Exists(envsPath)
+                            select envsPath).Distinct();
+                            
+        foreach (var envsFolder in condaEnvsPath)
+        {
+            foreach (var pythonHome in Directory.GetDirectories(envsFolder))
+            {
+                var env = DetectPythonInFolder(pythonHome);
+                if (env is not null)
+                {
+                    yield return env;
+                }
+            }
+        }
+    }
+
+    public sealed class ScopeGuard(Action action) : IDisposable
+    {
+        private bool disposed;
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+            action();
+            disposed = true;
+        }
     }
 }

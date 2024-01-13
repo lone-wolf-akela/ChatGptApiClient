@@ -308,6 +308,15 @@ public partial class Config : ObservableValidator
             : null;
     [JsonIgnore]
     public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
+
+    [ObservableProperty]
+    private string pythonDllPath;
+    partial void OnPythonDllPathChanged(string value) => SaveConfig();
+
+    [ObservableProperty]
+    private Utils.PythonEnv? pythonEnv;
+    partial void OnPythonEnvChanged(Utils.PythonEnv? value) => SaveConfig();
+
     public Config()
     {
         theme = ThemeType.System;
@@ -316,7 +325,7 @@ public partial class Config : ObservableValidator
         RefreshTheme();
         ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
 
-        userNickName = string.Empty;
+        userNickName = "";
         serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         serviceURL = "";
         azureEndpoint = "";
@@ -337,6 +346,8 @@ public partial class Config : ObservableValidator
         selectedModelVersionIndex = 0;
         useRandomSeed = true;
         uploadHiresImage = false;
+        pythonDllPath = "";
+        pythonEnv = null;
 
         AzureDeploymentList.CollectionChanged += AzureDeploymentListCollectionChanged;
 

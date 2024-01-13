@@ -10,7 +10,8 @@ public partial class NetStatus : ObservableObject
     {
         Idle,
         Sending,
-        Receiving
+        Receiving,
+        Processing
     }
 
     [ObservableProperty]
@@ -25,6 +26,7 @@ public partial class NetStatus : ObservableObject
         StatusEnum.Idle => "空闲，等待输入。",
         StatusEnum.Sending => "正在发送数据……",
         StatusEnum.Receiving => "正在接收数据……",
+        StatusEnum.Processing => "正在处理数据……",
         _ => throw new InvalidOperationException()
     };
     public Brush StatusColor => Status switch
@@ -32,6 +34,7 @@ public partial class NetStatus : ObservableObject
         StatusEnum.Idle => System.Windows.Application.Current.FindResource("PrimaryTextBrush") as Brush ?? Brushes.Black,
         StatusEnum.Sending => System.Windows.Application.Current.FindResource("InfoBrush") as Brush ?? Brushes.DeepSkyBlue,
         StatusEnum.Receiving => System.Windows.Application.Current.FindResource("SuccessBrush") as Brush ?? Brushes.LimeGreen,
+        StatusEnum.Processing => System.Windows.Application.Current.FindResource("WarningBrush") as Brush ?? Brushes.Orange,
         _ => throw new InvalidOperationException()
     };
 

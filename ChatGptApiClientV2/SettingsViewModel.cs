@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace ChatGptApiClientV2;
 
@@ -62,6 +64,8 @@ public partial class SettingsViewModel : ObservableObject
             Config.AzureDeploymentList.RemoveAt(SelectedAzureDeploymentIdIndex);
         }
     }
+
+    public IEnumerable<Utils.PythonEnv> PythonEnvs => Utils.FindPythonEnvs();
 
     public void UnLoadViewModel()
     {

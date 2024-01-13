@@ -423,7 +423,7 @@ public partial class SystemState : ObservableObject
         };
         CurrentSession.Messages.Add(newAssistantMsg);
 
-        var toolcalled = false;
+        var responseRequired = false;
         foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
         {
             await ResetSession(CurrentSession);
@@ -431,12 +431,12 @@ public partial class SystemState : ObservableObject
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
             var toolResult = await plugin.Action(this, args);
-            toolResult.ToolCallId = toolcall.Id;
-            CurrentSession.Messages.Add(toolResult);
-            toolcalled = true;
+            toolResult.Message.ToolCallId = toolcall.Id;
+            CurrentSession.Messages.Add(toolResult.Message);
+            responseRequired = responseRequired || toolResult.ResponeRequired;
         }
 
-        if (toolcalled)
+        if (responseRequired)
         {
             await ResetSession(CurrentSession);
             await Send();
@@ -451,13 +451,13 @@ public partial class SystemState : ObservableObject
             Config.Seed = Random.Next();
         }
 
-        List<IAttachmentInfo> Attachments = [];
+        List<IAttachmentInfo> attachments = [];
         foreach(var file in files)
         {
             var mime = MimeTypes.GetMimeType(file);
             if(mime.StartsWith("text/"))
             {
-                Attachments.Add(new TextAttachmentInfo
+                attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     Content = (await File.ReadAllTextAsync(file)).Trim()
@@ -465,7 +465,7 @@ public partial class SystemState : ObservableObject
             }
             else if (mime.StartsWith("application/pdf"))
             {
-                Attachments.Add(new TextAttachmentInfo
+                attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     Content = Utils.PdfFileToText(file).Trim()
@@ -476,7 +476,7 @@ public partial class SystemState : ObservableObject
                 var base64 = await Utils.ImageFileToBase64(file);
                 var image = Utils.Base64ToBitmapImage(base64);
                 System.Drawing.Size imageSize = new(image.PixelWidth, image.PixelHeight);
-                Attachments.Add(new ImageAttachmentInfo
+                attachments.Add(new ImageAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
                     ImageBase64Url = await Utils.ImageFileToBase64(file),
@@ -493,7 +493,7 @@ public partial class SystemState : ObservableObject
         {
             Content = contentList,
             Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName,
-            Attachments = Attachments
+            Attachments = attachments
         };
 
         CurrentSession.Messages.Add(userMsg);

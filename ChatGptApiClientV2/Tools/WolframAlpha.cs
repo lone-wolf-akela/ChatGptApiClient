@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.IO;
 using System.Windows.Documents;
 using System.ComponentModel;
+using static ChatGptApiClientV2.Tools.IToolFunction;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -35,10 +36,13 @@ public class WolframAlphaFunc : IToolFunction
     public Type ArgsType => typeof(Args);
 
     private readonly HttpClient httpClient = new();
-    public async Task<ToolMessage> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string argstr)
     {
+        using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
+
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
+        var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
         var argsJson = JToken.Parse(argstr);
@@ -51,7 +55,7 @@ public class WolframAlphaFunc : IToolFunction
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for WolframAlpha. The args are: {argstr}\n\n";
-                return msg;
+                return result;
             }
             args = parsedArgs;
         }
@@ -59,7 +63,7 @@ public class WolframAlphaFunc : IToolFunction
         {
             msgContents[0].Text += $"Failed to parse arguments for WolframAlpha. The args are: {argstr}\n\n";
             msgContents[0].Text += $"Exception: {e.Message}\n\n";
-            return msg;
+            return result;
         }
 
         var parameters = new Dictionary<string, string?>
@@ -96,8 +100,7 @@ public class WolframAlphaFunc : IToolFunction
             using var errorReader = new StreamReader(errorResponseStream);
             var errorResponse = await errorReader.ReadToEndAsync();
             msgContents[0].Text += $"Error: {errorResponse}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         await using var responseStream = await response.Content.ReadAsStreamAsync();
@@ -109,21 +112,18 @@ public class WolframAlphaFunc : IToolFunction
         if (success != true)
         {
             msgContents[0].Text += $"Error: {responseStr}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
         var pods = queryresult?["pods"];
         if (pods is null)
         {
             msgContents[0].Text += $"Error: {responseStr}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         msgContents[0].Text += $"Results: {pods.ToString(Formatting.Indented)}\n\n";
-        state.NetStatus.Status = NetStatus.StatusEnum.Idle;
         msg.Hidden = true; // Hide success results from user
-        return msg;
+        return result;
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)

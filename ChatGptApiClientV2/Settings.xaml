@@ -223,6 +223,15 @@
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
                             <TextBox x:Name="TxtbxWolframKey" TextWrapping="Wrap" Text="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" VerticalAlignment="Center"/>
                         </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Python 解释器" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
+                            <ComboBox ItemsSource="{Binding PythonEnvs, Mode=OneTime}" 
+                                      SelectedValue="{Binding Config.PythonDllPath}"
+                                      SelectedValuePath="DllPath"
+                                      SelectedItem="{Binding Config.PythonEnv, Mode=OneWayToSource}"
+                                      DisplayMemberPath="ExecutablePath"
+                                      VerticalAlignment="Center"/>
+                        </DockPanel>
                     </StackPanel>
                 </Grid>
             </StackPanel>

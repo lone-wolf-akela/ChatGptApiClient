@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Threading;
 using System.ComponentModel;
+using static ChatGptApiClientV2.Tools.IToolFunction;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -85,10 +86,13 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
     }
-    public async Task<ToolMessage> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string argstr)
     {
+        using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
+
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
+        var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
         var argsJson = JToken.Parse(argstr);
@@ -101,7 +105,7 @@ public class DalleImageGenFunc : IToolFunction
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
-                return msg;
+                return result;
             }
             args = parsedArgs;
         }
@@ -109,7 +113,7 @@ public class DalleImageGenFunc : IToolFunction
         {
             msgContents[0].Text += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
             msgContents[0].Text += $"Exception: {e.Message}\n\n";
-            return msg;
+            return result;
         }
 
         apiClient.DefaultRequestHeaders.Authorization = state.Config.ServiceProvider switch
@@ -156,8 +160,7 @@ public class DalleImageGenFunc : IToolFunction
             {
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
             }
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         await using var responseStream = await response.Content.ReadAsStreamAsync();
@@ -170,8 +173,7 @@ public class DalleImageGenFunc : IToolFunction
         if (imgDownloadUrl is null)
         {
             msgContents[0].Text += "Error: no image download address generated.\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         state.StreamText($"下载图像： {imgDownloadUrl}\n");
@@ -197,8 +199,7 @@ public class DalleImageGenFunc : IToolFunction
         if (!downloadSuccess)
         {
             msgContents[0].Text += $"Error: failed to download image from {imgDownloadUrl}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         var imageFileExt = Utils.GetFileExtensionFromUrl(imgDownloadUrl);
@@ -216,8 +217,8 @@ public class DalleImageGenFunc : IToolFunction
         msg.GeneratedImages.Add(new ToolMessage.GeneratedImage { ImageBase64Url = imageUrl, Description = imageDesc });
         File.Delete(imageName);
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
-        state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-        return msg;
+        result.ResponeRequired = false;
+        return result;
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)

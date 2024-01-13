@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.ComponentModel;
+using static ChatGptApiClientV2.Tools.IToolFunction;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -38,10 +39,13 @@ public class GoogleSearchFunc : IToolFunction
     public Type ArgsType => typeof(Args);
 
     private readonly HttpClient httpClient = new();
-    public async Task<ToolMessage> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string argstr)
     {
+        using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
+
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents};
+        var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
         var argsJson = JToken.Parse(argstr);
@@ -54,7 +58,7 @@ public class GoogleSearchFunc : IToolFunction
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for Google search. The args are: {argstr}\n\n";
-                return msg;
+                return result;
             }
             args = parsedArgs;
         }
@@ -62,14 +66,14 @@ public class GoogleSearchFunc : IToolFunction
         {
             msgContents[0].Text += $"Failed to parse arguments for Google search. The args are: {argstr}\n\n";
             msgContents[0].Text += $"Exception: {e.Message}\n\n";
-            return msg;
+            return result;
         }
 
         args.Query = args.Query.Trim();
         if (string.IsNullOrEmpty(args.Query))
         {
             msgContents[0].Text += "Error: Empty query.\n\n";
-            return msg;
+            return result;
         }
 
         var parameters = new Dictionary<string, string?>
@@ -107,17 +111,15 @@ public class GoogleSearchFunc : IToolFunction
             using var errorReader = new StreamReader(errorResponseStream);
             var errorResponse = await errorReader.ReadToEndAsync();
             msgContents[0].Text += $"Error: {errorResponse}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
         await using var responseStream = await response.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(responseStream);
         var responseStr = await reader.ReadToEndAsync();
         msgContents[0].Text += $"Results: {responseStr}\n\n";
-        state.NetStatus.Status = NetStatus.StatusEnum.Idle;
         msg.Hidden = true; // Hide success results from user
-        return msg;
+        return result;
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
@@ -178,10 +180,13 @@ public class WebsiteAccessFunc : IToolFunction
     public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
-    public async Task<ToolMessage> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string argstr)
     {
+        using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
+
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
+        var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
         var argsJson = JToken.Parse(argstr);
@@ -194,7 +199,7 @@ public class WebsiteAccessFunc : IToolFunction
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
-                return msg;
+                return result;
             }
             args = parsedArgs;
         }
@@ -202,7 +207,7 @@ public class WebsiteAccessFunc : IToolFunction
         {
             msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
             msgContents[0].Text += $"Exception: {e.Message}\n\n";
-            return msg;
+            return result;
         }
 
         state.NewMessage(RoleType.Tool);
@@ -241,13 +246,11 @@ public class WebsiteAccessFunc : IToolFunction
         catch(Exception e)
         {
             msgContents[0].Text += $"Error: {e.Message}\n\n";
-            state.NetStatus.Status = NetStatus.StatusEnum.Idle;
-            return msg;
+            return result;
         }
 
-        state.NetStatus.Status = NetStatus.StatusEnum.Idle;
         msg.Hidden = true; // Hide success results from user
-        return msg;
+        return result;
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
@@ -309,10 +312,11 @@ public class WebsiteNextPageFunc : IToolFunction
     }
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolMessage> Action(SystemState state, string argstr)
+    public Task<ToolResult> Action(SystemState state, string argstr)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
+        var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
         var argsJson = JToken.Parse(argstr);
@@ -325,7 +329,7 @@ public class WebsiteNextPageFunc : IToolFunction
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
-                return Task.FromResult(msg);
+                return Task.FromResult(result);
             }
             args = parsedArgs;
         }
@@ -333,7 +337,7 @@ public class WebsiteNextPageFunc : IToolFunction
         {
             msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
             msgContents[0].Text += $"Exception: {e.Message}\n\n";
-            return Task.FromResult(msg);
+            return Task.FromResult(result);
         }
 
         state.NewMessage(RoleType.Tool);
@@ -343,13 +347,13 @@ public class WebsiteNextPageFunc : IToolFunction
         if (!foundCache)
         {
             msgContents[0].Text += $"Error: {args.Url} has not been visited. You must first call website_access to get the content.\n\n";
-            return Task.FromResult(msg);
+            return Task.FromResult(result);
         }
 
         if (string.IsNullOrEmpty(content))
         {
             msgContents[0].Text += $"Error: No content remained for {args.Url}\n\n";
-            return Task.FromResult(msg);
+            return Task.FromResult(result);
         }
 
         if (content.Length > ContentPageLimit)
@@ -364,7 +368,7 @@ public class WebsiteNextPageFunc : IToolFunction
         }
         msgContents[0].Text += $"Content: {content}";
         msg.Hidden = true; // Hide success results from user
-        return Task.FromResult(msg);
+        return Task.FromResult(result);
     }
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
