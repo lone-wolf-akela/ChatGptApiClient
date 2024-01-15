@@ -757,7 +757,16 @@ public class AssistantMessage : IMessage
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
-    public int CountToken() => ((IMessage)this).CountTokenBase();
+    public int CountToken()
+    {
+        var count = ((IMessage)this).CountTokenBase();
+        foreach(var tc in ToolCalls ?? [])
+        {
+            count += Utils.GetStringTokenNum(tc.Function.Name);
+            count += Utils.GetStringTokenNum(tc.Function.Arguments);
+        }
+        return count;
+    }
     public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone()
     {

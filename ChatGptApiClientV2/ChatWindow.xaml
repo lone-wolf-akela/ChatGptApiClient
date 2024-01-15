@@ -17,6 +17,9 @@
         <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
     </FrameworkElement.CommandBindings>
     <Grid Margin="10,10,10,0">
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding State.Config.UiScale}" ScaleY="{Binding State.Config.UiScale}"/>
+        </Grid.LayoutTransform>
         <Grid.InputBindings>
             <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding SendCommand}"/>
         </Grid.InputBindings>
@@ -186,14 +189,23 @@
                             </Style.Resources>
                         </Style>
                     </hc:UniformSpacingPanel.Style>
-                    <Button Command="{Binding ResetCommand}" ToolTip="重置对话（清空当前对话历史）" Content="&#xE72C;" />
-                    <Button Command="{Binding SaveCommand}" ToolTip="保存对话历史" Content="&#xe78c;" />
-                    <Button Command="{Binding LoadCommand}" ToolTip="载入对话历史" Content="&#xe8da;" />
-                    <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;"  />
+                    <Button Command="{Binding ResetCommand}" ToolTip="重置对话（清空当前对话历史）" Content="&#xE72C;" Panel.ZIndex="1"/>
+                    <Button Command="{Binding SaveCommand}" ToolTip="保存对话历史" Content="&#xe78c;" Panel.ZIndex="1"/>
+                    <Button Command="{Binding LoadCommand}" ToolTip="载入对话历史" Content="&#xe8da;" Panel.ZIndex="1"/>
+                    <hc:Badge Value="{Binding FileAttachments.Count}" 
+                              ShowBadge="{Binding FileAttachments.Count}" 
+                              Style="{DynamicResource BadgePrimary}"
+                              FontSize="8"
+                              BadgeMargin="0,-5,-5,0"
+                              Panel.ZIndex="100">
+                        <Button Command="{Binding AddfileCommand}" ToolTip="添加附件（图片或TXT文档）" Content="&#xE723;" />
+                    </hc:Badge>
+                    <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;" Panel.ZIndex="1"/>
                     <Button Click="BtnScreenshot_Click" 
                             ToolTip="导出长截图" 
                             IsEnabled="{Binding Items.IsEmpty, ElementName=LstMsg, Converter={StaticResource Boolean2BooleanReConverter}}" 
-                            Content="&#xe91b;" />
+                            Content="&#xe91b;" 
+                            Panel.ZIndex="1"/>
                 </hc:UniformSpacingPanel>
                 <Button Command="{Binding SendCommand}" 
                         VerticalAlignment="Bottom" 
@@ -290,35 +302,6 @@
                                TextWrapping="WrapWithOverflow"
                                IsHitTestVisible="False"
                                Margin="{Binding Padding, ElementName=TxtInput}"/>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Bottom"
-                                IsHitTestVisible="False"
-                                Margin="{Binding Padding, ElementName=TxtInput}">
-                        <TextBlock Text="{Binding TextInputTokenNum, Mode=OneWay}"
-                                   FontFamily="Segoe UI, Microsoft YaHei UI" 
-                                   Foreground="Gray"
-                                   TextWrapping="WrapWithOverflow"
-                                   Margin="0,0,5,0"/>
-                        <TextBlock Text="Tokens"
-                                   FontFamily="Segoe UI, Microsoft YaHei UI" 
-                                   Foreground="Gray"
-                                   TextWrapping="WrapWithOverflow"/>
-                    </StackPanel>
-                    <hc:Badge VerticalAlignment="Bottom" 
-                              HorizontalAlignment="Right" 
-                              Margin="0,0,5,5"
-                              Value="{Binding FileAttachments.Count}" 
-                              ShowBadge="{Binding FileAttachments.Count}" 
-                              Style="{DynamicResource BadgePrimary}">
-                        <Button Command="{Binding AddfileCommand}"
-                                ToolTip="添加附件（图片或TXT文档）"
-                                FontFamily="./font/#Segoe Fluent Icons"
-                                FontSize="{StaticResource SubHeadFontSize}"
-                                Content="&#xE723;"
-                                Padding="0"
-                                Height="30"
-                                Width="30"/>
-                    </hc:Badge>
                 </hc:SimplePanel>
             </DockPanel>
         </DockPanel>
@@ -409,9 +392,20 @@
             <StatusBarItem Content="系统指纹："/>
             <StatusBarItem Content="{Binding State.NetStatus.SystemFingerprint}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="100"/>
             <Separator/>
-            <StatusBarItem Content="Token数："/>
+            <StatusBarItem Content="上下文统计："/>
             <StatusBarItem>
-                <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="已处理 "/>
+                    <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+                    <TextBlock Text=" Token(s)"/>
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="正在输入 "/>
+                    <TextBlock Text="{Binding TextInputTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+                    <TextBlock Text=" Token(s)" />
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
     </Grid>

@@ -22,6 +22,14 @@ public partial class Config : ObservableValidator
     private static string ConfigPath => "config.json";
 
     [ObservableProperty]
+    private double uiScale;
+    partial void OnUiScaleChanged(double value)
+    {
+        UiScale = Math.Clamp(value, 0.5, 2.0);
+        SaveConfig();
+    }
+
+    [ObservableProperty]
     private ThemeType theme;
     partial void OnThemeChanged(ThemeType value)
     {
@@ -325,6 +333,7 @@ public partial class Config : ObservableValidator
         RefreshTheme();
         ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
 
+        uiScale = 1.0;
         userNickName = "";
         serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         serviceURL = "";
