@@ -278,12 +278,12 @@ public class ChatWindowMessage : ObservableObject
 
     /**** stream (temp) data ****/
     private readonly List<IRichMessage> messageList = [];
-    private StringBuilder? streamMessage;
-    public StringBuilder? StreamMessage => streamMessage;
+    public StringBuilder? StreamMessage { get; private set; }
+
     public void AddStreamText(string text)
     {
-        streamMessage ??= new StringBuilder();
-        streamMessage.Append(text);
+        StreamMessage ??= new StringBuilder();
+        StreamMessage.Append(text);
         OnPropertyChanged(nameof(RenderedMessage));
     }
     private double? streamProgress;
@@ -305,9 +305,9 @@ public class ChatWindowMessage : ObservableObject
             {
                 doc.Blocks.AddRange(msg.Rendered);
             }
-            if (streamMessage is not null)
+            if (StreamMessage is not null)
             {
-                doc.Blocks.Add(new Paragraph(new Run(streamMessage.ToString())));
+                doc.Blocks.Add(new Paragraph(new Run(StreamMessage.ToString())));
             }
             if (streamProgress is not null)
             {
