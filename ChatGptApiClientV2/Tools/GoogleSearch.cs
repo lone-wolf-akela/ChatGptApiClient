@@ -38,7 +38,15 @@ public class GoogleSearchFunc : IToolFunction
     public string Name => "google_search";
     public Type ArgsType => typeof(Args);
 
-    private readonly HttpClient httpClient = new();
+    private static readonly HttpClient HttpClient;
+    static GoogleSearchFunc()
+    {
+        var httpClientHandler = new HttpClientHandler
+        {
+            AutomaticDecompression = System.Net.DecompressionMethods.All
+        };
+        HttpClient = new HttpClient(httpClientHandler);
+    }
     public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
@@ -102,7 +110,7 @@ public class GoogleSearchFunc : IToolFunction
         };
 
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         if (!response.IsSuccessStatusCode)

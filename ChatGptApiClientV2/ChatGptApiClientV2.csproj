@@ -104,7 +104,7 @@
     <PackageReference Include="PuppeteerSharp" Version="13.0.2" />
     <PackageReference Include="pythonnet" Version="3.0.3" />
     <PackageReference Include="SharpToken" Version="1.2.14" />
-    <PackageReference Include="SharpVectors" Version="1.8.2" />
+    <PackageReference Include="SharpVectors" Version="1.8.3" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
     <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
     <PackageReference Include="WindowsAPICodePack" Version="7.0.4" />

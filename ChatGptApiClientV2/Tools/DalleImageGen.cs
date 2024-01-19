@@ -10,9 +10,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Documents;
-using System.Windows.Threading;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
@@ -59,14 +57,21 @@ public class DalleImageGenFunc : IToolFunction
     public string Name => "dall_e_image_generation";
     public Type ArgsType => typeof(Args);
 
-    private readonly HttpClient apiClient = new();
-    private readonly HttpClient downloadClient = new();
+    private static readonly HttpClient HttpClient;
+    static DalleImageGenFunc()
+    {
+        var httpClientHandler = new HttpClientHandler
+        {
+            AutomaticDecompression = System.Net.DecompressionMethods.All
+        };
+        HttpClient = new HttpClient(httpClientHandler);
+    }
     private class Request
     {
         public string Prompt { get; init; } = "";
         public string Model { get; init; } = "dall-e-3";
         public string Quality { get; init; } = "hd";
-        public string ResponseFormat { get; init; } = "url";
+        public string ResponseFormat { get; init; } = "b64_json";
         public ImageSize Size { get; init; } = ImageSize.Sqaure;
         public string Style { get; init; } = "vivid";
 
@@ -117,7 +122,7 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
 
-        apiClient.DefaultRequestHeaders.Authorization = state.Config.ServiceProvider switch
+        HttpClient.DefaultRequestHeaders.Authorization = state.Config.ServiceProvider switch
         {
             Config.ServiceProviderType.Azure => null,
             _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY)
@@ -144,7 +149,7 @@ public class DalleImageGenFunc : IToolFunction
             request.Headers.Add("api-key", state.Config.AzureAPIKey);
         }
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await apiClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         if (!response.IsSuccessStatusCode)
@@ -169,55 +174,25 @@ public class DalleImageGenFunc : IToolFunction
         var imageResponse = await reader.ReadToEndAsync();
         var responseJson = JToken.Parse(imageResponse);
         var responseData = responseJson["data"]?[0];
-        var imgDownloadUrl = responseData?["url"]?.ToString();
+        var imageBase64Data = responseData?["b64_json"]?.ToString();
 
-        if (imgDownloadUrl is null)
+        if (imageBase64Data is null)
         {
-            msgContents[0].Text += "Error: no image download address generated.\n\n";
+            msgContents[0].Text += "Error: no image generated.\n\n";
             return result;
         }
 
-        state.StreamText($"下载图像： {imgDownloadUrl}\n");
-        DispatcherOperation? progressTextOperation = null;
-        var progress = new Progress<HttpDownloadProgressData>(progress =>
-        {
-            progressTextOperation = Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                state.SetStreamProgress(progress.Percent,
-                    $"进度: {progress.Percent * 100:0.00}% ({progress.Current}/{progress.Total} Bytes)");
-            });
-        });
+        // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
+        imageBase64Data = Utils.OptimizeBase64Png(imageBase64Data);
 
-        bool downloadSuccess;
-        var tmpName = Path.GetTempFileName();
-        await using (var fs = File.Create(tmpName))
-        {
-            downloadSuccess = await downloadClient.DownloadAsync(imgDownloadUrl, fs, progress);
-        }
-
-        progressTextOperation?.Wait();
-            
-        if (!downloadSuccess)
-        {
-            msgContents[0].Text += $"Error: failed to download image from {imgDownloadUrl}\n\n";
-            return result;
-        }
-
-        var imageFileExt = Utils.GetFileExtensionFromUrl(imgDownloadUrl);
-        var imageName = Path.ChangeExtension(tmpName, imageFileExt);
-        File.Move(tmpName, imageName);
-        var imageUrl = await Utils.ImageFileToBase64(imageName);
         var imageDesc =
             $"""
              Original Prompts: {args.Prompts}
 
              Revised Prompts: {responseData?["revised_prompt"]}
-
-             Download URL: {imgDownloadUrl}
              """;
-        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
+        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
         state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
-        File.Delete(imageName);
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
         msg.Hidden = true; // Hide success results from user
         result.ResponeRequired = false;
@@ -265,80 +240,13 @@ public class DalleImageGenFunc : IToolFunction
 
         yield return paragraph;
 
-        var imageurl = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
+        var imagedata = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedata"][0];
         var imagedesc = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"][0];
         var image = new ImageDisplayer
         {
-            Image = Utils.Base64ToBitmapImage(imageurl),
+            Image = Utils.Base64ToBitmapImage(imagedata),
             ImageTooltip = imagedesc
         };
         yield return new BlockUIContainer(image);
-    }
-}
-
-// from https://stackoverflow.com/questions/20661652/progress-bar-with-httpclient/46497896#46497896
-public struct HttpDownloadProgressData
-{
-    public long Current;
-    public long Total;
-    public readonly float Percent => Total > 0 ? (float)Current / Total : 0;
-}
-public static class HttpClientExtensions
-{
-    public static async Task<bool> DownloadAsync(this HttpClient client, string requestUri, Stream destination, IProgress<HttpDownloadProgressData>? progress = null, CancellationToken cancellationToken = default)
-    {
-        // Get the http headers first to examine the content length
-        using var response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return false;
-        }
-        var contentLength = response.Content.Headers.ContentLength;
-
-        await using var download = await response.Content.ReadAsStreamAsync(cancellationToken);
-
-        // Ignore progress reporting when no progress reporter was 
-        // passed or when the content length is unknown
-        if (progress == null || !contentLength.HasValue)
-        {
-            await download.CopyToAsync(destination, cancellationToken);
-            return true;
-        }
-
-        // Convert absolute progress (bytes downloaded) into relative progress (0% - 100%)
-        var streamprogress = new Progress<long>(
-            totalBytes => progress.Report(
-                new HttpDownloadProgressData
-                {
-                    Current = totalBytes, Total = contentLength.Value
-                }));
-        // Use extension method to report progress while downloading
-        await download.CopyToAsync(destination, 1024, streamprogress, cancellationToken);
-        progress.Report(new HttpDownloadProgressData { Current = contentLength.Value, Total = contentLength.Value });
-        return true;
-    }
-}
-
-public static class StreamExtensions
-{
-    public static async Task CopyToAsync(this Stream source, Stream destination, int bufferSize, IProgress<long>? progress = null, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(source);
-        if (!source.CanRead)
-            throw new ArgumentException("Has to be readable", nameof(source));
-        ArgumentNullException.ThrowIfNull(destination);
-        if (!destination.CanWrite)
-            throw new ArgumentException("Has to be writable", nameof(destination));
-        ArgumentOutOfRangeException.ThrowIfNegative(bufferSize);
-
-        var buffer = new byte[bufferSize];
-        long totalBytesRead = 0;
-        int bytesRead;
-        while ((bytesRead = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) != 0)
-        {
-            await destination.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
-            totalBytesRead += bytesRead;
-            progress?.Report(totalBytesRead);
-        }
     }
 }

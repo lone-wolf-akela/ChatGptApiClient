@@ -226,7 +226,16 @@ public partial class SystemState : ObservableObject
 
         return CurrentSession;
     }
-    private readonly HttpClient client = new();
+    private static readonly HttpClient HttpClient;
+    static SystemState()
+    {
+        var httpClientHandler = new HttpClientHandler
+        {
+            AutomaticDecompression = System.Net.DecompressionMethods.All
+        };
+        HttpClient = new HttpClient(httpClientHandler);
+    }
+
     private static readonly Random Random = new();
 
     public delegate void NewMessageHandler(RoleType role);
@@ -249,7 +258,7 @@ public partial class SystemState : ObservableObject
     }
     private async Task Send()
     {
-        client.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
+        HttpClient.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
         {
             Config.ServiceProviderType.Azure => null,
             _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY)
@@ -304,7 +313,7 @@ public partial class SystemState : ObservableObject
             request.Headers.Add("api-key", Config.AzureAPIKey);
         }
         NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         List<ChatCompletionChunk> chatChunks = [];

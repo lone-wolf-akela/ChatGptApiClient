@@ -151,13 +151,13 @@ public static partial class Utils
 
     [GeneratedRegex("^data:(?<mime>[a-z]+\\/[a-z]+);base64,(?<data>.+)$")]
     private static partial Regex Base64UrlExtract();
-    private static string ExtractBase64FromUrl(string url)
+    private static string ExtractBase64FromUrl(string urlOrData)
     {
         var r = Base64UrlExtract();
-        var match = r.Match(url);
+        var match = r.Match(urlOrData);
         if (!match.Success)
         {
-            throw new ArgumentException("The string is not a base64 image.");
+            return urlOrData;
         }
         var data = match.Groups["data"].Value;
         return data;
@@ -176,12 +176,19 @@ public static partial class Utils
         return bitmapImage;
     }
     
-
-    public static string GetFileExtensionFromUrl(string url)
+    public static string OptimizeBase64Png(string base64)
     {
-        url = url.Split('?')[0];
-        url = url.Split('/').Last();
-        return url.Contains('.') ? url[url.LastIndexOf('.')..] : "";
+        // optimize the input data
+        // used for dall-e generated image, as they are almost not compressed
+        // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
+        var data = ExtractBase64FromUrl(base64);
+        var bytes = Convert.FromBase64String(data);
+        using var ms = new MemoryStream(bytes);
+        using var image = Image.FromStream(ms);
+        using var ms2 = new MemoryStream();
+        image.Save(ms2, System.Drawing.Imaging.ImageFormat.Png);
+        var outBase64 = Convert.ToBase64String(ms2.ToArray());
+        return $"data:image/png;base64,{outBase64}";
     }
 
     private static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
