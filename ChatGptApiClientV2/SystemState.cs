@@ -428,9 +428,10 @@ public partial class SystemState : ObservableObject
         {
             await ResetSession(CurrentSession);
             var pluginName = toolcall.Function.Name;
+            var toolcallId = toolcall.Id;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
-            var toolResult = await plugin.Action(this, args);
+            var toolResult = await plugin.Action(this, toolcall.Id, args);
             toolResult.Message.ToolCallId = toolcall.Id;
             CurrentSession.Messages.Add(toolResult.Message);
             responseRequired = responseRequired || toolResult.ResponeRequired;

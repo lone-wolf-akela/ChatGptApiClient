@@ -39,7 +39,7 @@ public class GoogleSearchFunc : IToolFunction
     public Type ArgsType => typeof(Args);
 
     private readonly HttpClient httpClient = new();
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -170,7 +170,6 @@ public class GoogleSearchFunc : IToolFunction
 }
 public class WebsiteAccessFunc : IToolFunction
 {
-    public static readonly Dictionary<string, string> ContentRemained = [];
     private const int ContentPageLimit = 2048;
     public class Args
     {
@@ -180,7 +179,7 @@ public class WebsiteAccessFunc : IToolFunction
     public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -236,9 +235,10 @@ public class WebsiteAccessFunc : IToolFunction
             var content = innerText.ToString() ?? "";
             if (content.Length > ContentPageLimit)
             {
-                ContentRemained[args.Url] = content[ContentPageLimit..];
+                var contentRemained = content[ContentPageLimit..];
+                state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
                 content = content[..ContentPageLimit];
-                content += $"\n\n[Content truncated due to length limit; {ContentRemained[args.Url].Length} characters remained. Call website_nextpage if you need the remaining content.]";
+                content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
             }
             msgContents[0].Text += $"Content: {content}";
             await browser.CloseAsync();
@@ -312,7 +312,7 @@ public class WebsiteNextPageFunc : IToolFunction
     }
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolResult> Action(SystemState state, string argstr)
+    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -343,8 +343,12 @@ public class WebsiteNextPageFunc : IToolFunction
         state.NewMessage(RoleType.Tool);
         state.StreamText("Accessing the next page...\n\n");
 
-        var foundCache = WebsiteAccessFunc.ContentRemained.TryGetValue(args.Url, out var content);
-        if (!foundCache)
+        string? content = null;
+        try
+        {
+            content = state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0];
+        }
+        catch(KeyNotFoundException)
         {
             msgContents[0].Text += $"Error: {args.Url} has not been visited. You must first call website_access to get the content.\n\n";
             return Task.FromResult(result);
@@ -358,13 +362,14 @@ public class WebsiteNextPageFunc : IToolFunction
 
         if (content.Length > ContentPageLimit)
         {
-            WebsiteAccessFunc.ContentRemained[args.Url] = content[ContentPageLimit..];
+            var contentRemained = content[ContentPageLimit..];
+            state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
             content = content[..ContentPageLimit];
-            content += $"\n\n[Content truncated due to length limit; {WebsiteAccessFunc.ContentRemained[args.Url].Length} characters remained. Call website_nextpage if you need the remaining content.]";
+            content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
         }
         else
         {
-            WebsiteAccessFunc.ContentRemained[args.Url] = "";
+            state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
         }
         msgContents[0].Text += $"Content: {content}";
         msg.Hidden = true; // Hide success results from user

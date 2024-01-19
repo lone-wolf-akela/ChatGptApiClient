@@ -36,7 +36,7 @@ public class BingSearchFunc : IToolFunction
     public Type ArgsType => typeof(Args);
 
     private readonly HttpClient httpClient = new();
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 

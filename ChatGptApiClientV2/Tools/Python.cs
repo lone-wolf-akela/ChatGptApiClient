@@ -12,6 +12,7 @@ using System.IO;
 using Python.Runtime;
 using System.Diagnostics;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+using ChatGptApiClientV2.Controls;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -104,7 +105,7 @@ public class PythonFunc : IToolFunction
             }
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -263,7 +264,7 @@ public class  ShowImageFunc : IToolFunction
         public string FileName { get; set; } = "";
     }
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -310,7 +311,8 @@ public class  ShowImageFunc : IToolFunction
         }
         msgContents[0].Text += "Image successfully displayed.";
         var imageUrl = await Utils.ImageFileToBase64(filePath);
-        msg.GeneratedImages.Add(new ToolMessage.GeneratedImage { ImageBase64Url = imageUrl });
+        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
+        state.CurrentSession.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
         result.ResponeRequired = false;
         return result;
     }
@@ -319,6 +321,27 @@ public class  ShowImageFunc : IToolFunction
     {
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(new Run("显示图片..."));
-        return [paragraph];
+        yield return paragraph;
+
+        BlockUIContainer? imageBlock = null;
+        try
+        {
+            var imageUrl = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
+            var imageFileName = state.CurrentSession.PluginData[$"{Name}_{toolcallId}_filename"][0];
+            var image = new ImageDisplayer
+            {
+                FileName = imageFileName,
+                Image = Utils.Base64ToBitmapImage(imageUrl)
+            };
+            imageBlock = new BlockUIContainer(image);
+        }
+        catch (KeyNotFoundException)
+        {
+            // do nothing, the toolcall may have failed
+        }
+        if (imageBlock is not null)
+        {
+            yield return imageBlock;
+        }
     }
 }

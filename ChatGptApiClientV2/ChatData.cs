@@ -784,6 +784,7 @@ public class ToolMessage : IMessage
     public RoleType Role => RoleType.Tool;
     public string? Name => null;
     public string ToolCallId { get; set; } = "";
+    [Obsolete]
     public class GeneratedImage : ICloneable
     {
         public string ImageBase64Url { get; set; } = "";
@@ -797,6 +798,7 @@ public class ToolMessage : IMessage
             };
         }
     }
+    [Obsolete]
     public List<GeneratedImage> GeneratedImages { get; set; } = [];
     public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
     public bool IsSavingToDisk { get; set; } = false;
@@ -809,7 +811,9 @@ public class ToolMessage : IMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             ToolCallId = ToolCallId,
+#pragma warning disable CS0612 // 类型或成员已过时
             GeneratedImages = (from g in GeneratedImages select (GeneratedImage)g.Clone()).ToList(),
+#pragma warning restore CS0612 // 类型或成员已过时
             Hidden = Hidden
         };
     }
@@ -844,12 +848,31 @@ public class ChatCompletionRequest
     // tool_choice
     // user
 
-    public string Save()
+    public Dictionary<string, List<string>> PluginData { get; set; } = [];
+    public bool ShouldSerializePluginData() => IsSavingToDisk;
+    private bool IsSavingToDisk { get; set; }
+
+    private Utils.ScopeGuard SetSavingToDisk(bool isSaving)
     {
+        var oldVal = IsSavingToDisk;
+        IsSavingToDisk = isSaving;
         foreach(var msg in Messages)
         {
-            msg.IsSavingToDisk = true;
+            msg.IsSavingToDisk = isSaving;
         }
+        return new Utils.ScopeGuard(() =>
+        {
+            IsSavingToDisk = oldVal;
+            foreach (var msg in Messages)
+            {
+                msg.IsSavingToDisk = oldVal;
+            }
+        });
+    }
+
+    public string Save()
+    {
+        using var _ = SetSavingToDisk(true);
         var contractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy()
@@ -870,10 +893,7 @@ public class ChatCompletionRequest
     }
     public string GeneratePostRequest()
     {
-        foreach (var msg in Messages)
-        {
-            msg.IsSavingToDisk = false;
-        }
+        using var _ = SetSavingToDisk(false);
         var contractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy()

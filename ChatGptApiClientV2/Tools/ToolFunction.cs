@@ -46,7 +46,7 @@ public interface IToolFunction
         public ToolMessage Message { get; set; } = msg;
         public bool ResponeRequired { get; set; } = responeRequired;
     }
-    public Task<ToolResult> Action(SystemState state, string argstr);
+    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr);
     IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId);
     public ChatCompletionRequest.ToolType GetToolRequest() => new() 
     {

@@ -15,6 +15,7 @@ using System.Windows.Documents;
 using System.Windows.Threading;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+using ChatGptApiClientV2.Controls;
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -86,7 +87,7 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -214,9 +215,11 @@ public class DalleImageGenFunc : IToolFunction
 
              Download URL: {imgDownloadUrl}
              """;
-        msg.GeneratedImages.Add(new ToolMessage.GeneratedImage { ImageBase64Url = imageUrl, Description = imageDesc });
+        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
+        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
         File.Delete(imageName);
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
+        msg.Hidden = true; // Hide success results from user
         result.ResponeRequired = false;
         return result;
     }
@@ -226,19 +229,23 @@ public class DalleImageGenFunc : IToolFunction
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
         var argsSerializer = new JsonSerializer();
-        Args args;
+        var isFailed = false;
         try
         {
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("使用 DALL-E 生成图像..."))];
+                isFailed = true;
             }
-            args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("使用 DALL-E 生成图像..."))];
+            isFailed = true;
+        }
+        if (isFailed)
+        {
+            yield return new Paragraph(new Run("使用 DALL-E 生成图像..."));
+            yield break;
         }
 
         List<string> stickers = [
@@ -255,10 +262,17 @@ public class DalleImageGenFunc : IToolFunction
         paragraph.Inlines.Add(new Run("使用 DALL-E 生成图像:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
-        paragraph.Inlines.Add(new Run($"{args.Prompts}"));
-        paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        yield return paragraph;
+
+        var imageurl = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
+        var imagedesc = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"][0];
+        var image = new ImageDisplayer
+        {
+            Image = Utils.Base64ToBitmapImage(imageurl),
+            ImageTooltip = imagedesc
+        };
+        yield return new BlockUIContainer(image);
     }
 }
 
