@@ -25,12 +25,14 @@ public class ModelVersionInfo
     public bool FunctionCallSupported { get; init; }
     public static readonly ImmutableArray<ModelVersionInfo> VersionList =
     [
+        new ModelVersionInfo { ModelType = "gpt-3.5-16k", Name = "gpt-3.5-turbo-0125", Description = "2024-01-25", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-16k", Name = "gpt-3.5-turbo-1106", Description = "2023-11-06", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-4k", Name = "gpt-3.5-turbo", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-16k", Name = "gpt-3.5-turbo-16k", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-4k", Name = "gpt-3.5-turbo-0613", Description = "2023-06-13", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-16k", Name = "gpt-3.5-turbo-16k-0613", Description = "2023-06-13", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-3.5-4k", Name = "gpt-3.5-turbo-0301", Description = "2023-03-01", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = false },
+        new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-0125-preview", Description = "2023-01-25", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-1106-preview", Description = "2023-11-06", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-vision-preview", Description = "2023-11-06 w/ vision", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = false },
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
