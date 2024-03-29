@@ -13,9 +13,6 @@ using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Documents;
 using System.Threading.Tasks;
-using iText.Kernel.Pdf;
-using iText.Kernel.Pdf.Canvas.Parser;
-using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
@@ -221,18 +218,22 @@ public static partial class Utils
 
         return floater;
     }
-
+    // char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
+    // void poppler_free_text(const char* text);
+    [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file")]
+    private static extern IntPtr PopplerExtractTextFromPdfFile(string filename, int filenameLen = 0);
+    [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
+    private static extern void PopplerFreeText(IntPtr text);
     public static string PdfFileToText(string filename)
     {
-        using var reader = new PdfReader(filename);
-        using var doc = new PdfDocument(reader);
-        StringBuilder text = new();
-        ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
-        for (var i = 1; i <= doc.GetNumberOfPages(); i++)
+        var ptr = PopplerExtractTextFromPdfFile(filename, filename.Length);
+        if (ptr == IntPtr.Zero)
         {
-            text.Append(PdfTextExtractor.GetTextFromPage(doc.GetPage(i), strategy));
+            throw new InvalidOperationException("Failed to extract text from PDF file.");
         }
-        return text.ToString();
+        var text = Marshal.PtrToStringUTF8(ptr) ?? "";
+        PopplerFreeText(ptr);
+        return text;
     }
 
     // from https://stackoverflow.com/questions/354477/method-to-determine-if-path-string-is-local-or-remote-machine

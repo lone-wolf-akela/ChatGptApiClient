@@ -15,6 +15,7 @@
          Remove it when we update to dotnet-8.0.200
      -->
     <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -95,7 +96,6 @@
     <PackageReference Include="Flurl" Version="4.0.0" />
     <PackageReference Include="HandyControls" Version="3.5.0" />
     <PackageReference Include="HandyControls.Lang.zh-CN" Version="3.5.0" />
-    <PackageReference Include="itext7" Version="8.0.2" />
     <PackageReference Include="Markdig" Version="0.34.0" />
     <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -121,4 +121,12 @@
       <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
     </Page>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\poppler-wrapper\poppler-wrapper.vcxproj" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(SolutionDir)\$(Platform)\$(Configuration)\poppler-wrapper.dll&quot; &quot;$(TargetDir)&quot;" />
+  </Target>
 </Project>
