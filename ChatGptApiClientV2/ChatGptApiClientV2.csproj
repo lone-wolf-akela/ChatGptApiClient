@@ -126,7 +126,9 @@
     <ProjectReference Include="..\poppler-wrapper\poppler-wrapper.vcxproj" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y &quot;$(SolutionDir)\$(Platform)\$(Configuration)\poppler-wrapper.dll&quot; &quot;$(TargetDir)&quot;" />
-  </Target>
+  <ItemGroup>
+    <Content Include="$(SolutionDir)\$(Platform)\$(Configuration)\poppler-wrapper.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

@@ -221,12 +221,13 @@ public static partial class Utils
     // char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
     // void poppler_free_text(const char* text);
     [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file")]
-    private static extern IntPtr PopplerExtractTextFromPdfFile(string filename, int filenameLen = 0);
+    private static extern IntPtr PopplerExtractTextFromPdfFile(byte[] filename, int filenameLen);
     [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
     private static extern void PopplerFreeText(IntPtr text);
     public static string PdfFileToText(string filename)
     {
-        var ptr = PopplerExtractTextFromPdfFile(filename, filename.Length);
+        var utf8filename = Encoding.UTF8.GetBytes(filename);
+        var ptr = PopplerExtractTextFromPdfFile(utf8filename, utf8filename.Length);
         if (ptr == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to extract text from PDF file.");

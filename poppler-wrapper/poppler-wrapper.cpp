@@ -25,7 +25,8 @@ char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_l
     const std::string file_path(filename, filename_len);
     const std::unique_ptr<poppler::document> doc(poppler::document::load_from_file(file_path));
 
-    if (!doc) {
+    if (!doc) 
+    {
         return nullptr;
     }
 
