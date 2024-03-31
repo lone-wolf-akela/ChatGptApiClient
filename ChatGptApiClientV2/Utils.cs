@@ -220,16 +220,15 @@ public static partial class Utils
     }
     // char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
     // void poppler_free_text(const char* text);
-    [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file")]
-    private static extern IntPtr PopplerExtractTextFromPdfFile(byte[] filename, int filenameLen);
-    [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
-    private static extern void PopplerFreeText(IntPtr text);
+    [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file", StringMarshalling = StringMarshalling.Utf8)]
+    private static partial IntPtr PopplerExtractTextFromPdfFile(string filename, int filenameLen);
+    [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
+    private static partial void PopplerFreeText(IntPtr text);
     public static async Task<string> PdfFileToText(string filename)
     {
         return await Task.Run(() =>
         {
-            var utf8Filename = Encoding.UTF8.GetBytes(filename);
-            var ptr = PopplerExtractTextFromPdfFile(utf8Filename, utf8Filename.Length);
+            var ptr = PopplerExtractTextFromPdfFile(filename, 0);
             if (ptr == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Failed to extract text from PDF file.");
