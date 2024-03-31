@@ -478,7 +478,7 @@ public partial class SystemState : ObservableObject
                 attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
-                    Content = Utils.PdfFileToText(file).Trim()
+                    Content = (await Utils.PdfFileToText(file)).Trim()
                 });
             }
             else if (mime.StartsWith("image/"))

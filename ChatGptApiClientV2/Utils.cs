@@ -224,17 +224,20 @@ public static partial class Utils
     private static extern IntPtr PopplerExtractTextFromPdfFile(byte[] filename, int filenameLen);
     [DllImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
     private static extern void PopplerFreeText(IntPtr text);
-    public static string PdfFileToText(string filename)
+    public static async Task<string> PdfFileToText(string filename)
     {
-        var utf8filename = Encoding.UTF8.GetBytes(filename);
-        var ptr = PopplerExtractTextFromPdfFile(utf8filename, utf8filename.Length);
-        if (ptr == IntPtr.Zero)
+        return await Task.Run(() =>
         {
-            throw new InvalidOperationException("Failed to extract text from PDF file.");
-        }
-        var text = Marshal.PtrToStringUTF8(ptr) ?? "";
-        PopplerFreeText(ptr);
-        return text;
+            var utf8Filename = Encoding.UTF8.GetBytes(filename);
+            var ptr = PopplerExtractTextFromPdfFile(utf8Filename, utf8Filename.Length);
+            if (ptr == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to extract text from PDF file.");
+            }
+            var text = Marshal.PtrToStringUTF8(ptr) ?? "";
+            PopplerFreeText(ptr);
+            return text;
+        });
     }
 
     // from https://stackoverflow.com/questions/354477/method-to-determine-if-path-string-is-local-or-remote-machine
