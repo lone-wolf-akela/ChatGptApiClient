@@ -258,12 +258,12 @@ public partial class Config : ObservableValidator
 
         if (ServiceProvider == ServiceProviderType.Azure)
         {
-            foreach(var id in AzureDeploymentList)
+            foreach (var id in AzureDeploymentList)
             {
-                var knowledgeCutoff = 
-                    id.Contains("gpt-4") && id.Contains("1106") 
-                        ? new DateTime(2023, 4, 1) 
-                        : new DateTime(2021, 9, 1);
+                var knowledgeCutoff =
+                    id.Contains("gpt-4") && id.Contains("1106") ? new DateTime(2023, 4, 1) :
+                    id.Contains("gpt-4") && id.Contains("0125") ? new DateTime(2023, 12, 1) :
+                    new DateTime(2021, 9, 1);
                 var functionCallSupported = !(id.Contains("0301") || id.Contains("vision") || id.Contains("0314"));
                 ModelVersionOptions.Add(new ModelVersionInfo
                 {
