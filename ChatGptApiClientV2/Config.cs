@@ -113,13 +113,13 @@ public partial class Config : ObservableValidator
     [JsonIgnore]
     public string OpenAIChatServiceURL => ServiceProvider switch
     {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{SelectedModel?.Name}/chat/completions?api-version=2023-12-01-preview"),
+        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{SelectedModel?.Name}/chat/completions?api-version=2024-02-01"),
         _ => Url.Combine(ServiceURL, "v1/chat/completions")
     };
     [JsonIgnore]
     public string DalleImageGenServiceURL => ServiceProvider switch
     {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2023-12-01-preview"),
+        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2024-02-01"),
         _ => Url.Combine(ServiceURL, "v1/images/generations")
     };
     [JsonIgnore]
