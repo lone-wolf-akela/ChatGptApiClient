@@ -17,6 +17,7 @@ using System.Windows.Documents;
 using System.Windows.Threading;
 using ChatGptApiClientV2.Tools;
 using static ChatGptApiClientV2.UserMessage;
+using System.Diagnostics;
 
 namespace ChatGptApiClientV2;
 

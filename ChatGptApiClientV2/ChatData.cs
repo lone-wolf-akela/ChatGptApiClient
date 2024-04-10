@@ -48,7 +48,8 @@ public class ToolCallType : ICloneable
             };
         }
     }
-    public long Index { get; set; }
+
+    public long Index { private get; set; } // do not send this to server, it causes error with gpt-4-turbo-2024-04-09
     /// <summary>
     /// The ID of the tool call.
     /// </summary>

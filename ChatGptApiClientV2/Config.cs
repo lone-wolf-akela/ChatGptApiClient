@@ -263,8 +263,13 @@ public partial class Config : ObservableValidator
                 var knowledgeCutoff =
                     id.Contains("gpt-4") && id.Contains("1106") ? new DateTime(2023, 4, 1) :
                     id.Contains("gpt-4") && id.Contains("0125") ? new DateTime(2023, 12, 1) :
+                    id.Contains("gpt-4") && id.Contains("2024-04-09") ? new DateTime(2023, 12, 1) :
                     new DateTime(2021, 9, 1);
-                var functionCallSupported = !(id.Contains("0301") || id.Contains("vision") || id.Contains("0314"));
+                var functionCallSupported = 
+                    id.Contains("0301") ? false :
+                    (id.Contains("vision") && id.Contains("1106")) ? false :
+                    id.Contains("0314") ? false :
+                    true;
                 ModelVersionOptions.Add(new ModelVersionInfo
                 {
                     ModelType = "azure",
