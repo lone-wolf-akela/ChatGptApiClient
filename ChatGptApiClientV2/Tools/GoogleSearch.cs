@@ -178,7 +178,7 @@ public class GoogleSearchFunc : IToolFunction
 }
 public class WebsiteAccessFunc : IToolFunction
 {
-    private const int ContentPageLimit = 2048;
+    private const int ContentPageLimit = 4096;
     public class Args
     {
         [Description("The URL of the website to access.")]
@@ -237,6 +237,13 @@ public class WebsiteAccessFunc : IToolFunction
                 });
             var page = await browser.NewPageAsync();
             await page.GoToAsync(args.Url);
+
+            // Ensure at least one element is loaded
+            // solves the error "Execution context was destroyed, most likely because of a navigation."
+            // which happens when the url will redirect to another page
+            // such as when accessing the zh-hans version of wikipedia (which can redirect to the zh-cn version)
+            await page.WaitForSelectorAsync("*"); 
+
             var pageHeaderHandle = await page.QuerySelectorAsync("*");
             var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
             var innerText = await innerTextHandle.JsonValueAsync();
@@ -309,7 +316,7 @@ public class WebsiteAccessFunc : IToolFunction
 }
 public class WebsiteNextPageFunc : IToolFunction
 {
-    private const int ContentPageLimit = 2048;
+    private const int ContentPageLimit = 4096;
     public string Description => "Get the next page of content from the past call to website_access. The content will be truncated if it's too long. If so, call website_nextpage again to get the remaining content when needed.";
 
     public string Name => "website_nextpage";
