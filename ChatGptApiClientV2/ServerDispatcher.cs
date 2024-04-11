@@ -131,45 +131,28 @@ public class OpenAIEndpoint : IServerEndpoint
                             Console.WriteLine(uri.ToString());
                             Console.WriteLine(uri.AbsolutePath);
 
-                            var uriField = uri.GetType().GetField("_string", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                            if(uriField is null)
-                            {
-                                throw new InvalidOperationException("Could not find _string field");
-                            }
+                            var uriField = uri.GetType().GetField("_string", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) 
+                                ?? throw new InvalidOperationException("Could not find _string field");
                             uriField.SetValue(uri, imageContent.ImageUrl.Url);
 
-                            var uriInfoField = uri.GetType().GetField("_info", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                            if(uriInfoField is null)
-                            {
-                                throw new InvalidOperationException("Could not find _info field");
-                            }
+                            var uriInfoField = uri.GetType().GetField("_info", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                                ?? throw new InvalidOperationException("Could not find _info field");
+
                             var uriInfo = uriInfoField.GetValue(uri);
-                            var uriInfoStringField = uriInfo?.GetType().GetField("String", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                            if(uriInfoStringField is null)
-                            {
-                                throw new InvalidOperationException("Could not find String field in _info");
-                            }
+                            var uriInfoStringField = (uriInfo?.GetType().GetField("String", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)) 
+                                ?? throw new InvalidOperationException("Could not find String field in _info");
                             uriInfoStringField.SetValue(uriInfo, imageContent.ImageUrl.Url);
                             
-                            var uriInfoMoreInfoField = uriInfo?.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                            if(uriInfoMoreInfoField is null)
-                            {
-                                throw new InvalidOperationException("Could not find _moreInfo field in _info");
-                            }
+                            var uriInfoMoreInfoField = (uriInfo?.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)) 
+                                ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
                             var uriInfoMoreInfo = uriInfoMoreInfoField.GetValue(uriInfo);
                             
-                            var uriInfoMoreInfoAbsoluteUriField = uriInfoMoreInfo?.GetType().GetField("AbsoluteUri", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                            if(uriInfoMoreInfoAbsoluteUriField is null)
-                            {
-                                throw new InvalidOperationException("Could not find AbsoluteUri field in MoreInfo");
-                            }
+                            var uriInfoMoreInfoAbsoluteUriField = (uriInfoMoreInfo?.GetType().GetField("AbsoluteUri", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)) 
+                                ?? throw new InvalidOperationException("Could not find AbsoluteUri field in MoreInfo");
                             uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, imageContent.ImageUrl.Url);
 
-                            var uriInfoMoreInfoPathField = uriInfoMoreInfo?.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                            if(uriInfoMoreInfoPathField is null)
-                            {
-                                throw new InvalidOperationException("Could not find Path field in MoreInfo");
-                            }
+                            var uriInfoMoreInfoPathField = (uriInfoMoreInfo?.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)) 
+                                ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
                             uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, imageContent.ImageUrl.Url["data:".Length..]);
                             /************************************************************/
 
