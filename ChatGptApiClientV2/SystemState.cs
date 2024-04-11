@@ -17,7 +17,6 @@ using System.Windows.Documents;
 using System.Windows.Threading;
 using ChatGptApiClientV2.Tools;
 using static ChatGptApiClientV2.UserMessage;
-using System.Diagnostics;
 
 namespace ChatGptApiClientV2;
 
@@ -227,15 +226,6 @@ public partial class SystemState : ObservableObject
 
         return CurrentSession;
     }
-    private static readonly HttpClient HttpClient;
-    static SystemState()
-    {
-        var httpClientHandler = new HttpClientHandler
-        {
-            AutomaticDecompression = System.Net.DecompressionMethods.All
-        };
-        HttpClient = new HttpClient(httpClientHandler);
-    }
 
     private static readonly Random Random = new();
 
@@ -259,11 +249,6 @@ public partial class SystemState : ObservableObject
     }
     private async Task Send()
     {
-        HttpClient.DefaultRequestHeaders.Authorization = Config.ServiceProvider switch
-        {
-            Config.ServiceProviderType.Azure => null,
-            _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Config.API_KEY)
-        };
         var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
         var chatRequest = CurrentSession ?? throw new ArgumentNullException(nameof(CurrentSession));
         chatRequest.Model = selectedModel.Name;
@@ -277,7 +262,7 @@ public partial class SystemState : ObservableObject
         var enabledPlugins = (from plugin in Plugins
             where plugin.IsEnabled
             select plugin.Plugin).ToList();
-        if (Config.SelectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
+        if (selectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
         {
             HashSet<string> addedTools = [];
 
@@ -301,144 +286,45 @@ public partial class SystemState : ObservableObject
         {
             chatRequest.MaxTokens = 4096;
         }
-        var postStr = chatRequest.GeneratePostRequest();
-        var postContent = new StringContent(postStr, Encoding.UTF8, "application/json");
-        var request = new HttpRequestMessage
+
+        var serverOptions = new ServerEndpointOptions
         {
-            Method = HttpMethod.Post,
-            RequestUri = new Uri(Config.OpenAIChatServiceURL),
-            Content = postContent
+            Service = Config.ServiceProvider switch
+            {
+                Config.ServiceProviderType.OpenAI => ServerEndpointOptions.ServiceType.OpenAI,
+                Config.ServiceProviderType.Azure => ServerEndpointOptions.ServiceType.Azure,
+                _ => ServerEndpointOptions.ServiceType.Custom
+            },
+            Endpoint = Config.ServiceURL,
+            Key  = Config.API_KEY,
+            AzureKey = Config.AzureAPIKey
         };
-        if (Config.ServiceProvider == Config.ServiceProviderType.Azure)
-        {
-            request.Headers.Add("api-key", Config.AzureAPIKey);
-        }
+
+        var endpoint = IServerEndpoint.BuildServerEndpoint(serverOptions);
+
         NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        await endpoint.BuildSession(chatRequest);
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
-        List<ChatCompletionChunk> chatChunks = [];
         NewMessage(RoleType.Assistant);
 
-        string? errorMsg = null;
-        if (response.IsSuccessStatusCode)
+        await foreach(var response in endpoint.Streaming())
         {
-            await using var responseStream = await response.Content.ReadAsStreamAsync();
-            using var reader = new StreamReader(responseStream);
-
-            // make the whole thing run in background to prevent freeze the UI
-            // note: just use reader.ReadLineAsync() is not enough, the straemReader
-            // will still use much time on the main thread for rest EndOfStream check
-            await Task.Run(() =>
-            {
-                DispatcherOperation? uiUpdateOperation = null;
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-
-                    if (string.IsNullOrEmpty(line))
-                    {
-                        continue;
-                    }
-
-                    if (!line.StartsWith("data: "))
-                    {
-                        continue;
-                    }
-
-                    var chatResponse = line["data: ".Length..];
-                    if (chatResponse == "[DONE]")
-                    {
-                        break;
-                    }
-
-                    try
-                    {
-                        var contractResolver = new DefaultContractResolver
-                        {
-                            NamingStrategy = new SnakeCaseNamingStrategy()
-                        };
-                        var settings = new JsonSerializerSettings
-                        {
-                            ContractResolver = contractResolver
-                        };
-                        var chatChunk = JsonConvert.DeserializeObject<ChatCompletionChunk>(chatResponse, settings);
-                        if (chatChunk is not null)
-                        {
-                            chatChunks.Add(chatChunk);
-                        }
-                    }
-                    catch (JsonSerializationException exception)
-                    {
-                        errorMsg = $"Error: Invalid chat response: {exception.Message}";
-                        break;
-                    }
-
-                    var chunk = chatChunks.Last();
-                    var choices = chunk.Choices;
-                    if (choices.Count > 0)
-                    {
-                        var ch = choices[0].Delta.Content;
-                        if (ch is not null)
-                        {
-                            uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() => { StreamText(ch); });
-                        }
-                    }
-                        
-                    var fingerprint = chunk.SystemFingerprint;
-                    if (!string.IsNullOrEmpty(fingerprint))
-                    {
-                        uiUpdateOperation = Application.Current.Dispatcher.BeginInvoke(() =>
-                        {
-                            NetStatus.SystemFingerprint = chunk.SystemFingerprint;
-                        });
-                    }
-                }
-
-                // we must ensure all UI update is done
-                // before the following operations
-                uiUpdateOperation?.Wait();
-            });
-        }
-        else
-        {
-            await using var responseStream = await response.Content.ReadAsStreamAsync();
-            using var reader = new StreamReader(responseStream);
-            var chatResponse = await reader.ReadToEndAsync();
-            try
-            {
-                var responseJson = JToken.Parse(chatResponse);
-                errorMsg = responseJson["error"] is not null 
-                    ? $"Error: {responseJson["error"]?["message"]}" 
-                    : $"Error: {chatResponse}";
-            }
-            catch (JsonReaderException)
-            {
-                errorMsg = $"Error: {chatResponse}";
-            }
+            StreamText(response);
+            NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
         }
 
-        var chatCompletion = ChatCompletion.FromChunks(chatChunks);
         NetStatus.Status = NetStatus.StatusEnum.Idle;
-        NetStatus.SystemFingerprint = chatCompletion.SystemFingerprint;
+        NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
 
-        var choice0 = chatCompletion.Choices.Count > 0 ? chatCompletion.Choices[0] : null;
-        var newAssistantMsg = new AssistantMessage
-        {
-            Content = new List<IMessage.IContent>
-            {
-                new IMessage.TextContent { Text = errorMsg ?? choice0?.Message.Content ?? "" }
-            },
-            ToolCalls = choice0?.Message.ToolCalls
-        };
+        var newAssistantMsg = endpoint.ResponseMessage;
         CurrentSession.Messages.Add(newAssistantMsg);
 
         var responseRequired = false;
-        foreach (var toolcall in choice0?.Message.ToolCalls ?? [])
+        foreach (var toolcall in endpoint.ToolCalls)
         {
             await ResetSession(CurrentSession);
             var pluginName = toolcall.Function.Name;
-            var toolcallId = toolcall.Id;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
             var toolResult = await plugin.Action(this, toolcall.Id, args);

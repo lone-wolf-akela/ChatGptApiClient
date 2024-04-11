@@ -93,8 +93,9 @@ public partial class Config : ObservableValidator
     {
         get => ServiceProvider switch
         {
-            ServiceProviderType.ArtonelicoOpenAIProxy => "https://www.artonelico.top/openai-proxy",
-            ServiceProviderType.OpenAI => "https://api.openai.com",
+            ServiceProviderType.ArtonelicoOpenAIProxy => "https://www.artonelico.top/openai-proxy/v1",
+            ServiceProviderType.OpenAI => "https://api.openai.com/v1",
+            ServiceProviderType.Azure => AzureEndpoint,
             _ => serviceURL
         };
         set
@@ -114,13 +115,13 @@ public partial class Config : ObservableValidator
     public string OpenAIChatServiceURL => ServiceProvider switch
     {
         ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{SelectedModel?.Name}/chat/completions?api-version=2024-02-01"),
-        _ => Url.Combine(ServiceURL, "v1/chat/completions")
+        _ => Url.Combine(ServiceURL, "chat/completions")
     };
     [JsonIgnore]
     public string DalleImageGenServiceURL => ServiceProvider switch
     {
         ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2024-02-01"),
-        _ => Url.Combine(ServiceURL, "v1/images/generations")
+        _ => Url.Combine(ServiceURL, "images/generations")
     };
     [JsonIgnore]
     public bool ServiceURLEditable => ServiceProvider switch

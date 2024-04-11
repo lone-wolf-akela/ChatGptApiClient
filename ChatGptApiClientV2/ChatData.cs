@@ -516,8 +516,6 @@ public interface IMessage : ICloneable
     /// An optional name for the participant. Provides the model information to differentiate between participants of the same role.
     /// </summary>
     public string? Name { get; }
-    [JsonIgnore]
-    public bool IsSavingToDisk { set; }
     public bool Hidden { get; }
 
     public int CountTokenBase()
@@ -540,10 +538,8 @@ public class SystemMessage : IMessage
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
     public RoleType Role => RoleType.System;
     public string? Name { get; set; }
-    public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
     public int CountToken() => ((IMessage)this).CountTokenBase();
-    public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone()
     {
         return new SystemMessage
@@ -553,53 +549,6 @@ public class SystemMessage : IMessage
         };
     }
 }
-
-public class UserMessageConverter: JsonConverter<UserMessage>
-{
-    private bool canWrite = true;
-    public override bool CanWrite => canWrite;
-
-    public override void WriteJson(JsonWriter writer, UserMessage? value, JsonSerializer serializer)
-    {
-        if(value is null)
-        {
-            writer.WriteNull();
-            return;
-        }
-
-        if(value.IsSavingToDisk)
-        {
-            canWrite = false;
-            serializer.Serialize(writer, value);
-            canWrite = true;
-            return;
-        }
-
-        var content = (List<IMessage.IContent>)value.Content;
-        var contentToAdd = value.GenerateAttachmentContentList().ToList();
-
-        content.AddRange(contentToAdd);
-
-        canWrite = false;
-        serializer.Serialize(writer, value);
-        canWrite = true;
-        
-        foreach(var c in contentToAdd)
-        {
-            content.Remove(c);
-        }
-    }
-
-    public override UserMessage ReadJson(JsonReader reader, Type objectType, UserMessage? existingValue, bool hasExistingValue,
-        JsonSerializer serializer)
-    {
-        throw new InvalidOperationException();
-    }
-
-    public override bool CanRead => false;
-}
-
-[JsonConverter(typeof(UserMessageConverter))]
 public class UserMessage : IMessage
 {
     public class AttachmentInfoConverter : JsonConverter<IAttachmentInfo>
@@ -697,7 +646,6 @@ public class UserMessage : IMessage
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
     public RoleType Role => RoleType.User;
     public string? Name { get; set; }
-    public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
     public int CountToken()
     {
@@ -709,7 +657,6 @@ public class UserMessage : IMessage
         }
         return count;
     }
-    public bool ShouldSerializeHidden() => IsSavingToDisk;
     public List<IAttachmentInfo> Attachments { get; set; } = [];
     public IEnumerable<IMessage.IContent> GenerateAttachmentContentList()
     {
@@ -739,7 +686,6 @@ public class UserMessage : IMessage
         }
         return contents;
     }
-    public bool ShouldSerializeAttachments() => IsSavingToDisk;
     public object Clone()
     {
         return new UserMessage
@@ -756,7 +702,6 @@ public class AssistantMessage : IMessage
     public RoleType Role => RoleType.Assistant;
     public string? Name { get; set; }
     public List<ToolCallType>? ToolCalls { get; set; }
-    public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden => false;
     public int CountToken()
     {
@@ -768,7 +713,6 @@ public class AssistantMessage : IMessage
         }
         return count;
     }
-    public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone()
     {
         return new AssistantMessage
@@ -801,11 +745,8 @@ public class ToolMessage : IMessage
     }
     [Obsolete]
     public List<GeneratedImage> GeneratedImages { get; set; } = [];
-    public bool ShouldSerializeGeneratedImages() => IsSavingToDisk;
-    public bool IsSavingToDisk { get; set; } = false;
     public bool Hidden { get; set; }
     public int CountToken() => ((IMessage)this).CountTokenBase();
-    public bool ShouldSerializeHidden() => IsSavingToDisk;
     public object Clone()
     {
         return new ToolMessage
@@ -850,30 +791,9 @@ public class ChatCompletionRequest
     // user
 
     public Dictionary<string, List<string>> PluginData { get; set; } = [];
-    public bool ShouldSerializePluginData() => IsSavingToDisk;
-    private bool IsSavingToDisk { get; set; }
-
-    private Utils.ScopeGuard SetSavingToDisk(bool isSaving)
-    {
-        var oldVal = IsSavingToDisk;
-        IsSavingToDisk = isSaving;
-        foreach(var msg in Messages)
-        {
-            msg.IsSavingToDisk = isSaving;
-        }
-        return new Utils.ScopeGuard(() =>
-        {
-            IsSavingToDisk = oldVal;
-            foreach (var msg in Messages)
-            {
-                msg.IsSavingToDisk = oldVal;
-            }
-        });
-    }
 
     public string Save()
     {
-        using var _ = SetSavingToDisk(true);
         var contractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy()
@@ -882,27 +802,6 @@ public class ChatCompletionRequest
         {
             ContractResolver = contractResolver,
             Formatting = Formatting.Indented,
-            StringEscapeHandling = StringEscapeHandling.Default,
-            NullValueHandling = NullValueHandling.Ignore
-        };
-        var result = JsonConvert.SerializeObject(this, settings);
-        foreach (var msg in Messages)
-        {
-            msg.IsSavingToDisk = false;
-        }
-        return result;
-    }
-    public string GeneratePostRequest()
-    {
-        using var _ = SetSavingToDisk(false);
-        var contractResolver = new DefaultContractResolver
-        {
-            NamingStrategy = new SnakeCaseNamingStrategy()
-        };
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = contractResolver,
-            Formatting = Formatting.None,
             StringEscapeHandling = StringEscapeHandling.Default,
             NullValueHandling = NullValueHandling.Ignore
         };
