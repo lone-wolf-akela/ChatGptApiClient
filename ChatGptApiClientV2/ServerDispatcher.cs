@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.AI.OpenAI;
-using HandyControl.Tools.Extension;
 using static ChatGptApiClientV2.ChatCompletionRequest;
 
 namespace ChatGptApiClientV2;
@@ -152,7 +151,7 @@ public class OpenAIEndpoint : IServerEndpoint
                                 ?? throw new InvalidOperationException("Could not find String field in _info");
                             uriInfoStringField.SetValue(uriInfo, imageContent.ImageUrl.Url);
                             
-                            var uriInfoMoreInfoField = (uriInfo?.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)) 
+                            var uriInfoMoreInfoField = (uriInfo.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)) 
                                 ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
                             var uriInfoMoreInfo = uriInfoMoreInfoField.GetValue(uriInfo);
                             
@@ -160,7 +159,7 @@ public class OpenAIEndpoint : IServerEndpoint
                                 ?? throw new InvalidOperationException("Could not find AbsoluteUri field in MoreInfo");
                             uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, imageContent.ImageUrl.Url);
 
-                            var uriInfoMoreInfoPathField = (uriInfoMoreInfo?.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)) 
+                            var uriInfoMoreInfoPathField = (uriInfoMoreInfo.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)) 
                                 ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
                             uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, imageContent.ImageUrl.Url["data:".Length..]);
                             /************************************************************/
@@ -354,9 +353,9 @@ public class OpenAIEndpoint : IServerEndpoint
     private readonly StringBuilder responseSb = new();
     private string? errorMessage;
     private string systemFingerprint = "";
-    private readonly Dictionary<int, string> toolCallIdsByIndex = new();
-    private readonly Dictionary<int, string> funcNamesByIndex = new();
-    private readonly Dictionary<int, StringBuilder> funcArgsByIndex = new();
+    private readonly Dictionary<int, string> toolCallIdsByIndex = [];
+    private readonly Dictionary<int, string> funcNamesByIndex = [];
+    private readonly Dictionary<int, StringBuilder> funcArgsByIndex = [];
 }
 
 public class ClaudeEndpoint : IServerEndpoint
