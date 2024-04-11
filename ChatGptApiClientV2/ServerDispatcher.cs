@@ -116,7 +116,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
                             /************************************************************/
                             // WARNING: VERY HACKY!
-                            // System.Uri does not want us to encode more than around 2000 characters in the URI
+                            // System.Uri does not want us to encode more than 65520 bytes in the URI
                             // When we want to encode the whole image in the URI, it throws:
                             // Invalid URI: The Uri string is too long.
                             // we have to manually modify the internal fields of the Uri object to make it work
