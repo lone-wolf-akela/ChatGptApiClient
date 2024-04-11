@@ -328,7 +328,6 @@ public class OpenAIEndpoint : IServerEndpoint
                 var toolcall = new ToolCallType
                 {
                     Id = id,
-                    Type = "function",
                     Function = new ToolCallType.FunctionType
                     {
                         Name = funcNamesByIndex[index],
