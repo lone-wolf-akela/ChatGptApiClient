@@ -17,6 +17,7 @@ using System.Windows.Documents;
 using System.Windows.Threading;
 using ChatGptApiClientV2.Tools;
 using static ChatGptApiClientV2.UserMessage;
+using static ChatGptApiClientV2.ChatCompletionRequest;
 
 namespace ChatGptApiClientV2;
 
@@ -251,41 +252,6 @@ public partial class SystemState : ObservableObject
     {
         var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
         var chatRequest = CurrentSession ?? throw new ArgumentNullException(nameof(CurrentSession));
-        chatRequest.Model = selectedModel.Name;
-        chatRequest.Temperature = Config.Temperature;
-        chatRequest.TopP = Config.TopP;
-        chatRequest.PresencePenalty = Config.PresencePenalty;
-        chatRequest.Seed = Config.Seed;
-        chatRequest.Stream = true;
-        chatRequest.MaxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
-
-        var enabledPlugins = (from plugin in Plugins
-            where plugin.IsEnabled
-            select plugin.Plugin).ToList();
-        if (selectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
-        {
-            HashSet<string> addedTools = [];
-
-            chatRequest.Tools = [];
-            foreach (var plugin in enabledPlugins)
-            {
-                foreach (var func in plugin.Funcs)
-                {
-                    if (addedTools.Contains(func.Name)) {continue;}
-                    chatRequest.Tools.Add(func.GetToolRequest());
-                    addedTools.Add(func.Name);
-                }
-            }
-        }
-        else
-        {
-            chatRequest.Tools = null;
-        }
-
-        if (chatRequest.MaxTokens is null && Config.SelectedModel.Name.Contains("vision"))
-        {
-            chatRequest.MaxTokens = 4096;
-        }
 
         var serverOptions = new ServerEndpointOptions
         {
@@ -296,9 +262,40 @@ public partial class SystemState : ObservableObject
                 _ => ServerEndpointOptions.ServiceType.Custom
             },
             Endpoint = Config.ServiceURL,
-            Key  = Config.API_KEY,
-            AzureKey = Config.AzureAPIKey
+            Key = Config.API_KEY,
+            AzureKey = Config.AzureAPIKey,
+            Model = selectedModel.Name,
+            MaxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens,
+            PresencePenalty = Config.PresencePenalty,
+            Seed = Config.Seed,
+            Temperature = Config.Temperature,
+            TopP = Config.TopP,
         };
+
+        if (serverOptions.MaxTokens is null && selectedModel.Name.Contains("vision"))
+        {
+            serverOptions.MaxTokens = 4096; // for gpt4-vision-preview: its default max token number is very low
+        }
+
+        var enabledPlugins = (from plugin in Plugins
+            where plugin.IsEnabled
+            select plugin.Plugin).ToList();
+
+        var tools = new List<ToolType>();
+        if (selectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
+        {
+            HashSet<string> addedTools = [];
+            foreach (var plugin in enabledPlugins)
+            {
+                foreach (var func in plugin.Funcs)
+                {
+                    if (addedTools.Contains(func.Name)) {continue;}
+                    tools.Add(func.GetToolRequest());
+                    addedTools.Add(func.Name);
+                }
+            }
+        }
+        serverOptions.Tools = tools;
 
         var endpoint = IServerEndpoint.BuildServerEndpoint(serverOptions);
 

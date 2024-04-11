@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.AI.OpenAI;
+using HandyControl.Tools.Extension;
+using static ChatGptApiClientV2.ChatCompletionRequest;
 
 namespace ChatGptApiClientV2;
 
@@ -17,10 +19,17 @@ public class ServerEndpointOptions
         Claude,
         Custom
     };
-    public ServiceType Service { get; init; }
-    public string Endpoint { get; init; } = "";
-    public string Key { get; init; } = "";
-    public string AzureKey { get; init; } = "";
+    public ServiceType Service { get; set; }
+    public string Endpoint { get; set; } = "";
+    public string Key { get; set; } = "";
+    public string AzureKey { get; set; } = "";
+    public string Model { get; set; } = "";
+    public int? MaxTokens { get; set; }
+    public float? PresencePenalty { get; set; }
+    public long? Seed { get; set; }
+    public float? Temperature { get; set; }
+    public float? TopP { get; set; }
+    public IEnumerable<ToolType>? Tools { get; set; }
 }
 
 public interface IServerEndpoint
@@ -75,15 +84,15 @@ public class OpenAIEndpoint : IServerEndpoint
         {
             var chatCompletionsOptions = new ChatCompletionsOptions
             {
-                DeploymentName = session.Model,
-                MaxTokens = (int?)session.MaxTokens,
-                PresencePenalty = (float)session.PresencePenalty,
-                Seed = session.Seed,
-                Temperature = (float)session.Temperature,
-                NucleusSamplingFactor = (float)session.TopP
+                DeploymentName = options.Model,
+                MaxTokens = options.MaxTokens,
+                PresencePenalty = options.PresencePenalty,
+                Seed = options.Seed,
+                Temperature = options.Temperature,
+                NucleusSamplingFactor = options.TopP
             };
 
-            foreach(var tool in session.Tools ?? [])
+            foreach(var tool in options.Tools ?? [])
             {
                 var toolDef = new ChatCompletionsFunctionToolDefinition
                 {

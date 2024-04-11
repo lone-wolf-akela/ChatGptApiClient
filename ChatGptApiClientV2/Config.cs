@@ -176,20 +176,20 @@ public partial class Config : ObservableValidator
 
 
     [ObservableProperty]
-    private double temperature;
-    partial void OnTemperatureChanged(double value) => SaveConfig();
+    private float temperature;
+    partial void OnTemperatureChanged(float value) => SaveConfig();
     
     [ObservableProperty]
-    private double topP;
-    partial void OnTopPChanged(double value) => SaveConfig();
+    private float topP;
+    partial void OnTopPChanged(float value) => SaveConfig();
 
     [ObservableProperty]
-    private double presencePenalty;
-    partial void OnPresencePenaltyChanged(double value) => SaveConfig();
+    private float presencePenalty;
+    partial void OnPresencePenaltyChanged(float value) => SaveConfig();
 
     [ObservableProperty]
-    private long maxTokens;
-    partial void OnMaxTokensChanged(long value) => SaveConfig();
+    private int maxTokens;
+    partial void OnMaxTokensChanged(int value) => SaveConfig();
 
     [ObservableProperty]
     private int seed;
@@ -351,9 +351,9 @@ public partial class Config : ObservableValidator
         googleSearchEngineID = "";
         bingSearchAPIKey = "";
         wolframAlphaAppid = "";
-        temperature = 1.0;
-        topP = 1.0;
-        presencePenalty = 0.0;
+        temperature = 1.0f;
+        topP = 1.0f;
+        presencePenalty = 0.0f;
         maxTokens = 0;
         seed = 0;
         enableMarkdown = false;
