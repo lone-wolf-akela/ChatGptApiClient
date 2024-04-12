@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -406,12 +424,12 @@ public class ChatWindowMessageList : ObservableObject
     }
     public int GetCurrentStreamTokenNum()
     {
-        if(Messages.Count == 0)
+        if (Messages.Count == 0)
         {
             return 0;
         }
         var lastMsg = Messages.Last();
-        if(lastMsg.StreamMessage is null)
+        if (lastMsg.StreamMessage is null)
         {
             return 0;
         }
@@ -454,7 +472,7 @@ public class ChatWindowMessageList : ObservableObject
             }
             if (msg is UserMessage userMsg)
             {
-                foreach(var file in userMsg.Attachments)
+                foreach (var file in userMsg.Attachments)
                 {
                     switch (file)
                     {
@@ -670,7 +688,7 @@ public partial class ChatWindowViewModel : ObservableObject
         var dp = dps.DocumentPaginator;
         printDialog.PrintDocument(dp, "打印聊天记录");
     }
-   
+
 
     [RelayCommand(CanExecute = nameof(SessionNotNull))]
     private async Task SaveAsync()

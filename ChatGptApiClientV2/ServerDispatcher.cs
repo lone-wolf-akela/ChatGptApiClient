@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -99,7 +117,7 @@ public class OpenAIEndpoint : IServerEndpoint
     }
     private Uri ImageBase64StrToUri(string base64Uri)
     {
-        if(!base64Uri.StartsWith("data:"))
+        if (!base64Uri.StartsWith("data:"))
         {
             throw new ArgumentException("Invalid base64 image uri");
         }
@@ -202,11 +220,11 @@ public class OpenAIEndpoint : IServerEndpoint
         if (chatDataMsg is AssistantMessage assistantMessage)
         {
             var chatRequestAssistantMsg = new ChatRequestAssistantMessage(combinedContent);
-            var convertedToolCalls = 
+            var convertedToolCalls =
                 from toolCall in assistantMessage.ToolCalls ?? []
                 select new ChatCompletionsFunctionToolCall(
-                    toolCall.Id, 
-                    toolCall.Function.Name, 
+                    toolCall.Id,
+                    toolCall.Function.Name,
                     toolCall.Function.Arguments
                     );
             chatRequestAssistantMsg.ToolCalls.AddRange(convertedToolCalls);
@@ -223,7 +241,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
     private IEnumerable<ChatRequestMessage> GetChatRequestMessages(IEnumerable<IMessage> msgLst)
     {
-        var lst = 
+        var lst =
             from msg in msgLst
             select ChatDataMessageToChatRequestMessage(msg);
         return lst;
@@ -527,18 +545,18 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var messages = new List<Claude.Message>();
             string? systemMessage = null;
             var firstMsg = true;
-            foreach(var msg in session.Messages)
+            foreach (var msg in session.Messages)
             {
-                if(firstMsg)
-                { 
+                if (firstMsg)
+                {
                     firstMsg = false;
                     if (msg.Role == RoleType.System)
                     {
-                        if(msg.Content.Any(c => c.Type != IMessage.ContentCategory.Text))
+                        if (msg.Content.Any(c => c.Type != IMessage.ContentCategory.Text))
                         {
                             throw new ArgumentException("System message must be text");
                         }
-                        var allText = from content in msg.Content 
+                        var allText = from content in msg.Content
                                       select ((IMessage.TextContent)content).Text;
                         systemMessage = string.Join("\n\n", allText);
                         continue;
@@ -611,18 +629,18 @@ public partial class ClaudeEndpoint : IServerEndpoint
             if (!response.IsSuccessStatusCode)
             {
 
-                var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings) 
+                var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                     ?? throw new JsonSerializationException(responseStr);
                 errorMessage = $"{error.Error.Type}: {error.Error.Message}";
                 yield break;
             }
 
-            var responseData = JsonConvert.DeserializeObject<Claude.CreateMessageResponse>(responseStr, settings) 
+            var responseData = JsonConvert.DeserializeObject<Claude.CreateMessageResponse>(responseStr, settings)
                 ?? throw new JsonSerializationException($"Unable to parse response: {responseStr}");
 
-            foreach(var content in responseData.Content)
+            foreach (var content in responseData.Content)
             {
-                if(content.Type == Claude.ContentCategory.Text)
+                if (content.Type == Claude.ContentCategory.Text)
                 {
                     textResponseLst.Add((Claude.TextContent)content);
                 }
@@ -643,7 +661,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             errorMessage = e.Message;
             yield break;
         }
-        if(!string.IsNullOrEmpty(combinedTextResponse))
+        if (!string.IsNullOrEmpty(combinedTextResponse))
         {
             yield return combinedTextResponse;
         }
@@ -702,8 +720,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
         }
         return sb.ToString();
     }
-    public AssistantMessage ResponseMessage 
-    { 
+    public AssistantMessage ResponseMessage
+    {
         get
         {
             var assistantTextContent = new List<IMessage.TextContent>();
@@ -726,8 +744,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
             return response;
         }
     }
-    public IEnumerable<ToolCallType> ToolCalls 
-    { 
+    public IEnumerable<ToolCallType> ToolCalls
+    {
         get
         {
             foreach (var toolUse in toolUseResponseLst)

@@ -1,4 +1,22 @@
-﻿using Newtonsoft.Json.Linq;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -57,7 +75,7 @@ public class PythonFunc : IToolFunction
 
     private void PreparePython(string pythonDll)
     {
-        if(!File.Exists(pythonDll))
+        if (!File.Exists(pythonDll))
         {
             throw new Exception($"Python DLL not found: {pythonDll}");
         }
@@ -86,7 +104,7 @@ public class PythonFunc : IToolFunction
             CreateNoWindow = true
         };
         var task = Process.Start(startInfo)?.WaitForExitAsync();
-        if( task is not null)
+        if (task is not null)
         {
             await task;
         }
@@ -160,7 +178,7 @@ public class PythonFunc : IToolFunction
                     // ReSharper disable once SpecifyACultureInStringConversionExplicitly
                     return r.ToString();
                 }
-                
+
             });
             if (await Task.WhenAny(task, Task.Delay(60000)) != task)
             {
@@ -252,7 +270,7 @@ public class PythonFunc : IToolFunction
     }
 }
 
-public class  ShowImageFunc : IToolFunction
+public class ShowImageFunc : IToolFunction
 {
     public string Description => """
                                  Display the specified image to the user.
@@ -306,7 +324,7 @@ public class  ShowImageFunc : IToolFunction
             msgContents[0].Text += $"Error: File not found: {filePath}\n\n";
             return result;
         }
-        if(!filePath.EndsWith(".png") && !filePath.EndsWith(".jpg") && !filePath.EndsWith(".jpeg"))
+        if (!filePath.EndsWith(".png") && !filePath.EndsWith(".jpg") && !filePath.EndsWith(".jpeg"))
         {
             msgContents[0].Text += $"Error: File must be a PNG or JPEG file: {filePath}\n\n";
             return result;

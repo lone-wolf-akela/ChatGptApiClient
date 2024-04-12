@@ -1,4 +1,22 @@
-﻿using Newtonsoft.Json.Linq;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -92,9 +110,9 @@ public class BingSearchFunc : IToolFunction
 
         const string serviceUrl = "https://api.bing.microsoft.com/v7.0/search";
 
-        var query = string.Join("&", 
-            from p in parameters 
-            where p.Value is not null 
+        var query = string.Join("&",
+            from p in parameters
+            where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
         state.NewMessage(RoleType.Tool);
@@ -136,7 +154,7 @@ public class BingSearchFunc : IToolFunction
 
         JObject filteredResponse = [];
         JArray filteredPages = [];
-        foreach(var page in responsePages)
+        foreach (var page in responsePages)
         {
             JObject filteredPage = new()
             {

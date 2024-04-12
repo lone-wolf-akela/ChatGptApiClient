@@ -1,4 +1,22 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -80,7 +98,7 @@ public partial class InitialPrompts : ObservableObject
     }
     public void UseDefaultPromptList()
     {
-        const string prompt1 = 
+        const string prompt1 =
             """
             You are {ProductName}, a large language model trained by {ModelProvider}. Answer as concisely as possible.
 
@@ -135,7 +153,7 @@ public partial class PluginInfo(IToolCollection p) : ObservableObject
 public partial class SystemState : ObservableObject
 {
     public Config Config { get; } = Config.LoadConfig();
-        
+
     public NetStatus NetStatus { get; } = new();
     public ObservableCollection<PluginInfo> Plugins { get; } = [];
     private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
@@ -299,8 +317,8 @@ public partial class SystemState : ObservableObject
         }
 
         var enabledPlugins = (from plugin in Plugins
-            where plugin.IsEnabled
-            select plugin.Plugin).ToList();
+                              where plugin.IsEnabled
+                              select plugin.Plugin).ToList();
 
         var tools = new List<ToolType>();
         if (selectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
@@ -310,7 +328,7 @@ public partial class SystemState : ObservableObject
             {
                 foreach (var func in plugin.Funcs)
                 {
-                    if (addedTools.Contains(func.Name)) {continue;}
+                    if (addedTools.Contains(func.Name)) { continue; }
                     tools.Add(func.GetToolRequest());
                     addedTools.Add(func.Name);
                 }
@@ -326,7 +344,7 @@ public partial class SystemState : ObservableObject
 
         NewMessage(RoleType.Assistant);
 
-        await foreach(var response in endpoint.Streaming())
+        await foreach (var response in endpoint.Streaming())
         {
             StreamText(response);
             NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
@@ -367,10 +385,10 @@ public partial class SystemState : ObservableObject
         }
 
         List<IAttachmentInfo> attachments = [];
-        foreach(var file in files)
+        foreach (var file in files)
         {
             var mime = MimeTypes.GetMimeType(file);
-            if(mime.StartsWith("text/"))
+            if (mime.StartsWith("text/"))
             {
                 attachments.Add(new TextAttachmentInfo
                 {
@@ -419,8 +437,8 @@ public partial class SystemState : ObservableObject
         await ResetSession(CurrentSession);
     }
     public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall) =>
-        PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin) 
-            ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id) 
+        PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin)
+            ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id)
             : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
 
     private async Task SaveSessionToPath(string path)
@@ -495,8 +513,8 @@ public partial class SystemState : ObservableObject
                 return null;
             }
         });
-        
-        if(loadedSession is not null)
+
+        if (loadedSession is not null)
         {
             await ResetSession(loadedSession);
         }

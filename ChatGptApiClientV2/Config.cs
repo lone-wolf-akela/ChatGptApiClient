@@ -1,4 +1,22 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using System;
@@ -86,7 +104,7 @@ public partial class Config : ObservableValidator
         UpdateModelVersionList();
         SaveConfig();
     }
-        
+
     private string serviceURL;
 
     [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
@@ -230,7 +248,7 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     private float temperature;
     partial void OnTemperatureChanged(float value) => SaveConfig();
-    
+
     [ObservableProperty]
     private float topP;
     partial void OnTopPChanged(float value) => SaveConfig();
@@ -270,7 +288,7 @@ public partial class Config : ObservableValidator
         }
         else
         {
-            foreach(var model in ModelInfo.ModelList)
+            foreach (var model in ModelInfo.ModelList)
             {
                 if (model.Provider == ModelInfo.ProviderEnum.OpenAI)
                 {
@@ -331,7 +349,7 @@ public partial class Config : ObservableValidator
                     new DateTime(2021, 9, 1);
 
                 // ReSharper disable SimplifyConditionalTernaryExpression
-                var functionCallSupported = 
+                var functionCallSupported =
                     id.Contains("0301") ? false :
                     (id.Contains("vision") && id.Contains("1106")) ? false :
                     id.Contains("0314") ? false :
@@ -348,11 +366,11 @@ public partial class Config : ObservableValidator
                 });
             }
         }
-        else 
+        else
         {
             var models = from model in ModelVersionInfo.VersionList
-                where model.ModelType == SelectedModelType.Name
-                select model;
+                         where model.ModelType == SelectedModelType.Name
+                         select model;
             foreach (var model in models)
             {
                 ModelVersionOptions.Add(model);
@@ -379,13 +397,13 @@ public partial class Config : ObservableValidator
     }
     [JsonIgnore]
     public ModelInfo? SelectedModelType =>
-        SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count 
-            ? ModelOptions[SelectedModelIndex] 
+        SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count
+            ? ModelOptions[SelectedModelIndex]
             : null;
     [JsonIgnore]
     public ModelVersionInfo? SelectedModel =>
-        SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count 
-            ? ModelVersionOptions[SelectedModelVersionIndex] 
+        SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count
+            ? ModelVersionOptions[SelectedModelVersionIndex]
             : null;
     [JsonIgnore]
     public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;

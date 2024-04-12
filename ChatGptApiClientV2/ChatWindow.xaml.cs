@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -24,7 +42,7 @@ public partial class ChatWindow
         {
             return;
         }
-        
+
         if (e.Source is Controls.TextFileDisplayer textFile)
         {
             // pass scroll to parent only if already at the top/bottom
@@ -125,7 +143,7 @@ public partial class ChatWindow
         return new RenderScrollViewerResult(renderTargetBitmap, (int)offsetY);
     }
 
-    private const string SaveScreenshotDialogGuid =  "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
+    private const string SaveScreenshotDialogGuid = "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
     private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
         var scrollViewer = GetScrollViewer(LstMsg);
@@ -153,12 +171,12 @@ public partial class ChatWindow
         var pageHeight = scrollViewer.ActualHeight * 3 / 4;
         bitmaps.Add(RenderScrollViewer(scrollViewer, dpi.DpiScaleX, dpi.DpiScaleY));
         var lastOffsetY = -1;
-        while(true)
+        while (true)
         {
             scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset + pageHeight);
             scrollViewer.UpdateLayout();
             var newScreenShot = RenderScrollViewer(scrollViewer, dpi.DpiScaleX, dpi.DpiScaleY);
-            if(newScreenShot.OffsetY == lastOffsetY)
+            if (newScreenShot.OffsetY == lastOffsetY)
             {
                 // we have reached the end and cannot scroll further down
                 break;
@@ -206,7 +224,7 @@ public partial class ChatWindow
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
-       var settingsDialog = new Settings(((ChatWindowViewModel)DataContext).State.Config)
+        var settingsDialog = new Settings(((ChatWindowViewModel)DataContext).State.Config)
         {
             Owner = this
         };

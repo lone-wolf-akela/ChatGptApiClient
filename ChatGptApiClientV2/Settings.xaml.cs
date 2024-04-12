@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using HandyControl.Controls;
 using HandyControl.Tools;
 using System.Windows;
@@ -31,19 +49,19 @@ public partial class Settings
         picker.SelectedBrush = ((SettingsViewModel)DataContext).Config.CustomThemeColor;
         var window = new PopupWindow
         {
-            PopupElement = picker, 
+            PopupElement = picker,
             Owner = this,
         };
 
         const bool showBackground = false;
-        
+
         window.Loaded += (_, _) =>
         {
             var targetElement = (Visual)sender;
             // from HandyControl.Tools.ArithmeticHelper.CalSafePoint
             var point = targetElement.PointToScreen(new Point(0, 0));
             var dpi = VisualTreeHelper.GetDpi(this);
-            
+
             var currentScreen = Screen.FromHandle(new WindowInteropHelper(this).Handle);
 
             var workArea = new Rect(

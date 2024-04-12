@@ -1,4 +1,22 @@
-﻿using Newtonsoft.Json.Linq;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -28,7 +46,7 @@ public class WolframAlphaFunc : IToolFunction
         [Description("Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
         public string Query { get; set; } = "";
     }
-    public string Description => 
+    public string Description =>
         """
         Let WolframAlpha answer your questions. It can provide solutions on math, science, history, language, and many other fields.
         It can only answer one question at a time. If you have a complex question, think it step by step, making it several simpler quetions and ask them one by one.
@@ -85,9 +103,9 @@ public class WolframAlphaFunc : IToolFunction
 
         const string serviceUrl = "https://api.wolframalpha.com/v2/query";
 
-        var query = string.Join("&", 
-            from p in parameters 
-            where p.Value is not null 
+        var query = string.Join("&",
+            from p in parameters
+            where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
         state.NewMessage(RoleType.Tool);

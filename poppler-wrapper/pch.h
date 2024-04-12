@@ -1,13 +1,24 @@
-﻿// pch.h: 这是预编译标头文件。
-// 下方列出的文件仅编译一次，提高了将来生成的生成性能。
-// 这还将影响 IntelliSense 性能，包括代码完成和许多代码浏览功能。
-// 但是，如果此处列出的文件中的任何一个在生成之间有更新，它们全部都将被重新编译。
-// 请勿在此处添加要频繁更新的文件，这将使得性能优势无效。
+﻿/*
+	Poppler Wrapper: A C Binding for Poppler PDF Rendering Library
+	Copyright (C) 2024 Lone Wolf Akela
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #ifndef PCH_H
 #define PCH_H
 
-// 添加要在此处预编译的标头
 #include "framework.h"
 
 #endif //PCH_H

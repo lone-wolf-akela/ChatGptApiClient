@@ -1,4 +1,22 @@
-﻿using Newtonsoft.Json.Linq;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -54,7 +72,7 @@ public class GoogleSearchFunc : IToolFunction
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
         var msgContents = new List<IMessage.TextContent>();
-        var msg = new ToolMessage { Content = msgContents};
+        var msg = new ToolMessage { Content = msgContents };
         var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
@@ -97,9 +115,9 @@ public class GoogleSearchFunc : IToolFunction
 
         const string serviceUrl = "https://www.googleapis.com/customsearch/v1";
 
-        var query = string.Join("&", 
-            from p in parameters 
-            where p.Value is not null 
+        var query = string.Join("&",
+            from p in parameters
+            where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
         state.NewMessage(RoleType.Tool);
@@ -244,7 +262,7 @@ public class WebsiteAccessFunc : IToolFunction
             // solves the error "Execution context was destroyed, most likely because of a navigation."
             // which happens when the url will redirect to another page
             // such as when accessing the zh-hans version of wikipedia (which can redirect to the zh-cn version)
-            await page.WaitForSelectorAsync("*"); 
+            await page.WaitForSelectorAsync("*");
 
             var pageHeaderHandle = await page.QuerySelectorAsync("*");
             var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
@@ -260,7 +278,7 @@ public class WebsiteAccessFunc : IToolFunction
             msgContents[0].Text += $"Content: {content}";
             await browser.CloseAsync();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             msgContents[0].Text += $"Error: {e.Message}\n\n";
             return result;
@@ -305,8 +323,8 @@ public class WebsiteAccessFunc : IToolFunction
         paragraph.Inlines.Add(new Run("访问网站:"));
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
-        var link = new Hyperlink(new Run($"{args.Url}")) 
-        { 
+        var link = new Hyperlink(new Run($"{args.Url}"))
+        {
             NavigateUri = new Uri(args.Url),
             Command = new RelayCommand(() => Process.Start(new ProcessStartInfo(args.Url) { UseShellExecute = true }))
         };
@@ -365,7 +383,7 @@ public class WebsiteNextPageFunc : IToolFunction
         {
             content = state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0];
         }
-        catch(KeyNotFoundException)
+        catch (KeyNotFoundException)
         {
             msgContents[0].Text += $"Error: {args.Url} has not been visited. You must first call website_access to get the content.\n\n";
             return Task.FromResult(result);

@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -114,7 +132,7 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
         {
             return new List();
         }
-        if(cache.TryGetValue (value.GetType(), out var cached))
+        if (cache.TryGetValue(value.GetType(), out var cached))
         {
             return cached;
         }
@@ -184,7 +202,7 @@ public static partial class Utils
         bitmapImage.Freeze();
         return bitmapImage;
     }
-    
+
     public static string OptimizeBase64Png(string base64)
     {
         // optimize the input data
@@ -517,7 +535,7 @@ public static partial class Utils
             return null;
         }
         var hIcon = IntPtr.Zero;
-        spiml?.GetIcon(iImage, Shell32.ILD_TRANSPARENT | Shell32.ILD_IMAGE, ref hIcon); 
+        spiml?.GetIcon(iImage, Shell32.ILD_TRANSPARENT | Shell32.ILD_IMAGE, ref hIcon);
         return hIcon;
     }
 
@@ -561,7 +579,7 @@ public static partial class Utils
     [method: JsonConstructor]
     public class PythonEnv(string homePath, string executablePath, string dllPath)
     {
-        public string HomePath { get;} = homePath;
+        public string HomePath { get; } = homePath;
         public string ExecutablePath { get; } = executablePath;
         // ReSharper disable once UnusedMember.Global
         public string DllPath { get; } = dllPath;
@@ -569,14 +587,14 @@ public static partial class Utils
     private static PythonEnv? DetectPythonInFolder(string folder)
     {
         var exe = Path.Combine(folder, "python.exe");
-        if(!File.Exists(exe))
+        if (!File.Exists(exe))
         {
             return null;
         }
         var dlls = Directory.GetFiles(folder, "python3*.dll").ToList();
         // remove python3.dll
         dlls.RemoveAll(x => x.EndsWith("python3.dll"));
-        if(dlls.Count == 0)
+        if (dlls.Count == 0)
         {
             return null;
         }
@@ -598,10 +616,10 @@ public static partial class Utils
         var condaBatBase = FindPathContains("conda.bat");
         var condaBases = condaExeBase.Concat(condaBatBase).Distinct();
         var condaEnvsPath = (from path in condaBases
-                            let envsPath = Path.GetFullPath(Path.Combine(path, "..", "envs"))
-                            where Directory.Exists(envsPath)
-                            select envsPath).Distinct();
-                            
+                             let envsPath = Path.GetFullPath(Path.Combine(path, "..", "envs"))
+                             where Directory.Exists(envsPath)
+                             select envsPath).Distinct();
+
         foreach (var envsFolder in condaEnvsPath)
         {
             foreach (var pythonHome in Directory.GetDirectories(envsFolder))

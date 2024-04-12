@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+    Copyright (C) 2024 Lone Wolf Akela
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -27,7 +45,7 @@ public enum RoleType
     [EnumMember(Value = "tool")]
     Tool
 }
-    
+
 public class ToolCallType : ICloneable
 {
     public class FunctionType : ICloneable
@@ -110,7 +128,7 @@ public class MessageConverter : JsonConverter<IMessage>
         canRead = false;
         var jobj = JObject.Load(reader);
         var role = jobj["role"]?.ToObject<RoleType>();
-        
+
         IMessage result = role switch
         {
             RoleType.System => jobj.ToObject<SystemMessage>(serializer) ?? throw new JsonSerializationException(),
@@ -227,7 +245,7 @@ public interface IMessage : ICloneable
             }
         }
         public ContentCategory Type => ContentCategory.ImageUrl;
-        
+
         [JsonIgnore]
         public System.Drawing.Size? ImageSize { get; set; } // cache image size
         public int CountToken()
@@ -259,8 +277,8 @@ public interface IMessage : ICloneable
             var isWidthShorter = ImageSize.Value.Width < ImageSize.Value.Height;
             if (isWidthShorter && ImageSize.Value.Width > 768)
             {
-               var ratio = 768.0 / ImageSize.Value.Width;
-               ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+                var ratio = 768.0 / ImageSize.Value.Width;
+                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
             }
             else if (!isWidthShorter && ImageSize.Value.Height > 768)
             {
@@ -485,7 +503,7 @@ public class AssistantMessage : IMessage
     public int CountToken()
     {
         var count = ((IMessage)this).CountTokenBase();
-        foreach(var tc in ToolCalls ?? [])
+        foreach (var tc in ToolCalls ?? [])
         {
             count += Utils.GetStringTokenNum(tc.Function.Name);
             count += Utils.GetStringTokenNum(tc.Function.Arguments);
@@ -572,8 +590,8 @@ public class ChatCompletionRequest
         return result;
     }
     public static ChatCompletionRequest BuildFromInitPrompts(
-        IEnumerable<IMessage>? initPrompts, 
-        DateTime knowledgeCutoff, 
+        IEnumerable<IMessage>? initPrompts,
+        DateTime knowledgeCutoff,
         string productName,
         string modelProvider)
     {
@@ -583,7 +601,7 @@ public class ChatCompletionRequest
         foreach (var msg in messages)
         {
             var contentList = msg.Content.ToList();
-            foreach(var content in contentList)
+            foreach (var content in contentList)
             {
                 if (content is not IMessage.TextContent textContent)
                 {
@@ -609,7 +627,7 @@ public class ChatCompletionRequest
     public int CountTokens()
     {
         var count = 0;
-        foreach(var msg in Messages)
+        foreach (var msg in Messages)
         {
             count += msg.CountToken();
         }

@@ -1,4 +1,23 @@
-﻿using System;
+﻿/*
+    ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
+	Copyright (C) 2024 Lone Wolf Akela
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
@@ -208,9 +227,9 @@ public class CreateMessage
     /// for analytical / multiple choice, and closer to 1.0 for creative and 
     /// generative tasks. </para>
     /// </summary>
-    public float? Temperature 
+    public float? Temperature
     {
-        get => temperature; 
+        get => temperature;
         set => temperature = value.HasValue ? Math.Clamp(value.Value, 0.0f, 1.0f) : null;
     }
     /// <summary>
