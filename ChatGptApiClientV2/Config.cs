@@ -106,17 +106,55 @@ public partial class Config : ObservableValidator
             }
         }
     }
+
+    public enum AnthropicServiceProviderType
+    {
+        [Description("Artonelico Anthropic 代理")]
+        ArtonelicAnthropicProxy,
+        [Description("Anthropic 官方接口（需科学上网）")]
+        Anthropic,
+        [Description("其他")]
+        Others
+    }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AnthropicServiceURL))]
+    [NotifyPropertyChangedFor(nameof(AnthropicServiceURLEditable))]
+    [NotifyPropertyChangedFor(nameof(ModelOptions))]
+    [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
+    private AnthropicServiceProviderType anthropicServiceProvider;
+    partial void OnAnthropicServiceProviderChanged(AnthropicServiceProviderType value)
+    {
+        ValidateProperty(AnthropicServiceURL, nameof(AnthropicServiceURL));
+        UpdateModelOptionList();
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
+    private string anthropicServiceURL;
+
+    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+    public string AnthropicServiceURL
+    {
+        get => AnthropicServiceProvider switch
+        {
+            AnthropicServiceProviderType.ArtonelicAnthropicProxy => "https://www.artonelico.top/anthropic-proxy/v1",
+            AnthropicServiceProviderType.Anthropic => "https://api.anthropic.com/v1",
+            _ => anthropicServiceURL
+        };
+        set
+        {
+            if (SetProperty(ref anthropicServiceURL, value, true))
+            {
+                SaveConfig();
+            }
+        }
+    }
+
     [ObservableProperty]
     [NotifyDataErrorInfo]
     [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     private string azureEndpoint;
 
-    [JsonIgnore]
-    public string OpenAIChatServiceURL => ServiceProvider switch
-    {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{SelectedModel?.Name}/chat/completions?api-version=2024-02-01"),
-        _ => Url.Combine(ServiceURL, "chat/completions")
-    };
     [JsonIgnore]
     public string DalleImageGenServiceURL => ServiceProvider switch
     {
@@ -133,6 +171,15 @@ public partial class Config : ObservableValidator
         _ => throw new InvalidOperationException()
     };
 
+    [JsonIgnore]
+    public bool AnthropicServiceURLEditable => AnthropicServiceProvider switch
+    {
+        AnthropicServiceProviderType.ArtonelicAnthropicProxy => false,
+        AnthropicServiceProviderType.Anthropic => false,
+        AnthropicServiceProviderType.Others => true,
+        _ => throw new InvalidOperationException()
+    };
+
     [ObservableProperty]
     // ReSharper disable once InconsistentNaming
     private string _API_KEY;
@@ -142,6 +189,10 @@ public partial class Config : ObservableValidator
     private string azureAPIKey;
     partial void OnAzureAPIKeyChanged(string value) => SaveConfig();
     public ObservableCollection<string> AzureDeploymentList { get; } = [];
+
+    [ObservableProperty]
+    private string anthropicAPIKey;
+    partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
 
     private void AzureDeploymentListCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -220,6 +271,16 @@ public partial class Config : ObservableValidator
         {
             foreach(var model in ModelInfo.ModelList)
             {
+                if (model.Provider == ModelInfo.ProviderEnum.OpenAI)
+                {
+                    ModelOptions.Add(model);
+                }
+            }
+        }
+        foreach (var model in ModelInfo.ModelList)
+        {
+            if (model.Provider == ModelInfo.ProviderEnum.Anthropic)
+            {
                 ModelOptions.Add(model);
             }
         }
@@ -257,7 +318,7 @@ public partial class Config : ObservableValidator
             return;
         }
 
-        if (ServiceProvider == ServiceProviderType.Azure)
+        if (SelectedModelType.Name == "azure")
         {
             foreach (var id in AzureDeploymentList)
             {
@@ -343,15 +404,18 @@ public partial class Config : ObservableValidator
         userNickName = "";
         serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         serviceURL = "";
+        anthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
+        anthropicServiceURL = "";
         azureEndpoint = "";
         _API_KEY = "";
+        anthropicAPIKey = "";
         azureAPIKey = "";
         azureDalleDeploymentId = "dall-e-3";
         googleSearchAPIKey = "";
         googleSearchEngineID = "";
         bingSearchAPIKey = "";
         wolframAlphaAppid = "";
-        temperature = 1.0f;
+        temperature = 0.5f;
         topP = 1.0f;
         presencePenalty = 0.0f;
         maxTokens = 0;

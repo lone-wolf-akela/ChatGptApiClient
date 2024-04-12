@@ -5,14 +5,23 @@ namespace ChatGptApiClientV2;
 
 public class ModelInfo
 {
+    public enum ProviderEnum
+    {
+        OpenAI,
+        Anthropic
+    }
     public string Name { get; init; } = "";
     public string Description { get; init; } = "";
+    public ProviderEnum Provider { get; init; }
     public static readonly ImmutableArray<ModelInfo> ModelList =
     [
-        new ModelInfo { Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo (16k tokens)" },
-        new ModelInfo { Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)" },
-        new ModelInfo { Name = "gpt-3.5-4k", Description = "gpt-3.5 turbo (4k tokens, deprecated)" },
-        new ModelInfo { Name = "gpt-4-8k", Description = "gpt-4 (8k tokens, deprecated)" }
+        new ModelInfo { Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)" , Provider = ProviderEnum.OpenAI},
+        new ModelInfo { Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo (16k tokens)", Provider = ProviderEnum.OpenAI },
+        
+        new ModelInfo { Name = "claude-3", Description = "claude-3 (200k tokens)", Provider = ProviderEnum.Anthropic },
+
+        new ModelInfo { Name = "gpt-3.5-4k", Description = "gpt-3.5 turbo (4k tokens, deprecated)" , Provider = ProviderEnum.OpenAI},
+        new ModelInfo { Name = "gpt-4-8k", Description = "gpt-4 (8k tokens, deprecated)" , Provider = ProviderEnum.OpenAI}
         //new ModelInfo{ Name="gpt-4-32k", Description="gpt-4 (32k tokens)" },
     ];
 }
@@ -37,10 +46,14 @@ public class ModelVersionInfo
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-1106-preview", Description = "2023-11-06", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-4-128k", Name = "gpt-4-vision-preview", Description = "2023-11-06 w/ vision", KnowledgeCutoff = new DateTime(2023, 4, 1), FunctionCallSupported = false },
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k", Description = "current (06-13)", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = true }
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k", Description = "current (06-13)", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
         new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4-0613", Description = "2023-06-13", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0613", Description = "2023-06-13", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = true }
-        new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4-0314", Description = "2023-03-14", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = false }
-        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0314", Description = "2023-03-14", KnowledgeCutoff = newDateTime(2021, 9, 1), FunctionCallSupported = false }
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0613", Description = "2023-06-13", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = true },
+        new ModelVersionInfo { ModelType = "gpt-4-8k", Name = "gpt-4-0314", Description = "2023-03-14", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = false },
+        //new ModelVersionInfo { ModelType = "gpt-4-32k", Name = "gpt-4-32k-0314", Description = "2023-03-14", KnowledgeCutoff = new DateTime(2021, 9, 1), FunctionCallSupported = false },
+
+        new ModelVersionInfo { ModelType = "claude-3", Name = "claude-3-haiku-20240307", Description = "Haiku (Small)", KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true },
+        new ModelVersionInfo { ModelType = "claude-3", Name = "claude-3-sonnet-20240229", Description = "Sonnet (Medium)", KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true },
+        new ModelVersionInfo { ModelType = "claude-3", Name = "claude-3-opus-20240229", Description = "Opus (Large)", KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true },
     ];
 }

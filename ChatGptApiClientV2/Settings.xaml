@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ChatGptApiClientV2"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         mc:Ignorable="d" Icon="/chatgpt-icon.ico"
-        Title="Settings" Height="600" Width="1080"
+        Title="Settings" Height="650" Width="1080"
         Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <d:Window.DataContext>
         <local:SettingsViewModel/>
@@ -142,7 +142,7 @@
                         <Slider x:Name="SlidTopP" Maximum="1" LargeChange="0.1" Value="{Binding Path=Config.TopP, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                     </DockPanel>
                 </Grid>
-                <hc:Divider Margin="0" Content="聊天服务器和密钥" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="OpenAI 聊天服务器和密钥" HorizontalContentAlignment="Left"/>
                 <Grid Margin="0,0,0,5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -198,6 +198,38 @@
                                 </DockPanel>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+                </Grid>
+                <hc:Divider Margin="0" Content="Anthropic 聊天服务器和密钥" HorizontalContentAlignment="Left"/>
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
+                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic 服务源" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
+                            <ComboBox ItemsSource="{Binding Path=Config.AnthropicServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Description"
+                                      SelectedValue="{Binding Path=Config.AnthropicServiceProvider, Mode=TwoWay}"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic Service URL" HorizontalContentAlignment="Left" Width="100"/>
+                            <TextBox x:Name="TxtbxAnthropicServiceurl" 
+                                     TextWrapping="Wrap" 
+                                     VerticalAlignment="Center" 
+                                     IsEnabled="{Binding Path=Config.AnthropicServiceURLEditable}"
+                                     Text="{Binding Config.AnthropicServiceURL, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="5,0,0,0" >
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
+                            <TextBox x:Name="TxtbxAnthropicApikey" Text="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </DockPanel>
                     </StackPanel>
                 </Grid>
                 <hc:Divider Margin="0" Content="插件设置" HorizontalContentAlignment="Left"/>

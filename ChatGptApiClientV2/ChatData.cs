@@ -567,7 +567,11 @@ public class ChatCompletionRequest
         var result = JsonConvert.SerializeObject(this, settings);
         return result;
     }
-    public static ChatCompletionRequest BuildFromInitPrompts(IEnumerable<IMessage>? initPrompts, DateTime knowledgeCutoff)
+    public static ChatCompletionRequest BuildFromInitPrompts(
+        IEnumerable<IMessage>? initPrompts, 
+        DateTime knowledgeCutoff, 
+        string productName,
+        string modelProvider)
     {
         var request = new ChatCompletionRequest();
         var messages = (from msg in initPrompts select (IMessage)msg.Clone()).ToList();
@@ -587,6 +591,8 @@ public class ChatCompletionRequest
                 prompt = prompt.Replace("{DateTime}", DateTime.Now.ToString("MMM dd yyy", CultureInfo.GetCultureInfo("en-US")));
                 prompt = prompt.Replace("{Cutoff}", knowledgeCutoff.ToString("MMM yyyy", CultureInfo.GetCultureInfo("en-US")));
                 prompt = prompt.Replace("{Language}", ci.DisplayName);
+                prompt = prompt.Replace("{ProductName}", productName);
+                prompt = prompt.Replace("{ModelProvider}", modelProvider);
                 textContent.Text = prompt;
             }
             msg.Content = contentList;

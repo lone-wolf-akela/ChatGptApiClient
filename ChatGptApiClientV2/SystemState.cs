@@ -86,7 +86,7 @@ public partial class InitialPrompts : ObservableObject
     {
         const string prompt1 = 
             """
-            You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.
+            You are {ProductName}, a large language model trained by {ModelProvider}. Answer as concisely as possible.
 
             Knowledge cutoff: {Cutoff}
 
@@ -215,7 +215,12 @@ public partial class SystemState : ObservableObject
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
     private async Task<ChatCompletionRequest> ResetSession(ChatCompletionRequest? loadedSession = null)
     {
-        loadedSession ??= ChatCompletionRequest.BuildFromInitPrompts(InitialPrompts?.SelectedOption?.Messages, Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now);
+        loadedSession ??= BuildFromInitPrompts(
+            InitialPrompts?.SelectedOption?.Messages,
+            Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now,
+            Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Claude" : "ChatGPT",
+            Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Anthropic" : "OpenAI"
+            );
         CurrentSession = loadedSession;
 
         if (ChatSessionChangedEvent is not null)
@@ -250,22 +255,42 @@ public partial class SystemState : ObservableObject
     }
     private async Task Send()
     {
+        var selectedModelType = Config.SelectedModelType ?? throw new ArgumentNullException(nameof(Config.SelectedModelType));
         var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
         var chatRequest = CurrentSession ?? throw new ArgumentNullException(nameof(CurrentSession));
 
-        var serverOptions = new ServerEndpointOptions
+        ServerEndpointOptions.ServiceType service;
+        string endpointUrl;
+        string apiKey;
+        int? maxTokens;
+        if (selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI)
         {
-            Service = Config.ServiceProvider switch
+            service = Config.ServiceProvider switch
             {
                 Config.ServiceProviderType.OpenAI => ServerEndpointOptions.ServiceType.OpenAI,
                 Config.ServiceProviderType.Azure => ServerEndpointOptions.ServiceType.Azure,
                 _ => ServerEndpointOptions.ServiceType.Custom
-            },
-            Endpoint = Config.ServiceURL,
-            Key = Config.API_KEY,
+            };
+            endpointUrl = Config.ServiceURL;
+            apiKey = Config.API_KEY;
+            maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
+        }
+        else
+        {
+            service = ServerEndpointOptions.ServiceType.Claude;
+            endpointUrl = Config.AnthropicServiceURL;
+            apiKey = Config.AnthropicAPIKey;
+            maxTokens = Config.MaxTokens == 0 ? 4096 : Config.MaxTokens;
+        }
+
+        var serverOptions = new ServerEndpointOptions
+        {
+            Service = service,
+            Endpoint = endpointUrl,
+            Key = apiKey,
             AzureKey = Config.AzureAPIKey,
             Model = selectedModel.Name,
-            MaxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens,
+            MaxTokens = maxTokens,
             PresencePenalty = Config.PresencePenalty,
             Seed = Config.Seed,
             Temperature = Config.Temperature,

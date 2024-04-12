@@ -148,7 +148,7 @@ public static partial class Utils
 
     [GeneratedRegex("^data:(?<mime>[a-z]+\\/[a-z]+);base64,(?<data>.+)$")]
     private static partial Regex Base64UrlExtract();
-    private static string ExtractBase64FromUrl(string urlOrData)
+    public static string ExtractBase64FromUrl(string urlOrData)
     {
         var r = Base64UrlExtract();
         var match = r.Match(urlOrData);
@@ -158,6 +158,17 @@ public static partial class Utils
         }
         var data = match.Groups["data"].Value;
         return data;
+    }
+    public static string ExtractMimeFromUrl(string url)
+    {
+        var r = Base64UrlExtract();
+        var match = r.Match(url);
+        if (!match.Success)
+        {
+            throw new ArgumentException("The input is not a base64 data URL.");
+        }
+        var mime = match.Groups["mime"].Value;
+        return mime;
     }
     public static BitmapImage Base64ToBitmapImage(string base64)
     {
