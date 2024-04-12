@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using Flurl;
 using HandyControl.Themes;
 using System.Windows.Media;
+using ColorCode.Common;
 
 // ReSharper disable UnusedParameterInPartialMethod
 
@@ -265,7 +266,7 @@ public partial class Config : ObservableValidator
         ModelOptions.Clear();
         if (ServiceProvider == ServiceProviderType.Azure)
         {
-            ModelOptions.Add(new ModelInfo { Name = "azure", Description = "Azure OpenAI Service" });
+            ModelOptions.Add(new ModelInfo { Name = "azure", Description = "Azure OpenAI Service", DisplayPriority = -100 });
         }
         else
         {
@@ -284,6 +285,7 @@ public partial class Config : ObservableValidator
                 ModelOptions.Add(model);
             }
         }
+        ModelOptions.SortStable((a, b) => a.DisplayPriority.CompareTo(b.DisplayPriority));
         SelectedModelIndex = 0;
     }
 
