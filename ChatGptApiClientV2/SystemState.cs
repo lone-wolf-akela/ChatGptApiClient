@@ -277,6 +277,7 @@ public partial class SystemState : ObservableObject
         string endpointUrl;
         string apiKey;
         int? maxTokens;
+        float temperature;
         if (selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI)
         {
             service = Config.ServiceProvider switch
@@ -288,6 +289,7 @@ public partial class SystemState : ObservableObject
             endpointUrl = Config.ServiceURL;
             apiKey = Config.API_KEY;
             maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
+            temperature = Config.Temperature;
         }
         else
         {
@@ -295,6 +297,7 @@ public partial class SystemState : ObservableObject
             endpointUrl = Config.AnthropicServiceURL;
             apiKey = Config.AnthropicAPIKey;
             maxTokens = Config.MaxTokens == 0 ? 4096 : Config.MaxTokens;
+            temperature = Config.Temperature / 2.0f; // while openai use 0~2 as temperature range, anthropic use 0~1
         }
 
         var serverOptions = new ServerEndpointOptions
@@ -307,7 +310,7 @@ public partial class SystemState : ObservableObject
             MaxTokens = maxTokens,
             PresencePenalty = Config.PresencePenalty,
             Seed = Config.Seed,
-            Temperature = Config.Temperature,
+            Temperature = temperature,
             TopP = Config.TopP,
         };
 
