@@ -12,6 +12,8 @@ using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -358,7 +360,7 @@ public class WebsiteNextPageFunc : IToolFunction
         state.NewMessage(RoleType.Tool);
         state.StreamText("Accessing the next page...\n\n");
 
-        string? content = null;
+        string? content;
         try
         {
             content = state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0];

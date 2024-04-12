@@ -1,6 +1,9 @@
 ﻿// from https://github.com/khellang/MimeTypes/tree/master
 // see https://developercommunity.visualstudio.com/t/Rebuild-fails-while-build-succeeds-for-m/10060991?from=email&viewtype=all&q=nuget+package+for+solution+freezes&stateGroup=active
 
+// ReSharper disable InconsistentNaming
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBePrivate.Global
 namespace ChatGptApiClientV2;
 
 using System;

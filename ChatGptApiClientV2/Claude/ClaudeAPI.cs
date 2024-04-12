@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema;
-using static ChatGptApiClientV2.IMessage;
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable UnusedMember.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ChatGptApiClientV2.Claude;
 
@@ -168,7 +167,7 @@ public class Tool
 /// <para> Create a Message. </para>
 /// <para> Send a structured list of input messages with text and/or image content, and 
 /// the model will generate the next message in the conversation. </para>
-/// <para> The Messages API can be used for for either single queries or stateless 
+/// <para> The Messages API can be used for either single queries or stateless 
 /// multi-turn conversations. </para>
 /// </summary>
 public class CreateMessage
@@ -260,7 +259,7 @@ public enum StopReason
     [EnumMember(Value = "stop_sequence")]
     StopSequence,
     /// <summary>
-    /// (no decription from official document)
+    /// (no description from official document)
     /// </summary>
     [EnumMember(Value = "tool_use")]
     ToolUse,

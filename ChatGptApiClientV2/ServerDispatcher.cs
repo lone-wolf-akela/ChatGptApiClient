@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows.Interop;
 using Azure;
 using Azure.AI.OpenAI;
 using Flurl;
@@ -15,6 +14,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using static ChatGptApiClientV2.ChatCompletionRequest;
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 namespace ChatGptApiClientV2;
 
@@ -97,9 +97,9 @@ public class OpenAIEndpoint : IServerEndpoint
             };
         return lst;
     }
-    private Uri ImageBase64StrToUri(string base64uri)
+    private Uri ImageBase64StrToUri(string base64Uri)
     {
-        if(!base64uri.StartsWith("data:"))
+        if(!base64Uri.StartsWith("data:"))
         {
             throw new ArgumentException("Invalid base64 image uri");
         }
@@ -124,7 +124,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
         var uriField = uri.GetType().GetField("_string", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?? throw new InvalidOperationException("Could not find _string field");
-        uriField.SetValue(uri, base64uri);
+        uriField.SetValue(uri, base64Uri);
 
         var uriInfoField = uri.GetType().GetField("_info", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
             ?? throw new InvalidOperationException("Could not find _info field");
@@ -132,7 +132,7 @@ public class OpenAIEndpoint : IServerEndpoint
         var uriInfo = uriInfoField.GetValue(uri);
         var uriInfoStringField = (uriInfo?.GetType().GetField("String", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
             ?? throw new InvalidOperationException("Could not find String field in _info");
-        uriInfoStringField.SetValue(uriInfo, base64uri);
+        uriInfoStringField.SetValue(uriInfo, base64Uri);
 
         var uriInfoMoreInfoField = (uriInfo.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
             ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
@@ -140,11 +140,11 @@ public class OpenAIEndpoint : IServerEndpoint
 
         var uriInfoMoreInfoAbsoluteUriField = (uriInfoMoreInfo?.GetType().GetField("AbsoluteUri", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
             ?? throw new InvalidOperationException("Could not find AbsoluteUri field in MoreInfo");
-        uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, base64uri);
+        uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, base64Uri);
 
         var uriInfoMoreInfoPathField = (uriInfoMoreInfo.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
             ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
-        uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, base64uri["data:".Length..]);
+        uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, base64Uri["data:".Length..]);
 
         return uri;
     }
@@ -494,7 +494,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
     }
 
     /// <summary>
-    /// if two adjacent messages are both user or aisstant role, merge them
+    /// if two adjacent messages are both user or assistant role, merge them
     /// </summary>
     /// <param name="messages"> message list that has not been normalized</param>
     /// <returns></returns>
@@ -672,7 +672,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             { ':', '：' },
             { '!', '！' }
         };
-        // for each apeareance of key in input
+        // for each appearance of key in input
         // if the character before it is a chinese character
         // replace it with the value
         // 

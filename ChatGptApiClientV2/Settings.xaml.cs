@@ -1,7 +1,6 @@
 ﻿using System;
 using HandyControl.Controls;
 using HandyControl.Tools;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Forms;

@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
 using SharpToken;
+// ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
 
@@ -377,8 +378,8 @@ public static partial class Utils
         public int y;
         public int cx;
         public int cy;
-        public int xBitmap;    // x offest from the upperleft of bitmap
-        public int yBitmap;    // y offset from the upperleft of bitmap
+        public int xBitmap;    // x offset from the upper-left of bitmap
+        public int yBitmap;    // y offset from the upper-left of bitmap
         public int rgbBk;
         public int rgbFg;
         public int fStyle;
@@ -530,7 +531,7 @@ public static partial class Utils
         }
         // from native to managed
         var ico = (Icon)Icon.FromHandle(hIcon.Value).Clone();
-        Shell32.DestroyIcon(hIcon.Value); // don't forget to cleanup
+        Shell32.DestroyIcon(hIcon.Value); // don't forget to clean up
         return ico;
     }
     private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)
@@ -556,19 +557,14 @@ public static partial class Utils
             yield return folder;
         }
     }
-    public class PythonEnv
-    {
-        [JsonConstructor]
-        public PythonEnv(string homePath, string executablePath, string dllPath)
-        {
-            HomePath = homePath;
-            ExecutablePath = executablePath;
-            DllPath = dllPath;
-        }
 
-        public string HomePath { get;}
-        public string ExecutablePath { get; }
-        public string DllPath { get; }
+    [method: JsonConstructor]
+    public class PythonEnv(string homePath, string executablePath, string dllPath)
+    {
+        public string HomePath { get;} = homePath;
+        public string ExecutablePath { get; } = executablePath;
+        // ReSharper disable once UnusedMember.Global
+        public string DllPath { get; } = dllPath;
     }
     private static PythonEnv? DetectPythonInFolder(string folder)
     {

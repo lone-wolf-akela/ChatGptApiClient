@@ -9,6 +9,7 @@ using System.IO;
 using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace ChatGptApiClientV2.Tools;
 

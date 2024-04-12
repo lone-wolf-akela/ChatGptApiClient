@@ -8,6 +8,10 @@ using System.Runtime.Serialization;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMemberInSuper.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ChatGptApiClientV2;
 

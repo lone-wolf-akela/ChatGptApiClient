@@ -3,9 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
-using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 
 namespace ChatGptApiClientV2;
 
@@ -22,8 +20,10 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel()
     {
         Debug.Assert(IsDeignMode);
-        Config = new Config();
-        Config.ServiceProvider = Config.ServiceProviderType.Azure;
+        Config = new Config
+        {
+            ServiceProvider = Config.ServiceProviderType.Azure
+        };
     }
     public SettingsViewModel(Config conf)
     {

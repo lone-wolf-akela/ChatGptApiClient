@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace ChatGptApiClientV2;
 
