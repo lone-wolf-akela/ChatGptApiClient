@@ -58,7 +58,7 @@ public partial class FileAttachmentInfo : ObservableObject
             }
 
             var shellFile = ShellFile.FromFilePath(path);
-            var thumbnail = shellFile?.Thumbnail?.ExtraLargeBitmapSource;
+            var thumbnail = shellFile.Thumbnail?.ExtraLargeBitmapSource;
             thumbnail?.Freeze();
             Application.Current.Dispatcher.Invoke(() =>
             {
