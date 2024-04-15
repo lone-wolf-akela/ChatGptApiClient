@@ -28,10 +28,12 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Documents;
 using ChatGptApiClientV2.Tools;
 using static ChatGptApiClientV2.UserMessage;
 using static ChatGptApiClientV2.ChatCompletionRequest;
+using System.Diagnostics;
 
 namespace ChatGptApiClientV2;
 
@@ -351,6 +353,9 @@ public partial class SystemState : ObservableObject
         {
             StreamText(response);
             NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
+
+            // need this to make sure the UI is updated
+            Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
         }
 
         NetStatus.Status = NetStatus.StatusEnum.Idle;

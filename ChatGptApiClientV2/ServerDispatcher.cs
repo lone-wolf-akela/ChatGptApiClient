@@ -263,7 +263,7 @@ public class OpenAIEndpoint : IServerEndpoint
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             chatCompletionsOptions.Messages.AddRange(GetChatRequestMessages(session.Messages));
 
-            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions);
+            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions).ConfigureAwait(false);
             responseSb.Clear();
             errorMessage = null;
             systemFingerprint = "";
@@ -299,7 +299,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
                 try
                 {
-                    hasMore = await enumerator.MoveNextAsync();
+                    hasMore = await enumerator.MoveNextAsync().ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -350,7 +350,7 @@ public class OpenAIEndpoint : IServerEndpoint
         }
         finally
         {
-            await enumerator.DisposeAsync();
+            await enumerator.DisposeAsync().ConfigureAwait(false);
         }
     }
 
@@ -546,7 +546,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         return mergedMessages;
     }
 
-    protected void BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming)
+    protected async Task BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming)
     {
         try
         {
@@ -594,7 +594,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 RequestUri = new Uri(Url.Combine(options.Endpoint, "messages")),
                 Content = postContent
             };
-            responseTask = httpClient.SendAsync(request);
+            httpResponse = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             errorMessage = null;
         }
         catch (Exception e)
@@ -665,7 +665,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
 
     protected readonly HttpClient httpClient;
     protected string? errorMessage;
-    protected Task<HttpResponseMessage>? responseTask;
+    protected HttpResponseMessage? httpResponse;
     private readonly ServerEndpointOptions options;
 }
 
@@ -680,12 +680,11 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
-    public override Task BuildSession(ChatCompletionRequest session)
+    public override async Task BuildSession(ChatCompletionRequest session)
     {
-        BuildSessionPrepare(session, false);
+        await BuildSessionPrepare(session, false).ConfigureAwait(false);
         textResponseLst.Clear();
         toolUseResponseLst.Clear();
-        return Task.CompletedTask;
     }
 
     public override async IAsyncEnumerable<string> Streaming()
@@ -695,7 +694,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             yield break;
         }
 
-        if (responseTask is null)
+        if (httpResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
@@ -709,15 +708,14 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        var response = await responseTask;
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
         using var reader = new StreamReader(responseStream);
-        var responseStr = await reader.ReadToEndAsync();
+        var responseStr = await reader.ReadToEndAsync().ConfigureAwait(false);
 
         string? combinedTextResponse;
         try
         {
-            if (!response.IsSuccessStatusCode)
+            if (!httpResponse.IsSuccessStatusCode)
             {
 
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
@@ -816,14 +814,13 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         }
     }
 
-    public override Task BuildSession(ChatCompletionRequest session)
+    public override async Task BuildSession(ChatCompletionRequest session)
     {
-        BuildSessionPrepare(session, true);
+        await BuildSessionPrepare(session, true).ConfigureAwait(false);
         // messageStart = null;
         // messageDeltas.Clear();
         indexToContentBlockStart.Clear();
         indexToContentBlockDeltas.Clear();
-        return Task.CompletedTask;
     }
 
     public override async IAsyncEnumerable<string> Streaming()
@@ -833,7 +830,7 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             yield break;
         }
 
-        if (responseTask is null)
+        if (httpResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
@@ -847,14 +844,13 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        var response = await responseTask;
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
-        if (!response.IsSuccessStatusCode)
+        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        if (!httpResponse.IsSuccessStatusCode)
         {
             try
             {
                 using var errorReader = new StreamReader(responseStream);
-                var responseStr = await errorReader.ReadToEndAsync();
+                var responseStr = await errorReader.ReadToEndAsync().ConfigureAwait(false);
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                     ?? throw new JsonSerializationException(responseStr);
                 errorMessage = $"{error.Error.Type}: {error.Error.Message}";
@@ -866,13 +862,29 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             yield break;
         }
 
-        using var reader = new StreamReader(responseStream);
-        while(!reader.EndOfStream)
+        using var reader = new SseReader(responseStream);
+        while(true)
         {
-            var line = await reader.ReadLineAsync().ConfigureAwait(false);
-            if (string.IsNullOrEmpty(line)) { continue; }
-            if (!line.StartsWith("data:")) { continue; }
-            var chatResponse = line["data: ".Length..];
+            var line = await reader.TryReadLineAsync().ConfigureAwait(false);
+            if (line is null)
+            {
+                break;
+            }
+
+            if (line.Value.IsEmpty) { continue; }
+            if (line.Value.IsComment) { continue; }
+
+            var fieldName = line.Value.FieldName;
+            var fieldValue = line.Value.FieldValue;
+
+            if (!fieldName.Span.SequenceEqual("data".AsSpan())) { continue; }
+
+            if(fieldValue.Span.SequenceEqual("[DONE]".AsSpan()))
+            {
+                break;
+            }
+
+            var chatResponse = fieldValue.ToString();
 
             Claude.IStreamingResponse? responseChunk;
             try
