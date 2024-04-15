@@ -24,6 +24,7 @@
     <None Remove="font\SourceHanSansCN-Regular.otf" />
     <None Remove="images\chatgpt-icon.png" />
     <None Remove="images\chatgpt-icon.svg" />
+    <None Remove="images\claude-ai-icon.svg" />
     <None Remove="images\set-up-svgrepo-com.svg" />
     <None Remove="images\system-settings-svgrepo-com.svg" />
     <None Remove="images\丹恒 思考.png" />
@@ -60,6 +61,7 @@
     <Resource Include="font\CascadiaMono.ttf" />
     <Resource Include="font\Segoe Fluent Icons.ttf" />
     <Resource Include="images\chatgpt-icon.svg" />
+    <Resource Include="images\claude-ai-icon.svg" />
     <Resource Include="images\set-up-svgrepo-com.svg" />
     <Resource Include="images\丹恒 思考.png" />
     <Resource Include="images\优菈-让我看看.png" />

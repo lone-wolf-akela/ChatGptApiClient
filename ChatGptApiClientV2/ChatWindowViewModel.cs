@@ -98,6 +98,14 @@ public partial class FileAttachmentInfo : ObservableObject
 public class ChatWindowMessage : ObservableObject
 {
     public bool IsStreaming { get; init; }
+    
+    public enum AssistantType
+    {
+        ChatGPT,
+        Claude
+    }
+    public AssistantType Assistant { get; init; }
+
     private readonly BlockUIContainer loadingBar;
 
 
@@ -362,10 +370,11 @@ public class ChatWindowMessage : ObservableObject
     public static string UserAvatarSource => Environment.UserName;
 
     private const string ChatGPTIcon = "pack://application:,,,/images/chatgpt-icon.svg";
+    private const string ClaudeIcon = "pack://application:,,,/images/claude-ai-icon.svg";
     private const string ToolIcon = "pack://application:,,,/images/set-up-svgrepo-com.svg";
     public Uri Avatar => Role switch
     {
-        RoleType.Assistant => new Uri(ChatGPTIcon),
+        RoleType.Assistant => Assistant == AssistantType.ChatGPT ? new Uri(ChatGPTIcon) : new Uri(ClaudeIcon),
         RoleType.Tool => new Uri(ToolIcon),
         _ => new Uri(ChatGPTIcon)
     };
@@ -435,9 +444,9 @@ public class ChatWindowMessageList : ObservableObject
         }
         return Utils.GetStringTokenNum(lastMsg.StreamMessage.ToString());
     }
-    public void AddMessage(RoleType role)
+    public void AddMessage(RoleType role, ChatWindowMessage.AssistantType assistantType)
     {
-        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true });
+        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true, Assistant = assistantType });
     }
 
     public void SetStreamProgress(double progress, string text)
@@ -457,7 +466,10 @@ public class ChatWindowMessageList : ObservableObject
 
             var chatMsg = new ChatWindowMessage
             {
-                Role = msg.Role
+                Role = msg.Role,
+                Assistant = state.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
+                    ? ChatWindowMessage.AssistantType.Claude
+                    : ChatWindowMessage.AssistantType.ChatGPT
             };
             foreach (var content in msg.Content)
             {
@@ -631,7 +643,11 @@ public partial class ChatWindowViewModel : ObservableObject
     }
     private void AddMessage(RoleType role)
     {
-        MessageList.AddMessage(role);
+        MessageList.AddMessage(
+            role, 
+            State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic 
+            ? ChatWindowMessage.AssistantType.Claude 
+            : ChatWindowMessage.AssistantType.ChatGPT);
         ScrollToEndEvent?.Invoke();
     }
 
