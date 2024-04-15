@@ -115,7 +115,7 @@ public class OpenAIEndpoint : IServerEndpoint
             };
         return lst;
     }
-    private Uri ImageBase64StrToUri(string base64Uri)
+    private static Uri ImageBase64StrToUri(string base64Uri)
     {
         if (!base64Uri.StartsWith("data:"))
         {
@@ -166,7 +166,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
         return uri;
     }
-    private ChatRequestMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
+    private static ChatRequestMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
         if (chatDataMsg is UserMessage userMsg)
@@ -239,7 +239,7 @@ public class OpenAIEndpoint : IServerEndpoint
         throw new ArgumentException("Invalid role");
     }
 
-    private IEnumerable<ChatRequestMessage> GetChatRequestMessages(IEnumerable<IMessage> msgLst)
+    private static IEnumerable<ChatRequestMessage> GetChatRequestMessages(IEnumerable<IMessage> msgLst)
     {
         var lst =
             from msg in msgLst
@@ -448,7 +448,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         return tools;
     }
 
-    private Claude.Message ChatDataMessageToClaudeMessage(IMessage chatDataMsg)
+    private static Claude.Message ChatDataMessageToClaudeMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
         var claudeContentList = new List<Claude.IContent>();
@@ -524,7 +524,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
     /// </summary>
     /// <param name="messages"> message list that has not been normalized</param>
     /// <returns></returns>
-    private List<Claude.Message> NormalizeMessages(IEnumerable<Claude.Message> messages)
+    private static List<Claude.Message> NormalizeMessages(IEnumerable<Claude.Message> messages)
     {
         var mergedMessages = new List<Claude.Message>();
         Claude.Role? lastRole = null;
@@ -581,7 +581,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 MaxTokens = options.MaxTokens ?? 4096,
                 System = systemMessage,
                 Temperature = options.Temperature,
-                Tools = tools.Any() ? tools : null,
+                Tools = tools.Count != 0 ? tools : null,
                 TopP = options.TopP,
                 Stream = isStreaming
             };

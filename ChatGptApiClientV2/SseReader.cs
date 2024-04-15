@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 // ReSharper disable InconsistentNaming
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
 // from https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/openai/Azure.AI.OpenAI/src/Helpers/SseLine.cs
@@ -21,7 +20,7 @@ internal readonly struct SseLine
     private readonly int _colonIndex;
     private readonly int _valueIndex;
 
-    public static SseLine Empty { get; } = new SseLine(string.Empty, 0, false);
+    public static SseLine Empty { get; } = new(string.Empty, 0, false);
 
     internal SseLine(string original, int colonIndex, bool hasSpaceAfterColon)
     {
@@ -40,113 +39,101 @@ internal readonly struct SseLine
     public override string ToString() => _original;
 }
 
-internal sealed class SseReader : IDisposable
+internal sealed class SseReader(Stream stream) : IDisposable
+{
+    private readonly StreamReader _reader = new(stream);
+    private bool _disposedValue;
+
+    public SseLine? TryReadSingleFieldEvent()
     {
-        private readonly Stream _stream;
-        private readonly StreamReader _reader;
-        private bool _disposedValue;
-
-        public SseReader(Stream stream)
+        while (true)
         {
-            _stream = stream;
-            _reader = new StreamReader(stream);
-        }
-
-        public SseLine? TryReadSingleFieldEvent()
-        {
-            while (true)
-            {
-                SseLine? line = TryReadLine();
-                if (line == null)
-                    return null;
-                if (line.Value.IsEmpty)
-                    throw new InvalidDataException("event expected.");
-                SseLine? empty = TryReadLine();
-                if (empty != null && !empty.Value.IsEmpty)
-                    throw new NotSupportedException("Multi-filed events not supported.");
-                if (!line.Value.IsComment)
-                    return line; // skip comment lines
-            }
-        }
-
-        // TODO: we should support cancellation tokens, but StreamReader does not in NS2
-        public async Task<SseLine?> TryReadSingleFieldEventAsync()
-        {
-            while (true)
-            {
-                SseLine? line = await TryReadLineAsync().ConfigureAwait(false);
-                if (line == null)
-                    return null;
-                if (line.Value.IsEmpty)
-                    throw new InvalidDataException("event expected.");
-                SseLine? empty = await TryReadLineAsync().ConfigureAwait(false);
-                if (empty != null && !empty.Value.IsEmpty)
-                    throw new NotSupportedException("Multi-filed events not supported.");
-                if (!line.Value.IsComment)
-                    return line; // skip comment lines
-            }
-        }
-
-        public SseLine? TryReadLine()
-        {
-            string lineText = _reader.ReadLine();
-            if (lineText == null)
+            var line = TryReadLine();
+            if (line == null)
                 return null;
-            if (lineText.Length == 0)
-                return SseLine.Empty;
-            if (TryParseLine(lineText, out SseLine line))
-                return line;
-            return null;
-        }
-
-        // TODO: we should support cancellation tokens, but StreamReader does not in NS2
-        public async Task<SseLine?> TryReadLineAsync()
-        {
-            string lineText = await _reader.ReadLineAsync().ConfigureAwait(false);
-            if (lineText == null)
-                return null;
-            if (lineText.Length == 0)
-                return SseLine.Empty;
-            if (TryParseLine(lineText, out SseLine line))
-                return line;
-            return null;
-        }
-
-        private static bool TryParseLine(string lineText, out SseLine line)
-        {
-            if (lineText.Length == 0)
-            {
-                line = default;
-                return false;
-            }
-
-            ReadOnlySpan<char> lineSpan = lineText.AsSpan();
-            int colonIndex = lineSpan.IndexOf(':');
-            ReadOnlySpan<char> fieldValue = lineSpan.Slice(colonIndex + 1);
-
-            bool hasSpace = false;
-            if (fieldValue.Length > 0 && fieldValue[0] == ' ')
-                hasSpace = true;
-            line = new SseLine(lineText, colonIndex, hasSpace);
-            return true;
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _reader.Dispose();
-                    _stream.Dispose();
-                }
-
-                _disposedValue = true;
-            }
-        }
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            if (line.Value.IsEmpty)
+                throw new InvalidDataException("event expected.");
+            var empty = TryReadLine();
+            if (empty is { IsEmpty: false })
+                throw new NotSupportedException("Multi-filed events not supported.");
+            if (!line.Value.IsComment)
+                return line; // skip comment lines
         }
     }
+
+    // TODO: we should support cancellation tokens, but StreamReader does not in NS2
+    public async Task<SseLine?> TryReadSingleFieldEventAsync()
+    {
+        while (true)
+        {
+            var line = await TryReadLineAsync().ConfigureAwait(false);
+            if (line == null)
+                return null;
+            if (line.Value.IsEmpty)
+                throw new InvalidDataException("event expected.");
+            var empty = await TryReadLineAsync().ConfigureAwait(false);
+            if (empty is { IsEmpty: false })
+                throw new NotSupportedException("Multi-filed events not supported.");
+            if (!line.Value.IsComment)
+                return line; // skip comment lines
+        }
+    }
+
+    public SseLine? TryReadLine()
+    {
+        var lineText = _reader.ReadLine();
+        if (lineText == null)
+            return null;
+        if (lineText.Length == 0)
+            return SseLine.Empty;
+        if (TryParseLine(lineText, out SseLine line))
+            return line;
+        return null;
+    }
+
+    // TODO: we should support cancellation tokens, but StreamReader does not in NS2
+    public async Task<SseLine?> TryReadLineAsync()
+    {
+        var lineText = await _reader.ReadLineAsync().ConfigureAwait(false);
+        if (lineText == null)
+            return null;
+        if (lineText.Length == 0)
+            return SseLine.Empty;
+        if (TryParseLine(lineText, out var line))
+            return line;
+        return null;
+    }
+
+    private static bool TryParseLine(string lineText, out SseLine line)
+    {
+        if (lineText.Length == 0)
+        {
+            line = default;
+            return false;
+        }
+
+        var lineSpan = lineText.AsSpan();
+        var colonIndex = lineSpan.IndexOf(':');
+        var fieldValue = lineSpan[(colonIndex + 1)..];
+
+        bool hasSpace = fieldValue.Length > 0 && fieldValue[0] == ' ';
+        line = new SseLine(lineText, colonIndex, hasSpace);
+        return true;
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposedValue) { return; }
+        if (disposing)
+        {
+            _reader.Dispose();
+            stream.Dispose();
+        }
+
+        _disposedValue = true;
+    }
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+    }
+}
