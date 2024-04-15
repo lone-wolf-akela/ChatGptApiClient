@@ -64,7 +64,7 @@ public interface IServerEndpoint
     {
         if (options.Service == ServerEndpointOptions.ServiceType.Claude)
         {
-            return new ClaudeEndpoint(options);
+            return ClaudeEndpointBase.BuildClaudeEndpoint(options);
         }
         else
         {
@@ -401,11 +401,23 @@ public class OpenAIEndpoint : IServerEndpoint
     private readonly Dictionary<int, StringBuilder> funcArgsByIndex = [];
 }
 
-public partial class ClaudeEndpoint : IServerEndpoint
+public abstract partial class ClaudeEndpointBase : IServerEndpoint
 {
     private const string ApiVersion = "2023-06-01";
-    private const string ApiBeta = "tools-2024-04-04";
-    public ClaudeEndpoint(ServerEndpointOptions o)
+    public static ClaudeEndpointBase BuildClaudeEndpoint(ServerEndpointOptions o)
+    {
+        if (o.Tools is not null && o.Tools.Any())
+        {
+            // for now, tool use is not supported in streaming mode
+            // see https://docs.anthropic.com/claude/docs/tool-use
+            return new ClaudeEndpointNonStreaming(o);
+        }
+        else
+        {
+            return new ClaudeEndpointStreaming(o);
+        }
+    }
+    protected ClaudeEndpointBase(ServerEndpointOptions o)
     {
         options = o;
 
@@ -421,10 +433,6 @@ public partial class ClaudeEndpoint : IServerEndpoint
         httpClient = new HttpClient(httpClientHandler);
         httpClient.DefaultRequestHeaders.Add("x-api-key", options.Key);
         httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
-        if (!string.IsNullOrWhiteSpace(ApiBeta))
-        {
-            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
-        }
     }
 
     private IEnumerable<Claude.Tool> GetToolDefinitions()
@@ -538,7 +546,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
         return mergedMessages;
     }
 
-    public Task BuildSession(ChatCompletionRequest session)
+    protected void BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming)
     {
         try
         {
@@ -565,6 +573,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 messages.Add(ChatDataMessageToClaudeMessage(msg));
             }
 
+            var tools = GetToolDefinitions().ToList();
             var createMsg = new Claude.CreateMessage
             {
                 Model = options.Model,
@@ -572,8 +581,9 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 MaxTokens = options.MaxTokens ?? 4096,
                 System = systemMessage,
                 Temperature = options.Temperature,
-                Tools = GetToolDefinitions(),
-                TopP = options.TopP
+                Tools = tools.Any() ? tools : null,
+                TopP = options.TopP,
+                Stream = isStreaming
             };
 
             var postStr = createMsg.ToJson();
@@ -585,19 +595,100 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 Content = postContent
             };
             responseTask = httpClient.SendAsync(request);
-
-            textResponseLst.Clear();
-            toolUseResponseLst.Clear();
             errorMessage = null;
         }
         catch (Exception e)
         {
             errorMessage = e.Message;
         }
+    }
+
+    public abstract Task BuildSession(ChatCompletionRequest session);
+
+    public abstract IAsyncEnumerable<string> Streaming();
+
+    public string SystemFingerprint => "";
+
+    [GeneratedRegex(@"\p{IsCJKUnifiedIdeographs}")]
+    private static partial Regex CjkCharRegex();
+    private static bool IsChinese(char c)
+    {
+        var r = CjkCharRegex();
+        return r.IsMatch(c.ToString());
+    }
+    private static bool IsEnglishOrNumber(char c)
+    {
+        return c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9');
+    }
+    protected static string NormalizeChinesePunctuation(string input)
+    {
+        var punctuationPair = new Dictionary<char, char>
+        {
+            { ',', '，' },
+            { '?', '？' },
+            { ';', '；' },
+            { ':', '：' },
+            { '!', '！' }
+        };
+        // for each appearance of key in input
+        // if the character before it is a chinese character
+        // replace it with the value
+        // 
+        // and if a char is an English letter or a number, and the char before it is a Chinese character,
+        // add a space before it
+        //
+        // and if a char is a chinese character, and the char before it is an English letter or a number,
+        // add a space before it
+        var sb = new StringBuilder();
+        for (var i = 0; i < input.Length; i++)
+        {
+            char lastChar = i > 0 ? input[i - 1] : '\0';
+            if (punctuationPair.TryGetValue(input[i], out var chinesePunc) && IsChinese(lastChar))
+            {
+                sb.Append(chinesePunc);
+                continue;
+            }
+            if (IsEnglishOrNumber(input[i]) && IsChinese(lastChar))
+            {
+                sb.Append(' ');
+            }
+            else if (IsChinese(input[i]) && IsEnglishOrNumber(lastChar))
+            {
+                sb.Append(' ');
+            }
+            sb.Append(input[i]);
+        }
+        return sb.ToString();
+    }
+    public abstract AssistantMessage ResponseMessage { get; }
+    public abstract IEnumerable<ToolCallType> ToolCalls { get; }
+
+    protected readonly HttpClient httpClient;
+    protected string? errorMessage;
+    protected Task<HttpResponseMessage>? responseTask;
+    private readonly ServerEndpointOptions options;
+}
+
+
+public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
+{
+    private const string ApiBeta = "tools-2024-04-04";
+    public ClaudeEndpointNonStreaming(ServerEndpointOptions o) : base(o)
+    {
+        if (!string.IsNullOrWhiteSpace(ApiBeta))
+        {
+            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
+        }
+    }
+    public override Task BuildSession(ChatCompletionRequest session)
+    {
+        BuildSessionPrepare(session, false);
+        textResponseLst.Clear();
+        toolUseResponseLst.Clear();
         return Task.CompletedTask;
     }
 
-    public async IAsyncEnumerable<string> Streaming()
+    public override async IAsyncEnumerable<string> Streaming()
     {
         if (errorMessage is not null)
         {
@@ -667,60 +758,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
         }
     }
 
-    public string SystemFingerprint => "";
-
-    [GeneratedRegex(@"\p{IsCJKUnifiedIdeographs}")]
-    private static partial Regex CjkCharRegex();
-    private static bool IsChinese(char c)
-    {
-        var r = CjkCharRegex();
-        return r.IsMatch(c.ToString());
-    }
-    private static bool IsEnglishOrNumber(char c)
-    {
-        return c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9');
-    }
-    private static string NormalizeChinesePunctuation(string input)
-    {
-        var punctuationPair = new Dictionary<char, char>
-        {
-            { ',', '，'},
-            { '?', '？' },
-            { ';', '；' },
-            { ':', '：' },
-            { '!', '！' }
-        };
-        // for each appearance of key in input
-        // if the character before it is a chinese character
-        // replace it with the value
-        // 
-        // and if a char is an English letter or a number, and the char before it is a Chinese character,
-        // add a space before it
-        //
-        // and if a char is a chinese character, and the char before it is an English letter or a number,
-        // add a space before it
-        var sb = new StringBuilder();
-        for (var i = 0; i < input.Length; i++)
-        {
-            char lastChar = i > 0 ? input[i - 1] : '\0';
-            if (punctuationPair.TryGetValue(input[i], out var chinesePunc) && IsChinese(lastChar))
-            {
-                sb.Append(chinesePunc);
-                continue;
-            }
-            if (IsEnglishOrNumber(input[i]) && IsChinese(lastChar))
-            {
-                sb.Append(' ');
-            }
-            else if (IsChinese(input[i]) && IsEnglishOrNumber(lastChar))
-            {
-                sb.Append(' ');
-            }
-            sb.Append(input[i]);
-        }
-        return sb.ToString();
-    }
-    public AssistantMessage ResponseMessage
+    public override AssistantMessage ResponseMessage
     {
         get
         {
@@ -744,7 +782,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             return response;
         }
     }
-    public IEnumerable<ToolCallType> ToolCalls
+    public override IEnumerable<ToolCallType> ToolCalls
     {
         get
         {
@@ -763,11 +801,196 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
         }
     }
-
-    private readonly HttpClient httpClient;
-    private string? errorMessage;
-    private Task<HttpResponseMessage>? responseTask;
-    private readonly ServerEndpointOptions options;
     private readonly List<Claude.TextContent> textResponseLst = [];
     private readonly List<Claude.ToolUseContent> toolUseResponseLst = [];
+}
+
+public class ClaudeEndpointStreaming : ClaudeEndpointBase
+{
+    private const string ApiBeta = "";
+    public ClaudeEndpointStreaming(ServerEndpointOptions o) : base(o)
+    {
+        if (!string.IsNullOrWhiteSpace(ApiBeta))
+        {
+            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
+        }
+    }
+
+    public override Task BuildSession(ChatCompletionRequest session)
+    {
+        BuildSessionPrepare(session, true);
+        // messageStart = null;
+        // messageDeltas.Clear();
+        indexToContentBlockStart.Clear();
+        indexToContentBlockDeltas.Clear();
+        return Task.CompletedTask;
+    }
+
+    public override async IAsyncEnumerable<string> Streaming()
+    {
+        if (errorMessage is not null)
+        {
+            yield break;
+        }
+
+        if (responseTask is null)
+        {
+            throw new InvalidOperationException("Session not built");
+        }
+
+        var contractResolver = new DefaultContractResolver
+        {
+            NamingStrategy = new SnakeCaseNamingStrategy()
+        };
+        var settings = new JsonSerializerSettings
+        {
+            ContractResolver = contractResolver
+        };
+
+        var response = await responseTask;
+        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            try
+            {
+                using var errorReader = new StreamReader(responseStream);
+                var responseStr = await errorReader.ReadToEndAsync();
+                var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
+                    ?? throw new JsonSerializationException(responseStr);
+                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+            }
+            catch (Exception e)
+            {
+                errorMessage = e.Message;
+            }
+            yield break;
+        }
+
+        using var reader = new StreamReader(responseStream);
+        while(!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync().ConfigureAwait(false);
+            if (string.IsNullOrEmpty(line)) { continue; }
+            if (!line.StartsWith("data:")) { continue; }
+            var chatResponse = line["data: ".Length..];
+
+            Claude.IStreamingResponse? responseChunk;
+            try
+            {
+                responseChunk = JsonConvert.DeserializeObject<Claude.IStreamingResponse>(chatResponse, settings);
+                if (responseChunk is null)
+                {
+                    throw new JsonSerializationException(chatResponse);
+                }
+            }
+            catch (JsonSerializationException exception)
+            {
+                errorMessage = $"Error: Invalid chat response: {exception.Message}";
+                yield break;
+            }
+            if(responseChunk is Claude.StreamingMessageStart /*msgStart*/)
+            {
+                // not used
+                // messageStart = msgStart;
+            }
+            else if (responseChunk is Claude.StreamingContentBlockStart contentStart)
+            {
+                indexToContentBlockStart[contentStart.Index] = contentStart;
+                if (contentStart.ContentBlock is Claude.StreamingContentBlockText textContent)
+                {
+                    yield return textContent.Text;
+                }
+            }
+            else if (responseChunk is Claude.StreamingPing)
+            {
+                // do nothing
+            }
+            else if (responseChunk is Claude.StreamingContentBlockDelta contentDelta)
+            {
+                if(!indexToContentBlockDeltas.TryGetValue(contentDelta.Index, out var deltaList))
+                {
+                    deltaList = [];
+                    indexToContentBlockDeltas[contentDelta.Index] = deltaList;
+                }
+                deltaList.Add(contentDelta);
+                if (contentDelta.Delta is Claude.StreamingContentBlockTextDelta delta)
+                {
+                    yield return delta.Text;
+                }
+            }
+            else if (responseChunk is Claude.StreamingContentBlockStop)
+            {
+                // do nothing
+            }
+            else if (responseChunk is Claude.StreamingMessageDelta /*msgDelta*/)
+            {
+                // not used
+                // messageDeltas.Add(msgDelta);
+            }
+            else if (responseChunk is Claude.StreamingMessageStop)
+            {
+                // do nothing
+            }
+            else if (responseChunk is Claude.StreamingError error)
+            {
+                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                yield break;
+            }
+            else
+            {
+                errorMessage = $"Error: Invalid chat response: {chatResponse}";
+                yield break;
+            }
+        }
+    }
+
+    public override AssistantMessage ResponseMessage
+    {
+        get
+        {
+            var assistantTextContent = new List<IMessage.TextContent>();
+            if (errorMessage is not null)
+            {
+                assistantTextContent.Add(new IMessage.TextContent { Text = errorMessage });
+            }
+            else
+            {
+                StringBuilder msgBuilder = new();
+
+                var contentIndex = indexToContentBlockStart.Keys.ToList();
+                contentIndex.Sort();
+                foreach(var index in contentIndex)
+                {
+                    msgBuilder.Clear();
+                    var start = indexToContentBlockStart[index].ContentBlock;
+                    if (start is not Claude.StreamingContentBlockText textContentStart)
+                    {
+                        continue;
+                    }
+                    msgBuilder.Append(textContentStart.Text);
+                    foreach(var delta in indexToContentBlockDeltas[index])
+                    {
+                        if (delta.Delta is not Claude.StreamingContentBlockTextDelta textContentDelta)
+                        {
+                            throw new InvalidOperationException("Invalid delta type");
+                        }
+                        msgBuilder.Append(textContentDelta.Text);
+                    }
+                    assistantTextContent.Add(new IMessage.TextContent { Text = NormalizeChinesePunctuation(msgBuilder.ToString()) });
+                }
+            }
+            var response = new AssistantMessage
+            {
+                Content = assistantTextContent,
+                ToolCalls = []
+            };
+            return response;
+        }
+    }
+    public override IEnumerable<ToolCallType> ToolCalls => [];
+
+    //private StreamingMessageStart? messageStart;
+    //private List<StreamingMessageDelta> messageDeltas = [];
+    private readonly Dictionary<int, Claude.StreamingContentBlockStart> indexToContentBlockStart = [];
+    private readonly Dictionary<int, List<Claude.StreamingContentBlockDelta>> indexToContentBlockDeltas = [];
 }

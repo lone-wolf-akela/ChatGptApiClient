@@ -215,7 +215,7 @@ public class CreateMessage
     /// <summary>
     /// Whether to incrementally stream the response using server-sent events.
     /// </summary>
-    public bool? Stream => false;
+    public bool? Stream { get; set; }
     /// <summary>
     /// System prompt.
     /// </summary>
