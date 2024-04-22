@@ -92,6 +92,23 @@ public class ComparisonConverter : MarkupExtension, IValueConverter
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
+public class LargerToVisibilityConverter : MarkupExtension, IMultiValueConverter
+{
+    public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (values is [double d1, double d2])
+        {
+            return d1 > d2 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        return Visibility.Collapsed;
+    }
+    public object?[] ConvertBack(object? value, Type[] targetType, object? parameter, CultureInfo culture)
+    {
+        throw new InvalidOperationException();
+    }
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
 public class EnumValueDescription(Enum value, string desc)
 {
     public Enum Value { get; set; } = value;

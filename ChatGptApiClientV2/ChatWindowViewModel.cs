@@ -36,6 +36,8 @@ using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.Threading.Tasks;
 using Microsoft.WindowsAPICodePack.Shell;
+using static ChatGptApiClientV2.ChatWindowMessage;
+using System.ComponentModel;
 
 namespace ChatGptApiClientV2;
 
@@ -97,6 +99,93 @@ public partial class FileAttachmentInfo : ObservableObject
 }
 public partial class ChatWindowMessage : ObservableObject
 {
+    [ObservableProperty]
+    private bool isInEditingMode;
+    public partial class EditorModeContent(string srcText) : ObservableObject
+    {
+        [ObservableProperty]
+        private string text = srcText; // must use constructor to init, because write to Text will make it dirty
+        public bool IsEditable { get; init; }
+        partial void OnTextChanged(string value)
+        {
+            IsDirty = true;
+        }
+        public bool IsDirty { get; private set; }
+        public IRichMessage? SourceMessage { get; init; }
+    }
+    public ObservableCollection<EditorModeContent> EditorModeContents { get; } = new();
+    [RelayCommand]
+    private void EnterEditingMode()
+    {
+        EditorModeContents.Clear();
+        foreach(var msg in messageList)
+        {
+            EditorModeContent content;
+            if (msg is TextMessage txtMsg)
+            {
+                content = new EditorModeContent(txtMsg.Text)
+                { 
+                    IsEditable = true,
+                    SourceMessage = msg
+                };
+            }
+            else if (msg is ImageMessage imgMsg)
+            {
+                content = new EditorModeContent(imgMsg.FileName ?? "图像")
+                {
+                    IsEditable = false,
+                    SourceMessage = msg
+                };
+            }
+            else if (msg is BlocksMessage)
+            {
+                content = new EditorModeContent("不可编辑的UI元素")
+                {
+                    IsEditable = false,
+                    SourceMessage = msg
+                };
+            }
+            else if (msg is TextFileMessage txtFileMsg)
+            {
+                content = new EditorModeContent(txtFileMsg.FileName ?? "文件")
+                {
+                    IsEditable = false,
+                    SourceMessage = msg
+                };
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+            EditorModeContents.Add(content);
+        }
+        IsInEditingMode = true;
+    }
+    [RelayCommand]
+    private void ConfirmEditingMode()
+    {
+        foreach(var content in EditorModeContents)
+        {
+            if (!content.IsDirty) { continue; }
+            if (!content.IsEditable || content.SourceMessage is not TextMessage txtMsg)
+            {
+                throw new InvalidOperationException();
+            }
+            txtMsg.Text = content.Text;
+            if (txtMsg.SourceContent is not null)
+            {
+                txtMsg.SourceContent.Text = content.Text;
+            }
+        }
+        OnPropertyChanged(nameof(RenderedMessage));
+        IsInEditingMode = false;
+    }
+    [RelayCommand]
+    private void CancelEditingMode()
+    {
+        IsInEditingMode = false;
+    }
+    public IMessage? SourceMessage { get; init; }
     public bool IsStreaming { get; init; }
     [ObservableProperty]
     private bool isWaitingDeleteConfirm;
@@ -156,18 +245,24 @@ public partial class ChatWindowMessage : ObservableObject
         init
         {
             messageList.Clear();
-            messageList.Add(new TextMessage(value, true));
+            messageList.Add(new TextMessage(value, true, null));
         }
     }
 
-    private interface IRichMessage
+    public interface IRichMessage : INotifyPropertyChanged
     {
         public IEnumerable<Block> Rendered { get; }
     }
 
-    private class TextMessage(string text, bool enableMarkdown) : IRichMessage
+    private partial class TextMessage(string srcStr, bool enableMarkdown, TextContent? sourceContent) : ObservableObject, IRichMessage
     {
-        private string Text { get; } = text;
+        public TextContent? SourceContent { get; } = sourceContent;
+        [ObservableProperty]
+        private string text = srcStr;
+        partial void OnTextChanged(string value)
+        {
+            cachedRenderResult = null;
+        }
         private bool EnableMarkdown { get; } = enableMarkdown;
 
         private List<Block>? cachedRenderResult;
@@ -207,10 +302,10 @@ public partial class ChatWindowMessage : ObservableObject
         }
     }
 
-    private class ImageMessage(BitmapImage image, string? filename, string? tooltip) : IRichMessage
+    private class ImageMessage(BitmapImage image, string? filename, string? tooltip) : ObservableObject, IRichMessage
     {
         private BitmapImage Image { get; } = image;
-        private string FileName { get; } = filename ?? "";
+        public string FileName { get; } = filename ?? "";
         private string ImageTooltip { get; } = tooltip ?? "";
 
         private List<Block>? cachedRenderResult;
@@ -239,7 +334,7 @@ public partial class ChatWindowMessage : ObservableObject
         }
     }
 
-    private class BlocksMessage(IEnumerable<Block> blocks) : IRichMessage
+    private class BlocksMessage(IEnumerable<Block> blocks) : ObservableObject, IRichMessage
     {
         private IEnumerable<Block> Blocks { get; } = blocks;
 
@@ -258,9 +353,9 @@ public partial class ChatWindowMessage : ObservableObject
         }
     }
 
-    private class TextFileMessage(string content, string? filename) : IRichMessage
+    private class TextFileMessage(string content, string? filename) : ObservableObject, IRichMessage
     {
-        private string FileName { get; } = filename ?? "";
+        public string FileName { get; } = filename ?? "";
         private string FileContent { get; } = content;
 
         private List<Block>? cachedRenderResult;
@@ -287,11 +382,11 @@ public partial class ChatWindowMessage : ObservableObject
         }
     }
 
-    public async Task AddText(string text, bool enableMarkdown)
+    public async Task AddText(TextContent text, bool enableMarkdown)
     {
         await Task.Run(() =>
         {
-            messageList.Add(new TextMessage(text, enableMarkdown));
+            messageList.Add(new TextMessage(text.Text, enableMarkdown, text));
         });
         OnPropertyChanged(nameof(RenderedMessage));
     }
@@ -326,8 +421,8 @@ public partial class ChatWindowMessage : ObservableObject
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
-    /**** stream (temp) data ****/
     private readonly List<IRichMessage> messageList = [];
+    /**** stream (temp) data ****/
     public StringBuilder? StreamMessage { get; private set; }
 
     public void AddStreamText(string text)
@@ -448,9 +543,18 @@ public partial class ChatWindowMessage : ObservableObject
     };
 }
 
-public class ChatWindowMessageList : ObservableObject
+public partial class ChatWindowMessageList : ObservableObject
 {
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
+    [RelayCommand]
+    private void RemoveMessage(ChatWindowMessage msg)
+    {
+        Messages.Remove(msg);
+        if (msg.SourceMessage is not null)
+        {
+            syncedSession?.Messages.Remove(msg.SourceMessage);
+        }
+    }
     public void AddStreamText(string text)
     {
         Messages.Last().AddStreamText(text);
@@ -477,10 +581,11 @@ public class ChatWindowMessageList : ObservableObject
     {
         Messages.Last().SetStreamProgress(progress, text);
     }
+    private ChatCompletionRequest? syncedSession;
     public async Task SyncChatSession(ChatCompletionRequest session, SystemState state, bool enableMarkdown)
     {
         Messages.Clear();
-
+        syncedSession = session;
         foreach (var msg in session.Messages)
         {
             if (msg.Hidden)
@@ -492,14 +597,15 @@ public class ChatWindowMessageList : ObservableObject
             {
                 Role = msg.Role,
                 Assistant = state.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
-                    ? ChatWindowMessage.AssistantType.Claude
-                    : ChatWindowMessage.AssistantType.ChatGPT
+                    ? AssistantType.Claude
+                    : AssistantType.ChatGPT,
+                SourceMessage = msg
             };
             foreach (var content in msg.Content)
             {
                 if (content is TextContent textContent)
                 {
-                    await chatMsg.AddText(textContent.Text, enableMarkdown);
+                    await chatMsg.AddText(textContent, enableMarkdown);
                 }
                 else if (content is ImageContent imgContent)
                 {
