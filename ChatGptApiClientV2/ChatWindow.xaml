@@ -417,7 +417,7 @@
                                             </hc:SimplePanel.Style>
                                             <StackPanel Orientation="Horizontal"
                                                         Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                                                <Button Content="&#xe8c8;" ToolTip="复制"/>
+                                                <Button Content="&#xe8c8;" ToolTip="复制" Command="{Binding CopyMessageCommand}"/>
                                                 <Button Content="&#xe70f;" ToolTip="编辑"/>
                                                 <Button Content="&#xe74d;" ToolTip="删除" Command="{Binding TryDeleteMessageCommand}"/>
                                             </StackPanel>

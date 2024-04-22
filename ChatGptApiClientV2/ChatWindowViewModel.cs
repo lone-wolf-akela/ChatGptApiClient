@@ -110,6 +110,18 @@ public partial class ChatWindowMessage : ObservableObject
     {
         IsWaitingDeleteConfirm = false;
     }
+    [RelayCommand]
+    private void CopyMessage()
+    {
+        var doc = RenderedMessage;
+        var text = new TextRange(doc.ContentStart, doc.ContentEnd);
+        using var ms = new System.IO.MemoryStream();
+        text.Save(ms, DataFormats.Rtf);
+        ms.Seek(0, System.IO.SeekOrigin.Begin);
+        var rtf = new System.IO.StreamReader(ms).ReadToEnd();
+        Clipboard.SetData(DataFormats.Rtf, rtf);
+        OnPropertyChanged(nameof(RenderedMessage)); // need this or the displayed message will be cleared
+    }
 
     public enum AssistantType
     {
