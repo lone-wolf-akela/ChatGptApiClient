@@ -38,6 +38,7 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAPICodePack.Shell;
 using static ChatGptApiClientV2.ChatWindowMessage;
 using System.ComponentModel;
+using System.IO;
 
 namespace ChatGptApiClientV2;
 
@@ -203,12 +204,42 @@ public partial class ChatWindowMessage : ObservableObject
     private void CopyMessage()
     {
         var doc = RenderedMessage;
+        doc.Foreground = Brushes.Black; // ensure text color is black
+
         var text = new TextRange(doc.ContentStart, doc.ContentEnd);
-        using var ms = new System.IO.MemoryStream();
-        text.Save(ms, DataFormats.Rtf);
-        ms.Seek(0, System.IO.SeekOrigin.Begin);
-        var rtf = new System.IO.StreamReader(ms).ReadToEnd();
-        Clipboard.SetData(DataFormats.Rtf, rtf);
+
+        var dataObject = new DataObject();
+
+        using (var msRtf = new MemoryStream())
+        {
+            text.Save(msRtf, DataFormats.Rtf);
+            var rtfText = Encoding.UTF8.GetString(msRtf.ToArray());
+            dataObject.SetData(DataFormats.Rtf, rtfText);
+        }
+
+        using (var msPlainText = new MemoryStream())
+        {
+            text.Save(msPlainText, DataFormats.Text);
+            var plainText = Encoding.UTF8.GetString(msPlainText.ToArray());
+            dataObject.SetData(DataFormats.Text, plainText);
+        }
+
+        using (var msXaml = new MemoryStream())
+        {
+            text.Save(msXaml, DataFormats.Xaml);
+            var xamlText = Encoding.UTF8.GetString(msXaml.ToArray());
+            dataObject.SetData(DataFormats.Xaml, xamlText);
+        }
+
+        using (var msXamlPackage = new MemoryStream())
+        {
+            text.Save(msXamlPackage, DataFormats.XamlPackage);
+            var xamlPackage = msXamlPackage.ToArray();
+            dataObject.SetData(DataFormats.XamlPackage, xamlPackage);
+        }
+
+        // 将DataObject对象设置到剪贴板
+        Clipboard.SetDataObject(dataObject, true);
         OnPropertyChanged(nameof(RenderedMessage)); // need this or the displayed message will be cleared
     }
 
