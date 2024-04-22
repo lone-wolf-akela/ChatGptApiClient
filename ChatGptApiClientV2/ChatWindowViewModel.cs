@@ -95,10 +95,22 @@ public partial class FileAttachmentInfo : ObservableObject
     public string Path { get; }
     public ImageSource? Icon { get; private set; }
 }
-public class ChatWindowMessage : ObservableObject
+public partial class ChatWindowMessage : ObservableObject
 {
     public bool IsStreaming { get; init; }
-    
+    [ObservableProperty]
+    private bool isWaitingDeleteConfirm;
+    [RelayCommand]
+    private void TryDeleteMessage()
+    {
+        IsWaitingDeleteConfirm = true;
+    }
+    [RelayCommand]
+    private void CancelDeleteMessage()
+    {
+        IsWaitingDeleteConfirm = false;
+    }
+
     public enum AssistantType
     {
         ChatGPT,
