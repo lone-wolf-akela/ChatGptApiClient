@@ -349,11 +349,21 @@ public partial class SystemState : ObservableObject
 
         NewMessage(RoleType.Assistant);
 
+        var sb = new StringBuilder();
+        var lastUpdateTime = DateTime.Now;
         await foreach (var response in endpoint.Streaming())
         {
-            StreamText(response);
-            NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
+            sb.Append(response);
 
+            // every 100ms, update the UI
+            if ((DateTime.Now - lastUpdateTime).TotalMilliseconds < 100)
+            {
+                continue;
+            }
+            StreamText(sb.ToString());
+            sb.Clear();
+            NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
+            lastUpdateTime = DateTime.Now;
             // need this to make sure the UI is updated
             Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
         }
@@ -363,6 +373,9 @@ public partial class SystemState : ObservableObject
 
         var newAssistantMsg = endpoint.ResponseMessage;
         CurrentSession.Messages.Add(newAssistantMsg);
+
+        // long streaming can create a lot of small objects, so we force a GC here to help reduce memory usage
+        GC.Collect();
 
         var responseRequired = false;
         foreach (var toolcall in endpoint.ToolCalls)
