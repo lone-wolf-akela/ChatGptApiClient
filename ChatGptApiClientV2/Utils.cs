@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 using System.Globalization;
@@ -35,6 +34,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
 using SharpToken;
+using System.Windows.Interop;
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
@@ -227,11 +227,17 @@ public static partial class Utils
         // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
         var data = ExtractBase64FromUrl(base64);
         var bytes = Convert.FromBase64String(data);
+        
         using var ms = new MemoryStream(bytes);
-        using var image = Image.FromStream(ms);
-        using var ms2 = new MemoryStream();
-        image.Save(ms2, System.Drawing.Imaging.ImageFormat.Png);
-        var outBase64 = Convert.ToBase64String(ms2.ToArray());
+        var imageSource = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(imageSource));
+
+        using var msOutput = new MemoryStream();
+        encoder.Save(msOutput);
+        var outBase64 = Convert.ToBase64String(msOutput.ToArray());
+
         return $"data:image/png;base64,{outBase64}";
     }
 
@@ -557,17 +563,24 @@ public static partial class Utils
     }
 
     // from https://stackoverflow.com/questions/28525925/get-icon-128128-file-type-c-sharp
-    public static Icon? Get256FileIcon(string path)
+    public static BitmapSource? Get256FileIcon(string path)
     {
         var hIcon = GetJumboIcon(GetIconIndex(path));
         if (hIcon is null)
         {
             return null;
         }
-        // from native to managed
-        var ico = (Icon)Icon.FromHandle(hIcon.Value).Clone();
-        Shell32.DestroyIcon(hIcon.Value); // don't forget to clean up
-        return ico;
+        // 使用WPF的Imaging类来创建BitmapSource
+        var iconSrc = Imaging.CreateBitmapSourceFromHIcon(
+            hIcon.Value,
+            Int32Rect.Empty,
+            BitmapSizeOptions.FromEmptyOptions()
+        );
+        iconSrc.Freeze();  // 重要：冻结图像，使其可以跨线程使用
+
+        Shell32.DestroyIcon(hIcon.Value); // 清理非托管资源
+
+        return iconSrc;
     }
     private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)
     {

@@ -429,7 +429,7 @@ public partial class SystemState : ObservableObject
             {
                 var base64 = await Utils.ImageFileToBase64(file);
                 var image = Utils.Base64ToBitmapImage(base64);
-                System.Drawing.Size imageSize = new(image.PixelWidth, image.PixelHeight);
+                Size imageSize = new(image.PixelWidth, image.PixelHeight);
                 attachments.Add(new ImageAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),

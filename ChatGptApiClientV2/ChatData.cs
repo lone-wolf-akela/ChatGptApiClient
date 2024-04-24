@@ -247,7 +247,7 @@ public interface IMessage : ICloneable
         public ContentCategory Type => ContentCategory.ImageUrl;
 
         [JsonIgnore]
-        public System.Drawing.Size? ImageSize { get; set; } // cache image size
+        public System.Windows.Size? ImageSize { get; set; } // cache image size
         public int CountToken()
         {
             // see https://platform.openai.com/docs/guides/vision
@@ -265,28 +265,28 @@ public interface IMessage : ICloneable
             if (ImageSize is null)
             {
                 var image = Utils.Base64ToBitmapImage(ImageUrl.Url);
-                ImageSize = new System.Drawing.Size(image.PixelWidth, image.PixelHeight);
+                ImageSize = new System.Windows.Size(image.PixelWidth, image.PixelHeight);
             }
             // if size is too large, scale down to fit in 2048x2048, keep aspect ratio
             if (ImageSize.Value.Width > 2048 || ImageSize.Value.Height > 2048)
             {
                 var ratio = Math.Min(2048.0 / ImageSize.Value.Width, 2048.0 / ImageSize.Value.Height);
-                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio), Math.Round(ImageSize.Value.Height * ratio));
             }
             // further scale down to make the shortest side fit in 768px, keep aspect ratio
             var isWidthShorter = ImageSize.Value.Width < ImageSize.Value.Height;
             if (isWidthShorter && ImageSize.Value.Width > 768)
             {
                 var ratio = 768.0 / ImageSize.Value.Width;
-                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio), Math.Round(ImageSize.Value.Height * ratio));
             }
             else if (!isWidthShorter && ImageSize.Value.Height > 768)
             {
                 var ratio = 768.0 / ImageSize.Value.Height;
-                ImageSize = new System.Drawing.Size((int)Math.Round(ImageSize.Value.Width * ratio), (int)Math.Round(ImageSize.Value.Height * ratio));
+                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio), Math.Round(ImageSize.Value.Height * ratio));
             }
 
-            var tileNum = Math.Ceiling((double)ImageSize.Value.Width / tileSize) * Math.Ceiling((double)ImageSize.Value.Height / tileSize);
+            var tileNum = Math.Ceiling(ImageSize.Value.Width / tileSize) * Math.Ceiling(ImageSize.Value.Height / tileSize);
             count += (int)tileNum * tokenPerTile;
 
             return count;
@@ -428,7 +428,7 @@ public class UserMessage : IMessage
         public string FileName { get; set; } = "";
         public string ImageBase64Url { get; set; } = "";
         public bool HighResMode { get; set; }
-        public System.Drawing.Size? ImageSize { get; set; } // cache image size
+        public System.Windows.Size? ImageSize { get; set; } // cache image size
         public object Clone()
         {
             return new ImageAttachmentInfo

@@ -57,15 +57,9 @@ public partial class FileAttachmentInfo : ObservableObject
             var icon = Utils.Get256FileIcon(Path);
             if (icon is not null)
             {
-                var iconSrc = Imaging.CreateBitmapSourceFromHIcon(
-                    icon.Handle,
-                    new Int32Rect(0, 0, icon.Width, icon.Height),
-                    BitmapSizeOptions.FromEmptyOptions()
-                );
-                iconSrc.Freeze();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Icon = iconSrc;
+                    Icon = icon;
                     OnPropertyChanged(nameof(Icon));
                 });
             }
