@@ -33,7 +33,7 @@ using System.Windows.Documents;
 using ChatGptApiClientV2.Tools;
 using static ChatGptApiClientV2.UserMessage;
 using static ChatGptApiClientV2.ChatCompletionRequest;
-using System.Diagnostics;
+using System.Threading;
 
 namespace ChatGptApiClientV2;
 
@@ -269,11 +269,11 @@ public partial class SystemState : ObservableObject
     {
         SetStreamProgressEvent?.Invoke(progress, text);
     }
-    private async Task Send()
+    private async Task Send(CancellationToken cancellationToken = default)
     {
-        var selectedModelType = Config.SelectedModelType ?? throw new ArgumentNullException(nameof(Config.SelectedModelType));
-        var selectedModel = Config.SelectedModel ?? throw new ArgumentNullException(nameof(Config.SelectedModel));
-        var chatRequest = CurrentSession ?? throw new ArgumentNullException(nameof(CurrentSession));
+        var selectedModelType = Config.SelectedModelType ?? throw new InvalidOperationException($"{nameof(Config.SelectedModelType)} is null.");
+        var selectedModel = Config.SelectedModel ?? throw new InvalidOperationException($"{nameof(Config.SelectedModel)} is null.");
+        var chatRequest = CurrentSession ?? throw new InvalidOperationException($"{nameof(CurrentSession)} is null.");
 
         ServerEndpointOptions.ServiceType service;
         string endpointUrl;
@@ -344,33 +344,47 @@ public partial class SystemState : ObservableObject
         var endpoint = IServerEndpoint.BuildServerEndpoint(serverOptions);
 
         NetStatus.Status = NetStatus.StatusEnum.Sending;
-        await endpoint.BuildSession(chatRequest);
+        try
+        {
+            await endpoint.BuildSession(chatRequest, cancellationToken);
+        }
+        catch(OperationCanceledException)
+        {
+            NetStatus.Status = NetStatus.StatusEnum.Idle;
+            return;
+        }
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         NewMessage(RoleType.Assistant);
 
-        var sb = new StringBuilder();
-        var lastUpdateTime = DateTime.Now;
-        await foreach (var response in endpoint.Streaming())
+        try
         {
-            sb.Append(response);
-
-            // every 100ms, update the UI
-            if ((DateTime.Now - lastUpdateTime).TotalMilliseconds < 100)
+            var sb = new StringBuilder();
+            var lastUpdateTime = DateTime.Now;
+            await foreach (var response in endpoint.Streaming(cancellationToken))
             {
-                continue;
+                sb.Append(response);
+
+                // every 100ms, update the UI
+                if ((DateTime.Now - lastUpdateTime).TotalMilliseconds < 100)
+                {
+                    continue;
+                }
+                StreamText(sb.ToString());
+                sb.Clear();
+                NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
+                lastUpdateTime = DateTime.Now;
+                // need this to make sure the UI is updated
+                Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render, cancellationToken);
             }
             StreamText(sb.ToString());
-            sb.Clear();
+            NetStatus.Status = NetStatus.StatusEnum.Idle;
             NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
-            lastUpdateTime = DateTime.Now;
-            // need this to make sure the UI is updated
-            Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
         }
-
-        NetStatus.Status = NetStatus.StatusEnum.Idle;
-        NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
-
+        catch(OperationCanceledException)
+        {
+            NetStatus.Status = NetStatus.StatusEnum.Idle;
+        }
         var newAssistantMsg = endpoint.ResponseMessage;
         CurrentSession.Messages.Add(newAssistantMsg);
 
@@ -393,10 +407,10 @@ public partial class SystemState : ObservableObject
         if (responseRequired)
         {
             await ResetSession(CurrentSession);
-            await Send();
+            await Send(cancellationToken);
         }
     }
-    public async Task UserSendText(string text, IList<string> files)
+    public async Task UserSendText(string text, IEnumerable<string> files, CancellationToken cancellationToken = default)
     {
         CurrentSession ??= await ResetSession();
 
@@ -414,7 +428,7 @@ public partial class SystemState : ObservableObject
                 attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
-                    Content = (await File.ReadAllTextAsync(file)).Trim()
+                    Content = (await File.ReadAllTextAsync(file, cancellationToken)).Trim()
                 });
             }
             else if (mime.StartsWith("application/pdf"))
@@ -453,7 +467,7 @@ public partial class SystemState : ObservableObject
         CurrentSession.Messages.Add(userMsg);
         await ResetSession(CurrentSession);
 
-        await Send();
+        await Send(cancellationToken);
 
         await ResetSession(CurrentSession);
     }

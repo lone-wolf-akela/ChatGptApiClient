@@ -30,7 +30,6 @@ using Markdig;
 using Markdig.Wpf.ColorCode;
 using static ChatGptApiClientV2.IMessage;
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Windows.Interop;
 using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
@@ -39,6 +38,7 @@ using Microsoft.WindowsAPICodePack.Shell;
 using static ChatGptApiClientV2.ChatWindowMessage;
 using System.ComponentModel;
 using System.IO;
+using System.Threading;
 
 namespace ChatGptApiClientV2;
 
@@ -818,14 +818,22 @@ public partial class ChatWindowViewModel : ObservableObject
 
     public int TextInputTokenNum => Utils.GetStringTokenNum(TextInput);
 
-    [RelayCommand]
-    private async Task SendAsync()
+
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task SendAsync(CancellationToken cancellationToken)
     {
-        var input = TextInput;
-        var files = (from fileinfo in FileAttachments select fileinfo.Path).ToList();
-        TextInput = "";
-        FileAttachments.Clear();
-        await State.UserSendText(input, files);
+        try
+        {
+            var input = TextInput;
+            var files = (from fileinfo in FileAttachments select fileinfo.Path).ToList();
+            TextInput = "";
+            FileAttachments.Clear();
+            await State.UserSendText(input, files, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore
+        }
     }
 
     [RelayCommand]

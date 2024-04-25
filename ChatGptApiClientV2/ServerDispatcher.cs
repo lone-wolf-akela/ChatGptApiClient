@@ -21,8 +21,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.AI.OpenAI;
@@ -71,8 +73,8 @@ public interface IServerEndpoint
             return new OpenAIEndpoint(options);
         }
     }
-    public Task BuildSession(ChatCompletionRequest session);
-    public IAsyncEnumerable<string> Streaming();
+    public Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default);
+    public IAsyncEnumerable<string> Streaming(CancellationToken cancellationToken = default);
     public string SystemFingerprint { get; }
     public AssistantMessage ResponseMessage { get; }
     public IEnumerable<ToolCallType> ToolCalls { get; }
@@ -247,7 +249,7 @@ public class OpenAIEndpoint : IServerEndpoint
         return lst;
     }
 
-    public async Task BuildSession(ChatCompletionRequest session)
+    public async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -263,7 +265,7 @@ public class OpenAIEndpoint : IServerEndpoint
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             chatCompletionsOptions.Messages.AddRange(GetChatRequestMessages(session.Messages));
 
-            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions).ConfigureAwait(false);
+            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
             responseSb.Clear();
             errorMessage = null;
             systemFingerprint = "";
@@ -277,7 +279,7 @@ public class OpenAIEndpoint : IServerEndpoint
         }
     }
 
-    public async IAsyncEnumerable<string> Streaming()
+    public async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -289,12 +291,14 @@ public class OpenAIEndpoint : IServerEndpoint
             throw new InvalidOperationException("Session not built");
         }
 
-        var enumerator = streamingResponse.EnumerateValues().GetAsyncEnumerator();
+        var enumerator = streamingResponse.EnumerateValues().GetAsyncEnumerator(cancellationToken);
 
         try
         {
             while (true)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 bool hasMore;
 
                 try
@@ -546,7 +550,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         return mergedMessages;
     }
 
-    protected async Task BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming)
+    protected async Task BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming, CancellationToken cancellationToken)
     {
         try
         {
@@ -594,7 +598,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 RequestUri = new Uri(Url.Combine(options.Endpoint, "messages")),
                 Content = postContent
             };
-            httpResponse = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            httpResponse = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             errorMessage = null;
         }
         catch (Exception e)
@@ -603,9 +607,9 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         }
     }
 
-    public abstract Task BuildSession(ChatCompletionRequest session);
+    public abstract Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default);
 
-    public abstract IAsyncEnumerable<string> Streaming();
+    public abstract IAsyncEnumerable<string> Streaming(CancellationToken cancellationToken = default);
 
     public string SystemFingerprint => "";
 
@@ -680,14 +684,14 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
-    public override async Task BuildSession(ChatCompletionRequest session)
+    public override async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
     {
-        await BuildSessionPrepare(session, false).ConfigureAwait(false);
+        await BuildSessionPrepare(session, false, cancellationToken).ConfigureAwait(false);
         textResponseLst.Clear();
         toolUseResponseLst.Clear();
     }
 
-    public override async IAsyncEnumerable<string> Streaming()
+    public override async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -708,9 +712,9 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(responseStream);
-        var responseStr = await reader.ReadToEndAsync().ConfigureAwait(false);
+        var responseStr = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
         string? combinedTextResponse;
         try
@@ -814,16 +818,16 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         }
     }
 
-    public override async Task BuildSession(ChatCompletionRequest session)
+    public override async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
     {
-        await BuildSessionPrepare(session, true).ConfigureAwait(false);
+        await BuildSessionPrepare(session, true, cancellationToken).ConfigureAwait(false);
         // messageStart = null;
         // messageDeltas.Clear();
         indexToContentBlockStart.Clear();
         indexToContentBlockDeltas.Clear();
     }
 
-    public override async IAsyncEnumerable<string> Streaming()
+    public override async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -844,13 +848,13 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         if (!httpResponse.IsSuccessStatusCode)
         {
             try
             {
                 using var errorReader = new StreamReader(responseStream);
-                var responseStr = await errorReader.ReadToEndAsync().ConfigureAwait(false);
+                var responseStr = await errorReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                     ?? throw new JsonSerializationException(responseStr);
                 errorMessage = $"{error.Error.Type}: {error.Error.Message}";
@@ -865,6 +869,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         using var reader = new SseReader(responseStream);
         while(true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var line = await reader.TryReadLineAsync().ConfigureAwait(false);
             if (line is null)
             {

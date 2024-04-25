@@ -221,15 +221,25 @@
                             Content="&#xe91b;" 
                             Panel.ZIndex="1"/>
                 </hc:UniformSpacingPanel>
-                <Button Command="{Binding SendCommand}" 
-                        VerticalAlignment="Bottom" 
-                        HorizontalAlignment="Stretch" 
-                        MinHeight="50" 
-                        MinWidth="100">
-                    <TextBlock TextAlignment="Center">
-                        发送<LineBreak/>Ctrl + Enter
-                    </TextBlock>
-                </Button>
+                <hc:SimplePanel>
+                    <Button Command="{Binding SendCommand}" 
+                            VerticalAlignment="Bottom" 
+                            HorizontalAlignment="Stretch" 
+                            MinHeight="50" 
+                            MinWidth="100"
+                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            <TextBlock TextAlignment="Center">
+                                发送<LineBreak/>Ctrl + Enter
+                            </TextBlock>
+                    </Button>
+                    <Button Command="{Binding SendCancelCommand}" 
+                            VerticalAlignment="Bottom" 
+                            HorizontalAlignment="Stretch" 
+                            MinHeight="50" 
+                            MinWidth="100"
+                            Content="停止接收"
+                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                </hc:SimplePanel>
             </StackPanel>
             <DockPanel Margin="0,0,5,0">
                 <StackPanel DockPanel.Dock="Bottom" 
