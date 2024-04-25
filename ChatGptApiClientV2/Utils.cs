@@ -36,6 +36,7 @@ using Newtonsoft.Json;
 using SharpToken;
 using System.Windows.Interop;
 using System.Threading;
+using System.Windows.Media;
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
@@ -52,6 +53,36 @@ public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter
         };
     }
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value;
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
+// from https://stackoverflow.com/questions/5649875/how-to-make-the-border-trim-the-child-elements
+public class BorderClipConverter : MarkupExtension, IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values is not [double width, double height, CornerRadius radius])
+        {
+            return DependencyProperty.UnsetValue;
+        }
+
+        if (width < double.Epsilon || height < double.Epsilon)
+        {
+            return Geometry.Empty;
+        }
+
+        var clip = Utils.CreateRoundedRectangleGeometry(width, height, radius);
+        clip.Freeze();
+
+        return clip;
+
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
@@ -164,6 +195,33 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
 
 public static partial class Utils
 {
+    public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius)
+    {
+        var geometry = new StreamGeometry();
+
+        using var context = geometry.Open();
+        context.BeginFigure(new Point(radius.TopLeft, 0), true, true);
+
+        // Top side and top-right corner
+        context.LineTo(new Point(width - radius.TopRight, 0), true, false);
+        context.ArcTo(new Point(width, radius.TopRight), new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise, true, false);
+
+        // Right side and bottom-right corner
+        context.LineTo(new Point(width, height - radius.BottomRight), true, false);
+        context.ArcTo(new Point(width - radius.BottomRight, height), new Size(radius.BottomRight, radius.BottomRight), 0, false, SweepDirection.Clockwise, true, false);
+
+        // Bottom side and bottom-left corner
+        context.LineTo(new Point(radius.BottomLeft, height), true, false);
+        context.ArcTo(new Point(0, height - radius.BottomLeft), new Size(radius.BottomLeft, radius.BottomLeft), 0, false, SweepDirection.Clockwise, true, false);
+
+        // Left side and top-left corner
+        context.LineTo(new Point(0, radius.TopLeft), true, false);
+        context.ArcTo(new Point(radius.TopLeft, 0), new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise, true, false);
+
+        return geometry;
+    }
+
+
     private static GptEncoding? tokenEncoding;
     public static int GetStringTokenNum(string str)
     {

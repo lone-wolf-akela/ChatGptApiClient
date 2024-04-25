@@ -43,6 +43,7 @@
         </Grid.InputBindings>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*" MinHeight="100"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="150" MinHeight="150"/>
@@ -190,8 +191,8 @@
                           Command="{Binding SwitchMarkdownRenderingCommand}"/>
             </StackPanel>
         </DockPanel>
-        <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
-        <DockPanel Grid.Row="3" Margin="0,5,0,0">
+        <GridSplitter Grid.Row="3" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
+        <DockPanel Grid.Row="4" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
                 <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5" VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
                     <hc:UniformSpacingPanel.Resources>
@@ -328,9 +329,39 @@
                 </hc:SimplePanel>
             </DockPanel>
         </DockPanel>
-        <hc:SimplePanel Grid.Row="1" Margin="0,0,0,5" >
+        <Border Grid.Row="1" 
+                CornerRadius="5, 5, 0, 0" 
+                BorderThickness="1,1,1,0"
+                BorderBrush="{DynamicResource BorderBrush}"
+                Background="{DynamicResource RegionBrush}">
+            <Border.Clip>
+                <MultiBinding Converter="{local:BorderClipConverter}">
+                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}"/>
+                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}"/>
+                    <Binding Path="CornerRadius" RelativeSource="{RelativeSource Self}"/>
+                </MultiBinding>
+            </Border.Clip>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <StackPanel.Resources>
+                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                            <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons"/>
+                            <Setter Property="Margin" Value="3,0,0,0"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <Button Content="&#xecc9;"/>
+                    <Button Content="&#xecc8;"/>
+                </StackPanel>
+                <TabControl Background="Transparent" BorderThickness="0">
+                    <TabItem Header="11111"/>
+                    <TabItem Header="22222"/>
+                </TabControl>
+            </DockPanel>
+        </Border>
+        <hc:SimplePanel Grid.Row="2" Margin="0,0,0,5" >
             <ListBox x:Name="LstMsg" 
                      Style="{StaticResource SmoothScrollListBox}"
+                     hc:BorderElement.CornerRadius="0,0,5,5"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ItemsSource="{Binding Path=MessageList.Messages, Mode=OneWay}"
                      KeyboardNavigation.TabNavigation="None"
@@ -527,7 +558,7 @@
                 <hc:LoadingCircle IsRunning="True" Width="64" Height="64" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </hc:SimplePanel>
         </hc:SimplePanel>
-        <StatusBar Grid.Row="4" Margin="0,5,0,0">
+        <StatusBar Grid.Row="5" Margin="0,5,0,0">
             <StatusBarItem Content="状态："/>
             <StatusBarItem Content="{Binding State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="150"/>
             <Separator/>

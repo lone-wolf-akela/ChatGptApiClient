@@ -76,7 +76,7 @@
                             <Border BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     Background="{TemplateBinding Background}"
-                                    CornerRadius="{StaticResource DefaultCornerRadius}">
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}">
                                 <hc:ScrollViewer IsInertiaEnabled="True">
                                     <ItemsPresenter />
                                 </hc:ScrollViewer>
