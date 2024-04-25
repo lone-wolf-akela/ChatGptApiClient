@@ -398,10 +398,18 @@ public partial class SystemState : ObservableObject
             var pluginName = toolcall.Function.Name;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
-            var toolResult = await plugin.Action(this, toolcall.Id, args);
-            toolResult.Message.ToolCallId = toolcall.Id;
-            CurrentSession.Messages.Add(toolResult.Message);
-            responseRequired = responseRequired || toolResult.ResponeRequired;
+            try
+            {
+                var toolResult = await plugin.Action(this, toolcall.Id, args, cancellationToken);
+                toolResult.Message.ToolCallId = toolcall.Id;
+                CurrentSession.Messages.Add(toolResult.Message);
+                responseRequired = responseRequired || toolResult.ResponeRequired;
+            }
+            catch (OperationCanceledException)
+            {
+                NetStatus.Status = NetStatus.StatusEnum.Idle;
+                return;
+            }
         }
 
         if (responseRequired)
@@ -436,18 +444,18 @@ public partial class SystemState : ObservableObject
                 attachments.Add(new TextAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
-                    Content = (await Utils.PdfFileToText(file)).Trim()
+                    Content = (await Utils.PdfFileToText(file, cancellationToken)).Trim()
                 });
             }
             else if (mime.StartsWith("image/"))
             {
-                var base64 = await Utils.ImageFileToBase64(file);
+                var base64 = await Utils.ImageFileToBase64(file, cancellationToken);
                 var image = Utils.Base64ToBitmapImage(base64);
                 Size imageSize = new(image.PixelWidth, image.PixelHeight);
                 attachments.Add(new ImageAttachmentInfo
                 {
                     FileName = Path.GetFileName(file),
-                    ImageBase64Url = await Utils.ImageFileToBase64(file),
+                    ImageBase64Url = await Utils.ImageFileToBase64(file, cancellationToken),
                     HighResMode = Config.UploadHiresImage,
                     ImageSize = imageSize
                 });

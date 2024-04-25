@@ -31,6 +31,7 @@ using Python.Runtime;
 using System.Diagnostics;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
+using System.Threading;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -87,7 +88,7 @@ public class PythonFunc : IToolFunction
         }
         Directory.CreateDirectory("sandbox");
     }
-    private async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "")
+    private async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "", CancellationToken cancellationToken = default)
     {
         if (version != "")
         {
@@ -103,7 +104,7 @@ public class PythonFunc : IToolFunction
             RedirectStandardError = false,
             CreateNoWindow = true
         };
-        var task = Process.Start(startInfo)?.WaitForExitAsync();
+        var task = Process.Start(startInfo)?.WaitForExitAsync(cancellationToken);
         if (task is not null)
         {
             await task;
@@ -125,7 +126,7 @@ public class PythonFunc : IToolFunction
             }
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -179,8 +180,8 @@ public class PythonFunc : IToolFunction
                     return r.ToString();
                 }
 
-            });
-            if (await Task.WhenAny(task, Task.Delay(60000)) != task)
+            }, cancellationToken);
+            if (await Task.WhenAny(task, Task.Delay(60000, cancellationToken)) != task)
             {
                 throw new Exception("execution timed out.");
             }
@@ -284,7 +285,7 @@ public class ShowImageFunc : IToolFunction
         public string FileName { get; set; } = "";
     }
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -330,7 +331,7 @@ public class ShowImageFunc : IToolFunction
             return result;
         }
         msgContents[0].Text += "Image successfully displayed.";
-        var imageUrl = await Utils.ImageFileToBase64(filePath);
+        var imageUrl = await Utils.ImageFileToBase64(filePath, cancellationToken);
         state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
         state.CurrentSession.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
         result.ResponeRequired = false;

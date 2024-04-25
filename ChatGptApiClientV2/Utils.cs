@@ -35,6 +35,7 @@ using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
 using SharpToken;
 using System.Windows.Interop;
+using System.Threading;
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
@@ -171,14 +172,14 @@ public static partial class Utils
         return token.Count;
     }
 
-    public static async Task<string> ImageFileToBase64(string filename)
+    public static async Task<string> ImageFileToBase64(string filename, CancellationToken cancellationToken = default)
     {
         var mime = MimeTypes.GetMimeType(filename);
         if (!mime.StartsWith("image/"))
         {
             throw new ArgumentException("The file is not an image.");
         }
-        var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(filename));
+        var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(filename, cancellationToken));
         return $"data:{mime};base64,{base64}";
     }
 
@@ -277,7 +278,7 @@ public static partial class Utils
     private static partial IntPtr PopplerExtractTextFromPdfFile(string filename, int filenameLen);
     [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
     private static partial void PopplerFreeText(IntPtr text);
-    public static async Task<string> PdfFileToText(string filename)
+    public static async Task<string> PdfFileToText(string filename, CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
         {
@@ -289,7 +290,7 @@ public static partial class Utils
             var text = Marshal.PtrToStringUTF8(ptr) ?? "";
             PopplerFreeText(ptr);
             return text;
-        });
+        }, cancellationToken);
     }
 
     // from https://stackoverflow.com/questions/354477/method-to-determine-if-path-string-is-local-or-remote-machine
@@ -324,8 +325,8 @@ public static partial class Utils
         public const int ILD_TRANSPARENT = 0x00000001;
         public const int ILD_IMAGE = 0x00000020;
 
-        [DllImport("shell32.dll")]
-        public static extern int SHGetImageList(int iImageList, ref Guid riid, ref IImageList? ppv);
+        [LibraryImport("shell32.dll")]
+        public static partial int SHGetImageList(int iImageList, ref Guid riid, ref IImageList? ppv);
 
         [LibraryImport("user32.dll", SetLastError = true)]
         public static partial void DestroyIcon(IntPtr hIcon);
@@ -584,13 +585,9 @@ public static partial class Utils
     }
     private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)
     {
-        foreach (var folder in folders)
-        {
-            if (File.Exists(Path.Combine(folder, fileName)))
-            {
-                yield return folder;
-            }
-        }
+        return from folder in folders
+               where File.Exists(Path.Combine(folder, fileName))
+               select folder;
     }
     private static IEnumerable<string> FindPathContains(string fileName)
     {

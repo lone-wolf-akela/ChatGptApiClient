@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using NJsonSchema;
@@ -64,7 +65,7 @@ public interface IToolFunction
         public ToolMessage Message { get; set; } = msg;
         public bool ResponeRequired { get; set; } = responeRequired;
     }
-    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr);
+    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default);
     IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId);
     public ChatCompletionRequest.ToolType GetToolRequest() => new()
     {

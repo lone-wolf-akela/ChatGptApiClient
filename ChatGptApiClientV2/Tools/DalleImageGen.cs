@@ -31,6 +31,7 @@ using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
+using System.Threading;
 // ReSharper disable UnusedMember.Local
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 // ReSharper disable UnusedMember.Global
@@ -114,7 +115,7 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -171,14 +172,14 @@ public class DalleImageGenFunc : IToolFunction
             request.Headers.Add("api-key", state.Config.AzureAPIKey);
         }
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         if (!response.IsSuccessStatusCode)
         {
-            await using var errorResponseStream = await response.Content.ReadAsStreamAsync();
+            await using var errorResponseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var errorReader = new StreamReader(errorResponseStream);
-            var errorResponse = await errorReader.ReadToEndAsync();
+            var errorResponse = await errorReader.ReadToEndAsync(cancellationToken);
             var errorJson = JToken.Parse(errorResponse);
             if (errorJson["error"] is not null)
             {
@@ -191,9 +192,9 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(responseStream);
-        var imageResponse = await reader.ReadToEndAsync();
+        var imageResponse = await reader.ReadToEndAsync(cancellationToken);
         var responseJson = JToken.Parse(imageResponse);
         var responseData = responseJson["data"]?[0];
         var imageBase64Data = responseData?["b64_json"]?.ToString();

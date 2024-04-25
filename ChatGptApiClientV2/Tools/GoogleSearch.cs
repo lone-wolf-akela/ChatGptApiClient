@@ -30,6 +30,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+using System.Threading;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -67,7 +68,7 @@ public class GoogleSearchFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -130,21 +131,21 @@ public class GoogleSearchFunc : IToolFunction
         };
 
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         if (!response.IsSuccessStatusCode)
         {
-            await using var errorResponseStream = await response.Content.ReadAsStreamAsync();
+            await using var errorResponseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var errorReader = new StreamReader(errorResponseStream);
-            var errorResponse = await errorReader.ReadToEndAsync();
+            var errorResponse = await errorReader.ReadToEndAsync(cancellationToken);
             msgContents[0].Text += $"Error: {errorResponse}\n\n";
             return result;
         }
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(responseStream);
-        var responseStr = await reader.ReadToEndAsync();
+        var responseStr = await reader.ReadToEndAsync(cancellationToken);
         msgContents[0].Text += $"Results: {responseStr}\n\n";
         msg.Hidden = true; // Hide success results from user
         return result;
@@ -207,7 +208,7 @@ public class WebsiteAccessFunc : IToolFunction
     public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -243,11 +244,15 @@ public class WebsiteAccessFunc : IToolFunction
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var installed = await new BrowserFetcher(new BrowserFetcherOptions
             {
                 Browser = SupportedBrowser.Chrome,
                 Path = "./browser"
             }).DownloadAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
             var browser = await Puppeteer.LaunchAsync(
                 new LaunchOptions
                 {
@@ -255,18 +260,30 @@ public class WebsiteAccessFunc : IToolFunction
                     Browser = installed.Browser,
                     ExecutablePath = installed.GetExecutablePath()
                 });
+            cancellationToken.ThrowIfCancellationRequested();
+
             var page = await browser.NewPageAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
             await page.GoToAsync(args.Url);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Ensure at least one element is loaded
             // solves the error "Execution context was destroyed, most likely because of a navigation."
             // which happens when the url will redirect to another page
             // such as when accessing the zh-hans version of wikipedia (which can redirect to the zh-cn version)
             await page.WaitForSelectorAsync("*");
+            cancellationToken.ThrowIfCancellationRequested();
 
             var pageHeaderHandle = await page.QuerySelectorAsync("*");
+            cancellationToken.ThrowIfCancellationRequested();
+
             var innerTextHandle = await pageHeaderHandle.GetPropertyAsync("innerText");
+            cancellationToken.ThrowIfCancellationRequested();
+
             var innerText = await innerTextHandle.JsonValueAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
             var content = innerText.ToString() ?? "";
             if (content.Length > ContentPageLimit)
             {
@@ -347,7 +364,7 @@ public class WebsiteNextPageFunc : IToolFunction
     }
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };

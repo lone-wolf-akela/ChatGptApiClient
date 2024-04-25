@@ -27,7 +27,9 @@ using System.IO;
 using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
+using System.Threading;
 // ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ChatGptApiClientV2.Tools;
 
@@ -63,7 +65,7 @@ public class WolframAlphaFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr)
+    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -118,21 +120,21 @@ public class WolframAlphaFunc : IToolFunction
         };
 
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
-        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         if (!response.IsSuccessStatusCode)
         {
-            await using var errorResponseStream = await response.Content.ReadAsStreamAsync();
+            await using var errorResponseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             using var errorReader = new StreamReader(errorResponseStream);
-            var errorResponse = await errorReader.ReadToEndAsync();
+            var errorResponse = await errorReader.ReadToEndAsync(cancellationToken);
             msgContents[0].Text += $"Error: {errorResponse}\n\n";
             return result;
         }
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(responseStream);
-        var responseStr = await reader.ReadToEndAsync();
+        var responseStr = await reader.ReadToEndAsync(cancellationToken);
         var responseJson = JToken.Parse(responseStr);
         var queryresult = responseJson["queryresult"];
         var success = queryresult?["success"]?.Value<bool>();
