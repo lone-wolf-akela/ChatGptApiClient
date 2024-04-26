@@ -109,7 +109,7 @@ public partial class ChatWindowMessage : ObservableObject
         public bool IsDirty { get; private set; }
         public IRichMessage? SourceMessage { get; init; }
     }
-    public ObservableCollection<EditorModeContent> EditorModeContents { get; } = new();
+    public ObservableCollection<EditorModeContent> EditorModeContents { get; } = [];
     [RelayCommand]
     private void EnterEditingMode()
     {
@@ -264,15 +264,6 @@ public partial class ChatWindowMessage : ObservableObject
         loadingBarCtl.SetResourceReference(Control.ForegroundProperty, "PrimaryBrush");
 
         loadingBar = new BlockUIContainer(loadingBarCtl);
-    }
-
-    public string Message
-    {
-        init
-        {
-            messageList.Clear();
-            messageList.Add(new TextMessage(value, true, null));
-        }
     }
 
     public interface IRichMessage : INotifyPropertyChanged

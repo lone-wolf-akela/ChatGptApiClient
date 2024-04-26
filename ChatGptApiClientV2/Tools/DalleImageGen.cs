@@ -263,12 +263,13 @@ public class DalleImageGenFunc : IToolFunction
 
         yield return paragraph;
 
-        var imagedata = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedata"][0];
-        var imagedesc = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedesc"][0];
+        var foundData = state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata", out var imagedata);
+        var foundDesc = state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedesc", out var imagedesc);
+        if (!foundData) { yield break; }
         var image = new ImageDisplayer
         {
-            Image = Utils.Base64ToBitmapImage(imagedata),
-            ImageTooltip = imagedesc
+            Image = Utils.Base64ToBitmapImage(imagedata![0]),
+            ImageTooltip = foundDesc ? imagedesc![0] : ""
         };
         yield return new BlockUIContainer(image);
     }

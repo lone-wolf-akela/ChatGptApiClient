@@ -396,15 +396,15 @@
                             </Border.Clip>
                             <hc:SimplePanel>
                                 <ListBox x:Name="LstMsg" 
-                                        Style="{StaticResource SmoothScrollListBox}"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                        ItemsSource="{Binding Path= Messages.Messages, Mode=OneWay}"
-                                        KeyboardNavigation.TabNavigation="None"
-                                        KeyboardNavigation.ControlTabNavigation="None"
-                                        KeyboardNavigation.DirectionalNavigation="None"
-                                        ScrollViewer.CanContentScroll="False">
+                                         Style="{StaticResource SmoothScrollListBox}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ItemsSource="{Binding Path= Messages.Messages, Mode=OneWay}"
+                                         KeyboardNavigation.TabNavigation="None"
+                                         KeyboardNavigation.ControlTabNavigation="None"
+                                         KeyboardNavigation.DirectionalNavigation="None"
+                                         ScrollViewer.CanContentScroll="False">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
                                             <Setter Property="Background" Value="Transparent" />
@@ -580,16 +580,6 @@
                                             </DockPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
-                                    <d:ListBox.ItemsSource>
-                                        <x:Array Type="{x:Type local:ChatWindowMessage}">
-                                            <local:ChatWindowMessage Role="User" Message="# User Messages 1"/>
-                                            <local:ChatWindowMessage Role="System" Message="System Messages 2"/>
-                                            <local:ChatWindowMessage Role="Tool" Message="Tool Messages 1"/>
-                                            <!-- ReSharper disable MarkupAttributeTypo -->
-                                            <local:ChatWindowMessage Role="Assistant" Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
-                                            <!-- ReSharper restore MarkupAttributeTypo -->
-                                        </x:Array>
-                                    </d:ListBox.ItemsSource>
                                 </ListBox>
                                 <hc:SimplePanel Background="#88ffffff" Visibility="{Binding IsLoading, Converter={StaticResource Boolean2VisibilityConverter}}" d:IsHidden="True">
                                     <hc:LoadingCircle IsRunning="True" Width="64" Height="64" VerticalAlignment="Center" HorizontalAlignment="Center"/>

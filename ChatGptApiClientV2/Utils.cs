@@ -356,9 +356,10 @@ public static partial class Utils
 
         var uri = new Uri($"pack://application:,,,/images/{selectedSticker}");
         var bitmap = new BitmapImage(uri);
-        var image = new System.Windows.Controls.Image
+        var image = new Image
         {
-            Source = bitmap
+            Source = bitmap,
+            SnapsToDevicePixels = true
         };
         var floater = new Floater(new BlockUIContainer(image))
         {
@@ -429,7 +430,7 @@ public static partial class Utils
         [LibraryImport("user32.dll", SetLastError = true)]
         public static partial void DestroyIcon(IntPtr hIcon);
 
-        [DllImport("Shell32.dll")]
+        [DllImport("Shell32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr SHGetFileInfo(
             string pszPath,
             uint dwFileAttributes,
@@ -480,10 +481,9 @@ public static partial class Utils
         OverlayIndex = 0x000000040,
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct SHFILEINFO
     {
-        public const int NAMESIZE = 80;
         public IntPtr hIcon;
         public int iIcon;
         public uint dwAttributes;
@@ -634,7 +634,13 @@ public static partial class Utils
     // ReSharper restore UnusedMember.Local
     // ReSharper restore InconsistentNaming
 
-    private static int GetIconIndex(string pszFile)
+    internal class ShellFileInfo(string displayName, string typeName, int iconIndex)
+    {
+        public string DisplayName { get; } = displayName;
+        public string TypeName { get; } = typeName;
+        public int IconIndex { get; } = iconIndex;
+    }
+    private static ShellFileInfo GetShellFileInfo(string pszFile)
     {
         SHFILEINFO sfi = new();
         Shell32.SHGetFileInfo(
@@ -642,9 +648,9 @@ public static partial class Utils
             0,
             ref sfi,
             (uint)Marshal.SizeOf(sfi),
-            (uint)(SHGFI.SysIconIndex | SHGFI.LargeIcon | SHGFI.UseFileAttributes)
+            (uint)(SHGFI.SysIconIndex | SHGFI.LargeIcon | SHGFI.UseFileAttributes | SHGFI.DisplayName | SHGFI.TypeName)
             );
-        return sfi.iIcon;
+        return new ShellFileInfo(sfi.szDisplayName, sfi.szTypeName, sfi.iIcon);
     }
 
     private static IntPtr? GetJumboIcon(int iImage)
@@ -664,7 +670,8 @@ public static partial class Utils
     // from https://stackoverflow.com/questions/28525925/get-icon-128128-file-type-c-sharp
     public static BitmapSource? Get256FileIcon(string path)
     {
-        var hIcon = GetJumboIcon(GetIconIndex(path));
+        var fileInfo = GetShellFileInfo(path);
+        var hIcon = GetJumboIcon(fileInfo.IconIndex);
         if (hIcon is null)
         {
             return null;

@@ -62,6 +62,7 @@
                 <Image Source="{Binding Image}" 
                        Stretch="Uniform" 
                        MaxHeight="{Binding ImageMaxHeight}"
+                       SnapsToDevicePixels="True"
                        RenderOptions.BitmapScalingMode="Fant">
                     <Image.OpacityMask>
                         <VisualBrush Visual="{Binding ElementName=ImageMask}"/>
