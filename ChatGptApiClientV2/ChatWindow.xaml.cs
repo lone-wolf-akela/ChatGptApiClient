@@ -106,21 +106,6 @@ public partial class ChatWindow
         return null;
     }
 
-    private static ListBox? FindListBoxInTabItem(TabControl tabControl, int tabIndex, string listBoxName)
-    {
-        if (tabIndex < 0 || tabIndex >= tabControl.Items.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(tabIndex));
-        }
-
-        if (tabControl.Items[tabIndex] is TabItem { IsLoaded: true } tabItem)
-        {
-            return FindChild<ListBox>(tabItem, listBoxName);
-        }
-
-        return null;
-    }
-
     private static T? FindChild<T>(DependencyObject? parent, string childName) where T : DependencyObject
     {
         if (parent == null) { return null; }
@@ -145,7 +130,7 @@ public partial class ChatWindow
 
     private void ScrollToEnd(int tabIndex)
     {
-        var lstBox = FindListBoxInTabItem(TabMsg, tabIndex, "LstMsg");
+        var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
         if (lstBox is null)
         {
             return;
@@ -191,7 +176,7 @@ public partial class ChatWindow
     private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
         var tabIndex = TabMsg.SelectedIndex;
-        var lstBox = FindListBoxInTabItem(TabMsg, tabIndex, "LstMsg");
+        var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
         if (lstBox is null)
         {
             return;

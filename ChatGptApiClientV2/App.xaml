@@ -222,15 +222,19 @@
                                     <RowDefinition x:Name="RowDefinition1" Height="*" />
                                 </Grid.RowDefinitions>
                                 <DockPanel Grid.Column="0" Grid.Row="0">
+                                    <TabPanel x:Name="headerPanel" Background="Transparent" IsItemsHost="true" Margin="0,5,0,0" DockPanel.Dock="Left"/>
                                     <Button x:Name="AddBtn"
-                                            DockPanel.Dock="Right"
+                                            DockPanel.Dock="Left"
                                             FontFamily="./font/#Segoe Fluent Icons"
                                             Content="&#xe710;"
-                                            Height="auto"
-                                            Width="40"
+                                            Height="30"
+                                            Width="35"
+                                            VerticalAlignment="Bottom"
+                                            hc:BorderElement.CornerRadius="5,5,0,0"
+                                            BorderThickness="1,1,1,0"
                                             Margin="5,0,5,0"
                                             Command="{Binding Path=(local:TabControlHelper.AddTabCommand), RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"/>
-                                    <TabPanel x:Name="headerPanel" Background="Transparent" IsItemsHost="true" Margin="0"/>
+                                    <hc:SimplePanel/>
                                 </DockPanel>
                                 <Border x:Name="contentPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{DynamicResource BorderBrush}" Background="{TemplateBinding Background}" Grid.Column="0" Grid.Row="1">
                                     <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" Margin="0" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
@@ -262,6 +266,64 @@
                                     <Setter TargetName="headerPanel" Property="Grid.Row" Value="0" />
                                     <Setter TargetName="contentPanel" Property="Grid.Column" Value="0" />
                                     <Setter TargetName="contentPanel" Property="Grid.Row" Value="0" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="TopRoundTabItemStyle" TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <hc:SimplePanel x:Name="templateRoot" 
+                                            SnapsToDevicePixels="true"
+                                            Margin="0">
+                                <Border x:Name="mainBorder" 
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1,1,1,0" 
+                                        CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
+                                        Background="{TemplateBinding Background}" 
+                                        Margin="0">
+                                    <Border x:Name="bottomLine"
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            Background="Transparent" 
+                                            Margin="0"/>
+                                </Border>
+                                <ContentPresenter x:Name="contentPresenter" 
+                                                  TextElement.Foreground="{DynamicResource PrimaryTextBrush}" 
+                                                  ContentSource="Header" 
+                                                  Focusable="False"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}" 
+                                                  RecognizesAccessKey="True" 
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                  VerticalAlignment="Center"/>
+                            </hc:SimplePanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="False">
+                                    <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,0" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.4" TargetName="contentPresenter" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Panel.ZIndex" Value="1" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryBrush}" TargetName="contentPresenter" />
+                                    <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,2" />
+                                    <Setter Property="LayoutTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="1.1"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleY="1.1"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="RenderTransformOrigin" Value="0.5,1"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

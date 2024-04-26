@@ -60,6 +60,7 @@ public static class TabControlHelper
         return (ICommand)element.GetValue(AddTabCommandProperty);
     }
 }
+
 public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -90,11 +91,10 @@ public class BorderClipConverter : MarkupExtension, IMultiValueConverter
             return Geometry.Empty;
         }
 
-        var clip = Utils.CreateRoundedRectangleGeometry(width, height, radius);
+        var clip = Utils.CreateRoundedRectangleGeometry(width, height, radius, new Thickness(0));
         clip.Freeze();
 
         return clip;
-
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
@@ -235,28 +235,28 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
 
 public static partial class Utils
 {
-    public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius)
+    public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius, Thickness thickness)
     {
         var geometry = new StreamGeometry();
 
         using var context = geometry.Open();
-        context.BeginFigure(new Point(radius.TopLeft, 0), true, true);
+        context.BeginFigure(new Point(radius.TopLeft + thickness.Left, thickness.Top), true, true);
 
         // Top side and top-right corner
-        context.LineTo(new Point(width - radius.TopRight, 0), true, false);
-        context.ArcTo(new Point(width, radius.TopRight), new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise, true, false);
+        context.LineTo(new Point(width - radius.TopRight - thickness.Right, 0), true, false);
+        context.ArcTo(new Point(width - thickness.Right, radius.TopRight + thickness.Top), new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise, true, false);
 
         // Right side and bottom-right corner
-        context.LineTo(new Point(width, height - radius.BottomRight), true, false);
-        context.ArcTo(new Point(width - radius.BottomRight, height), new Size(radius.BottomRight, radius.BottomRight), 0, false, SweepDirection.Clockwise, true, false);
+        context.LineTo(new Point(width - thickness.Right, height - radius.BottomRight - thickness.Bottom), true, false);
+        context.ArcTo(new Point(width - radius.BottomRight - thickness.Right, height - thickness.Bottom), new Size(radius.BottomRight, radius.BottomRight), 0, false, SweepDirection.Clockwise, true, false);
 
         // Bottom side and bottom-left corner
-        context.LineTo(new Point(radius.BottomLeft, height), true, false);
-        context.ArcTo(new Point(0, height - radius.BottomLeft), new Size(radius.BottomLeft, radius.BottomLeft), 0, false, SweepDirection.Clockwise, true, false);
+        context.LineTo(new Point(radius.BottomLeft + thickness.Left, height - thickness.Bottom), true, false);
+        context.ArcTo(new Point(thickness.Left, height - radius.BottomLeft - thickness.Bottom), new Size(radius.BottomLeft, radius.BottomLeft), 0, false, SweepDirection.Clockwise, true, false);
 
         // Left side and top-left corner
-        context.LineTo(new Point(0, radius.TopLeft), true, false);
-        context.ArcTo(new Point(radius.TopLeft, 0), new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise, true, false);
+        context.LineTo(new Point(thickness.Left, radius.TopLeft + thickness.Top), true, false);
+        context.ArcTo(new Point(radius.TopLeft + thickness.Left, thickness.Top), new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise, true, false);
 
         return geometry;
     }

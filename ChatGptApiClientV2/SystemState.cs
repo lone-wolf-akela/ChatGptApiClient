@@ -426,6 +426,10 @@ public partial class SystemState : ObservableObject
     }
     public async Task UserSendText(string text, IEnumerable<string> files, int sessionIndex, CancellationToken cancellationToken = default)
     {
+        if (sessionIndex >= SessionList.Count)
+        {
+            SessionList.AddRange(Enumerable.Repeat<ChatCompletionRequest?>(null, sessionIndex - SessionList.Count + 1));
+        }
         SessionList[sessionIndex] ??= await ResetSession(sessionIndex);
         var selectedSession = SessionList[sessionIndex];
 
