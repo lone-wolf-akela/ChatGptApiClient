@@ -115,7 +115,7 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -151,8 +151,8 @@ public class DalleImageGenFunc : IToolFunction
             _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY)
         };
 
-        state.NewMessage(RoleType.Tool);
-        state.StreamText("生成中...\n\n");
+        state.NewMessage(RoleType.Tool, sessionIndex);
+        state.StreamText("生成中...\n\n", sessionIndex);
 
         var requestbody = new Request
         {
@@ -214,15 +214,15 @@ public class DalleImageGenFunc : IToolFunction
 
              Revised Prompts: {responseData?["revised_prompt"]}
              """;
-        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
-        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
+        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
+        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
         msg.Hidden = true; // Hide success results from user
         result.ResponeRequired = false;
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -263,8 +263,8 @@ public class DalleImageGenFunc : IToolFunction
 
         yield return paragraph;
 
-        var imagedata = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedata"][0];
-        var imagedesc = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imagedesc"][0];
+        var imagedata = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedata"][0];
+        var imagedesc = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedesc"][0];
         var image = new ImageDisplayer
         {
             Image = Utils.Base64ToBitmapImage(imagedata),

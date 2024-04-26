@@ -65,7 +65,7 @@ public class BingSearchFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -116,8 +116,8 @@ public class BingSearchFunc : IToolFunction
             where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-        state.NewMessage(RoleType.Tool);
-        state.StreamText($"Bing Searching: {args.Query}\n\n");
+        state.NewMessage(RoleType.Tool, sessionIndex);
+        state.StreamText($"Bing Searching: {args.Query}\n\n", sessionIndex);
 
         var request = new HttpRequestMessage
         {
@@ -172,7 +172,7 @@ public class BingSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);

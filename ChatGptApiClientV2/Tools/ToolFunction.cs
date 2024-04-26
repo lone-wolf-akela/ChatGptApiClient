@@ -65,8 +65,8 @@ public interface IToolFunction
         public ToolMessage Message { get; set; } = msg;
         public bool ResponeRequired { get; set; } = responeRequired;
     }
-    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default);
-    IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId);
+    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default);
+    IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId);
     public ChatCompletionRequest.ToolType GetToolRequest() => new()
     {
         Function = new ChatCompletionRequest.ToolType.FunctionType

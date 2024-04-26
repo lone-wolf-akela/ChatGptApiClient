@@ -27,6 +27,7 @@ using System.Windows.Media.Imaging;
 using System.Diagnostics;
 using Microsoft.Win32;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ChatGptApiClientV2;
 
@@ -104,9 +105,52 @@ public partial class ChatWindow
         }
         return null;
     }
-    private void ScrollToEnd()
+
+    private static ListBox? FindListBoxInTabItem(TabControl tabControl, int tabIndex, string listBoxName)
     {
-        var scrollViewer = GetScrollViewer(LstMsg);
+        if (tabIndex < 0 || tabIndex >= tabControl.Items.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(tabIndex));
+        }
+
+        if (tabControl.Items[tabIndex] is TabItem { IsLoaded: true } tabItem)
+        {
+            return FindChild<ListBox>(tabItem, listBoxName);
+        }
+
+        return null;
+    }
+
+    private static T? FindChild<T>(DependencyObject? parent, string childName) where T : DependencyObject
+    {
+        if (parent == null) { return null; }
+
+        T? foundChild = null;
+        var childrenCount = VisualTreeHelper.GetChildrenCount(parent);
+
+        for (var i = 0; i < childrenCount; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T childType and FrameworkElement frameworkElement && frameworkElement.Name == childName)
+            {
+                foundChild = childType;
+                break;
+            }
+            foundChild = FindChild<T>(child, childName);
+            if (foundChild != null) { break; }
+        }
+
+        return foundChild;
+    }
+
+    private void ScrollToEnd(int tabIndex)
+    {
+        var lstBox = FindListBoxInTabItem(TabMsg, tabIndex, "LstMsg");
+        if (lstBox is null)
+        {
+            return;
+        }
+        var scrollViewer = GetScrollViewer(lstBox);
         scrollViewer?.UpdateLayout();
         scrollViewer?.ScrollToEnd();
     }
@@ -146,7 +190,13 @@ public partial class ChatWindow
     private const string SaveScreenshotDialogGuid = "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
     private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
-        var scrollViewer = GetScrollViewer(LstMsg);
+        var tabIndex = TabMsg.SelectedIndex;
+        var lstBox = FindListBoxInTabItem(TabMsg, tabIndex, "LstMsg");
+        if (lstBox is null)
+        {
+            return;
+        }
+        var scrollViewer = GetScrollViewer(lstBox);
         if (scrollViewer is null) { return; }
 
         var dpi = VisualTreeHelper.GetDpi(this);

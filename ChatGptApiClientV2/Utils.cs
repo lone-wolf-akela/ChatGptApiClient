@@ -37,10 +37,29 @@ using SharpToken;
 using System.Windows.Interop;
 using System.Threading;
 using System.Windows.Media;
+using System.Windows.Controls;
+using System.Windows.Input;
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
+public static class TabControlHelper
+{
+    public static readonly DependencyProperty AddTabCommandProperty = DependencyProperty.RegisterAttached(
+        "AddTabCommand",
+        typeof(ICommand),
+        typeof(TabControlHelper),
+        new PropertyMetadata(null));
 
+    public static void SetAddTabCommand(UIElement element, ICommand value)
+    {
+        element.SetValue(AddTabCommandProperty, value);
+    }
+
+    public static ICommand GetAddTabCommand(UIElement element)
+    {
+        return (ICommand)element.GetValue(AddTabCommandProperty);
+    }
+}
 public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -102,6 +121,27 @@ public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
         if (value is Visibility v)
         {
             return v == Visibility.Visible ? 0 : 1;
+        }
+        return 0;
+    }
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
+public class Int2BoolConverter : MarkupExtension, IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int i)
+        {
+            return i != 0;
+        }
+        return false;
+    }
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool b)
+        {
+            return b ? 1 : 0;
         }
         return 0;
     }

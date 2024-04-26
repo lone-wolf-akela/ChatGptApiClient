@@ -20,6 +20,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:hc="https://handyorg.github.io/handycontrol"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             xmlns:local="clr-namespace:ChatGptApiClientV2"
              StartupUri="ChatWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -206,6 +207,66 @@
                         <Setter Property="Template" Value="{StaticResource ComboBoxEditableTemplate}"/>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+            <Style x:Key="TabControlWithAddBtn" TargetType="TabControl" BasedOn="{StaticResource TabControlBaseStyle}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid x:Name="templateRoot" Background="{TemplateBinding Background}" ClipToBounds="true" SnapsToDevicePixels="true">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ColumnDefinition0" />
+                                    <ColumnDefinition x:Name="ColumnDefinition1" Width="0" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition x:Name="RowDefinition0" Height="Auto" />
+                                    <RowDefinition x:Name="RowDefinition1" Height="*" />
+                                </Grid.RowDefinitions>
+                                <DockPanel Grid.Column="0" Grid.Row="0">
+                                    <Button x:Name="AddBtn"
+                                            DockPanel.Dock="Right"
+                                            FontFamily="./font/#Segoe Fluent Icons"
+                                            Content="&#xe710;"
+                                            Height="auto"
+                                            Width="40"
+                                            Margin="5,0,5,0"
+                                            Command="{Binding Path=(local:TabControlHelper.AddTabCommand), RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"/>
+                                    <TabPanel x:Name="headerPanel" Background="Transparent" IsItemsHost="true" Margin="0"/>
+                                </DockPanel>
+                                <Border x:Name="contentPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{DynamicResource BorderBrush}" Background="{TemplateBinding Background}" Grid.Column="0" Grid.Row="1">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" Margin="0" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="TabStripPlacement" Value="Bottom">
+                                    <Setter TargetName="RowDefinition0" Property="Height" Value="*" />
+                                    <Setter TargetName="RowDefinition1" Property="Height" Value="Auto" />
+                                    <Setter TargetName="headerPanel" Property="Grid.Row" Value="1" />
+                                    <Setter TargetName="contentPanel" Property="Grid.Row" Value="0" />
+                                </Trigger>
+                                <Trigger Property="TabStripPlacement" Value="Left">
+                                    <Setter TargetName="RowDefinition0" Property="Height" Value="*" />
+                                    <Setter TargetName="RowDefinition1" Property="Height" Value="0" />
+                                    <Setter TargetName="ColumnDefinition0" Property="Width" Value="Auto" />
+                                    <Setter TargetName="ColumnDefinition1" Property="Width" Value="*" />
+                                    <Setter TargetName="headerPanel" Property="Grid.Column" Value="0" />
+                                    <Setter TargetName="headerPanel" Property="Grid.Row" Value="0" />
+                                    <Setter TargetName="contentPanel" Property="Grid.Column" Value="1" />
+                                    <Setter TargetName="contentPanel" Property="Grid.Row" Value="0" />
+                                </Trigger>
+                                <Trigger Property="TabStripPlacement" Value="Right">
+                                    <Setter TargetName="RowDefinition0" Property="Height" Value="*" />
+                                    <Setter TargetName="RowDefinition1" Property="Height" Value="0" />
+                                    <Setter TargetName="ColumnDefinition0" Property="Width" Value="*" />
+                                    <Setter TargetName="ColumnDefinition1" Property="Width" Value="Auto" />
+                                    <Setter TargetName="headerPanel" Property="Grid.Column" Value="1" />
+                                    <Setter TargetName="headerPanel" Property="Grid.Row" Value="0" />
+                                    <Setter TargetName="contentPanel" Property="Grid.Column" Value="0" />
+                                    <Setter TargetName="contentPanel" Property="Grid.Row" Value="0" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
             <Geometry x:Key="StraightBubbleTailGeometry">M-6.5253045E-55,0 L29.9,0.2 29.9,0.066666668 C33,15.466667 38.166667,23.1 44.966667,35 L44.966667,35.133333 C25.766667,28.433333 7.35,15.625 -6.5253045E-55,0 z</Geometry>
         </ResourceDictionary>

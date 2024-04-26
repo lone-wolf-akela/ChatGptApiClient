@@ -225,11 +225,11 @@ public partial class SystemState : ObservableObject
         /*** end setup initial prompts ***/
     }
 
-    public ChatCompletionRequest? CurrentSession { get; private set; }
+    public List<ChatCompletionRequest?> SessionList { get; } = [];
 
-    public delegate Task ChatSessionChangedHandler(ChatCompletionRequest session);
+    public delegate Task ChatSessionChangedHandler(ChatCompletionRequest session, int sessionIndex);
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
-    private async Task<ChatCompletionRequest> ResetSession(ChatCompletionRequest? loadedSession = null)
+    private async Task<ChatCompletionRequest> ResetSession(int sessionIndex, ChatCompletionRequest? loadedSession = null)
     {
         loadedSession ??= BuildFromInitPrompts(
             InitialPrompts?.SelectedOption?.Messages,
@@ -237,43 +237,49 @@ public partial class SystemState : ObservableObject
             Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Claude" : "ChatGPT",
             Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Anthropic" : "OpenAI"
             );
-        CurrentSession = loadedSession;
+
+        if (sessionIndex >= SessionList.Count)
+        {
+            SessionList.AddRange(Enumerable.Repeat<ChatCompletionRequest?>(null, sessionIndex - SessionList.Count + 1));
+        }
+
+        SessionList[sessionIndex] = loadedSession;
 
         if (ChatSessionChangedEvent is not null)
         {
-            await ChatSessionChangedEvent.Invoke(CurrentSession);
+            await ChatSessionChangedEvent.Invoke(loadedSession, sessionIndex);
         }
 
-        await SaveSessionToPath("./latest_session.json");
+        await SaveSessionToPath(sessionIndex, "./latest_session.json");
 
-        return CurrentSession;
+        return loadedSession;
     }
 
     private static readonly Random Random = new();
 
-    public delegate void NewMessageHandler(RoleType role);
-    public delegate void StreamTextHandler(string text);
-    public delegate void SetStreamProgressHandler(double progress, string text);
+    public delegate void NewMessageHandler(RoleType role, int sessionIndex);
+    public delegate void StreamTextHandler(string text, int sessionIndex);
+    public delegate void SetStreamProgressHandler(double progress, string text, int sessionIndex);
     public event NewMessageHandler? NewMessageEvent;
     public event StreamTextHandler? StreamTextEvent;
     public event SetStreamProgressHandler? SetStreamProgressEvent;
-    public void NewMessage(RoleType role)
+    public void NewMessage(RoleType role, int sessionIndex)
     {
-        NewMessageEvent?.Invoke(role);
+        NewMessageEvent?.Invoke(role, sessionIndex);
     }
-    public void StreamText(string text)
+    public void StreamText(string text, int sessionIndex)
     {
-        StreamTextEvent?.Invoke(text);
+        StreamTextEvent?.Invoke(text, sessionIndex);
     }
-    public void SetStreamProgress(double progress, string text)
+    public void SetStreamProgress(double progress, string text, int sessionIndex)
     {
-        SetStreamProgressEvent?.Invoke(progress, text);
+        SetStreamProgressEvent?.Invoke(progress, text, sessionIndex);
     }
-    private async Task Send(CancellationToken cancellationToken = default)
+    private async Task Send(int sessionIndex, CancellationToken cancellationToken = default)
     {
         var selectedModelType = Config.SelectedModelType ?? throw new InvalidOperationException($"{nameof(Config.SelectedModelType)} is null.");
         var selectedModel = Config.SelectedModel ?? throw new InvalidOperationException($"{nameof(Config.SelectedModel)} is null.");
-        var chatRequest = CurrentSession ?? throw new InvalidOperationException($"{nameof(CurrentSession)} is null.");
+        var chatRequest = SessionList[sessionIndex] ?? throw new InvalidOperationException("selected session is null.");
 
         ServerEndpointOptions.ServiceType service;
         string endpointUrl;
@@ -355,7 +361,7 @@ public partial class SystemState : ObservableObject
         }
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
-        NewMessage(RoleType.Assistant);
+        NewMessage(RoleType.Assistant, sessionIndex);
 
         try
         {
@@ -370,14 +376,14 @@ public partial class SystemState : ObservableObject
                 {
                     continue;
                 }
-                StreamText(sb.ToString());
+                StreamText(sb.ToString(), sessionIndex);
                 sb.Clear();
                 NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
                 lastUpdateTime = DateTime.Now;
                 // need this to make sure the UI is updated
                 Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render, cancellationToken);
             }
-            StreamText(sb.ToString());
+            StreamText(sb.ToString(), sessionIndex);
             NetStatus.Status = NetStatus.StatusEnum.Idle;
             NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
         }
@@ -386,7 +392,7 @@ public partial class SystemState : ObservableObject
             NetStatus.Status = NetStatus.StatusEnum.Idle;
         }
         var newAssistantMsg = endpoint.ResponseMessage;
-        CurrentSession.Messages.Add(newAssistantMsg);
+        chatRequest.Messages.Add(newAssistantMsg);
 
         // long streaming can create a lot of small objects, so we force a GC here to help reduce memory usage
         GC.Collect();
@@ -394,15 +400,15 @@ public partial class SystemState : ObservableObject
         var responseRequired = false;
         foreach (var toolcall in endpoint.ToolCalls)
         {
-            await ResetSession(CurrentSession);
+            await ResetSession(sessionIndex, chatRequest);
             var pluginName = toolcall.Function.Name;
             var args = toolcall.Function.Arguments;
             var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
             try
             {
-                var toolResult = await plugin.Action(this, toolcall.Id, args, cancellationToken);
+                var toolResult = await plugin.Action(this, sessionIndex, toolcall.Id, args, cancellationToken);
                 toolResult.Message.ToolCallId = toolcall.Id;
-                CurrentSession.Messages.Add(toolResult.Message);
+                chatRequest.Messages.Add(toolResult.Message);
                 responseRequired = responseRequired || toolResult.ResponeRequired;
             }
             catch (OperationCanceledException)
@@ -414,13 +420,14 @@ public partial class SystemState : ObservableObject
 
         if (responseRequired)
         {
-            await ResetSession(CurrentSession);
-            await Send(cancellationToken);
+            await ResetSession(sessionIndex, chatRequest);
+            await Send(sessionIndex, cancellationToken);
         }
     }
-    public async Task UserSendText(string text, IEnumerable<string> files, CancellationToken cancellationToken = default)
+    public async Task UserSendText(string text, IEnumerable<string> files, int sessionIndex, CancellationToken cancellationToken = default)
     {
-        CurrentSession ??= await ResetSession();
+        SessionList[sessionIndex] ??= await ResetSession(sessionIndex);
+        var selectedSession = SessionList[sessionIndex];
 
         if (Config.UseRandomSeed)
         {
@@ -472,25 +479,25 @@ public partial class SystemState : ObservableObject
             Attachments = attachments
         };
 
-        CurrentSession.Messages.Add(userMsg);
-        await ResetSession(CurrentSession);
+        selectedSession!.Messages.Add(userMsg);
+        await ResetSession(sessionIndex, selectedSession);
 
-        await Send(cancellationToken);
+        await Send(sessionIndex, cancellationToken);
 
-        await ResetSession(CurrentSession);
+        await ResetSession(sessionIndex, selectedSession);
     }
-    public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall) =>
+    public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall, int sessionIndex) =>
         PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin)
-            ? plugin.GetToolcallMessage(this, toolcall.Function.Arguments, toolcall.Id)
+            ? plugin.GetToolcallMessage(this, sessionIndex, toolcall.Function.Arguments, toolcall.Id)
             : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
 
-    private async Task SaveSessionToPath(string path)
+    private async Task SaveSessionToPath(int sessionIndex, string path)
     {
-        var savedSession = CurrentSession?.Save();
+        var savedSession = SessionList[sessionIndex]?.Save();
         await File.WriteAllTextAsync(path, savedSession);
     }
     private const string OpenSaveSessionDialogGuid = "32F3FF84-A923-4D69-9ABD-11DC14074AC6";
-    public async Task SaveSession()
+    public async Task SaveSession(int sessionIndex)
     {
         var dlg = new SaveFileDialog
         {
@@ -501,13 +508,13 @@ public partial class SystemState : ObservableObject
         };
         if (dlg.ShowDialog() == true)
         {
-            await SaveSessionToPath(dlg.FileName);
+            await SaveSessionToPath(sessionIndex, dlg.FileName);
         }
     }
 
-    public delegate void SetIsLoadingHandler(bool isLoading);
+    public delegate void SetIsLoadingHandler(bool isLoading, int sessionIndex);
     public event SetIsLoadingHandler? SetIsLoadingHandlerEvent;
-    public async Task LoadSession()
+    public async Task<bool> LoadSession(int sessionIndex)
     {
         var dlg = new OpenFileDialog
         {
@@ -517,10 +524,10 @@ public partial class SystemState : ObservableObject
         };
         if (dlg.ShowDialog() != true)
         {
-            return;
+            return false;
         }
 
-        SetIsLoadingHandlerEvent?.Invoke(true);
+        SetIsLoadingHandlerEvent?.Invoke(true, sessionIndex);
 
         var savedJson = await File.ReadAllTextAsync(dlg.FileName);
 
@@ -559,22 +566,27 @@ public partial class SystemState : ObservableObject
 
         if (loadedSession is not null)
         {
-            await ResetSession(loadedSession);
+            await ResetSession(sessionIndex, loadedSession);
         }
-        SetIsLoadingHandlerEvent?.Invoke(false);
+        SetIsLoadingHandlerEvent?.Invoke(false, sessionIndex);
+        return true;
     }
-    public async Task ClearSession()
+    public async Task ClearSession(int sessionIndex)
     {
-        await ResetSession();
+        await ResetSession(sessionIndex);
     }
-    public async Task RefreshSession()
+    public async Task RefreshSession(int sessionIndex)
     {
-        await ResetSession(CurrentSession);
+        await ResetSession(sessionIndex, SessionList[sessionIndex]);
     }
 
-    public int GetSessionTokens()
+    public int GetSessionTokens(int sessionIndex)
     {
-        var count = CurrentSession?.CountTokens() ?? 0;
+        if (sessionIndex >= SessionList.Count || sessionIndex < 0)
+        {
+            return 0;
+        }
+        var count = SessionList[sessionIndex]?.CountTokens() ?? 0;
         return count;
     }
 }

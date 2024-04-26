@@ -126,7 +126,7 @@ public class PythonFunc : IToolFunction
             }
         }
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -196,7 +196,7 @@ public class PythonFunc : IToolFunction
         }
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -285,7 +285,7 @@ public class ShowImageFunc : IToolFunction
         public string FileName { get; set; } = "";
     }
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -332,13 +332,13 @@ public class ShowImageFunc : IToolFunction
         }
         msgContents[0].Text += "Image successfully displayed.";
         var imageUrl = await Utils.ImageFileToBase64(filePath, cancellationToken);
-        state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
-        state.CurrentSession.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
+        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
+        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
         result.ResponeRequired = false;
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(new Run("显示图片..."));
@@ -347,8 +347,8 @@ public class ShowImageFunc : IToolFunction
         BlockUIContainer? imageBlock = null;
         try
         {
-            var imageUrl = state.CurrentSession!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
-            var imageFileName = state.CurrentSession.PluginData[$"{Name}_{toolcallId}_filename"][0];
+            var imageUrl = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
+            var imageFileName = state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_filename"][0];
             var image = new ImageDisplayer
             {
                 FileName = imageFileName,

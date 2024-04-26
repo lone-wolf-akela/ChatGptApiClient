@@ -68,7 +68,7 @@ public class GoogleSearchFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -121,8 +121,8 @@ public class GoogleSearchFunc : IToolFunction
             where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-        state.NewMessage(RoleType.Tool);
-        state.StreamText($"Google Searching: {args.Query}\n\n");
+        state.NewMessage(RoleType.Tool, sessionIndex);
+        state.StreamText($"Google Searching: {args.Query}\n\n", sessionIndex);
 
         var request = new HttpRequestMessage
         {
@@ -151,7 +151,7 @@ public class GoogleSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -208,7 +208,7 @@ public class WebsiteAccessFunc : IToolFunction
     public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -238,8 +238,8 @@ public class WebsiteAccessFunc : IToolFunction
             return result;
         }
 
-        state.NewMessage(RoleType.Tool);
-        state.StreamText($"Accessing: {args.Url}\n\n");
+        state.NewMessage(RoleType.Tool, sessionIndex);
+        state.StreamText($"Accessing: {args.Url}\n\n", sessionIndex);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         try
@@ -288,7 +288,7 @@ public class WebsiteAccessFunc : IToolFunction
             if (content.Length > ContentPageLimit)
             {
                 var contentRemained = content[ContentPageLimit..];
-                state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
+                state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
                 content = content[..ContentPageLimit];
                 content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
             }
@@ -305,7 +305,7 @@ public class WebsiteAccessFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -364,7 +364,7 @@ public class WebsiteNextPageFunc : IToolFunction
     }
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolResult> Action(SystemState state, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -392,13 +392,13 @@ public class WebsiteNextPageFunc : IToolFunction
             return Task.FromResult(result);
         }
 
-        state.NewMessage(RoleType.Tool);
-        state.StreamText("Accessing the next page...\n\n");
+        state.NewMessage(RoleType.Tool, sessionIndex);
+        state.StreamText("Accessing the next page...\n\n", sessionIndex);
 
         string? content;
         try
         {
-            content = state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0];
+            content = state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0];
         }
         catch (KeyNotFoundException)
         {
@@ -415,20 +415,20 @@ public class WebsiteNextPageFunc : IToolFunction
         if (content.Length > ContentPageLimit)
         {
             var contentRemained = content[ContentPageLimit..];
-            state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
+            state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
             content = content[..ContentPageLimit];
             content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
         }
         else
         {
-            state.CurrentSession!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
+            state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
         }
         msgContents[0].Text += $"Content: {content}";
         msg.Hidden = true; // Hide success results from user
         return Task.FromResult(result);
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
         List<string> stickers = [
             "紬_急急急.png",
