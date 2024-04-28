@@ -27,6 +27,7 @@
            xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
            mc:Ignorable="d" Icon="/chatgpt-icon.ico"
            Title="ChatWindow" Height="600" Width="1000"
+           MouseDown="Window_MouseDown"
            Loaded="Window_Loaded">
     <d:Window.DataContext>
         <local:ChatWindowViewModel/>
@@ -34,12 +35,15 @@
     <FrameworkElement.CommandBindings>
         <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
     </FrameworkElement.CommandBindings>
-    <Grid Margin="10,10,10,0">
+    <Grid x:Name="MainGird" Margin="10,10,10,0" Focusable="True">
         <Grid.LayoutTransform>
             <ScaleTransform ScaleX="{Binding State.Config.UiScale}" ScaleY="{Binding State.Config.UiScale}"/>
         </Grid.LayoutTransform>
         <Grid.InputBindings>
             <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding SendCommand}"/>
+            <KeyBinding Key="F2" Command="{Binding SelectedTabEnterEditTitleModeCommand}"/>
+            <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding CloseCurrentTabCommand}"/>
+            <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding CreateTabCommand}"/>
         </Grid.InputBindings>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -313,24 +317,15 @@
                     </ListBox>
                     <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
                 </StackPanel>
-                <hc:SimplePanel>
-                    <TextBox x:Name="TxtInput" 
+                <hc:TextBox x:Name="TxtInput" 
                              Text="{Binding TextInput, UpdateSourceTrigger=PropertyChanged}"
                              FontFamily="Segoe UI, Microsoft YaHei UI"
                              VerticalContentAlignment="Top" 
                              TextWrapping="WrapWithOverflow" 
                              AcceptsReturn="True" 
                              VerticalScrollBarVisibility="Auto" 
-                             Padding="5"/>
-                    <TextBlock Text="在此输入对话内容" 
-                               FontFamily="Segoe UI, Microsoft YaHei UI" 
-                               Foreground="Gray" 
-                               Visibility="{Binding Text.Length, ElementName=TxtInput, Converter={local:Int2VisibilityReConverter}}" 
-                               VerticalAlignment="Top" 
-                               TextWrapping="WrapWithOverflow"
-                               IsHitTestVisible="False"
-                               Margin="{Binding Padding, ElementName=TxtInput}"/>
-                </hc:SimplePanel>
+                             Padding="5"
+                             hc:InfoElement.Placeholder="在此输入对话内容"/>
             </DockPanel>
         </DockPanel>
         <Border Grid.Row="1" 
@@ -344,7 +339,8 @@
                             Style="{StaticResource TabControlWithAddBtn}"
                             SelectedIndex="{Binding SelectedTabIndex}"
                             ItemsSource="{Binding ChatWindowMessageTabs}"
-                            local:TabControlHelper.AddTabCommand="{Binding CreateTabCommand}">
+                            local:TabControlHelper.AddTabCommand="{Binding CreateTabCommand}"
+                            local:TabControlHelper.AddTabBtnTooltip="打开新标签页 (Ctrl + T)">
                 <TabControl.ItemContainerStyle>
                     <Style TargetType="TabItem" BasedOn="{StaticResource TopRoundTabItemStyle}">
                         <Setter Property="hc:BorderElement.CornerRadius" Value="5,5,0,0"/>
@@ -363,26 +359,62 @@
                                               Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
                                               CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"/>
                             </Border.InputBindings>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
-                                <Button Content="&#xe711;" 
-                                        FontFamily="./font/#Segoe Fluent Icons" 
-                                        Margin="3,0,-5,0"
-                                        BorderThickness="0"
-                                        Padding="0"
-                                        Height="20"
-                                        Width="20"
-                                        ToolTip="关闭标签页"
-                                        Style="{StaticResource ButtonCustom}"
-                                        Background="Transparent"
-                                        FontWeight="Bold"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        hc:BackgroundSwitchElement.MouseHoverBackground="Gray"
-                                        hc:BorderElement.CornerRadius="5"
-                                        Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
-                                        CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"/>
-                            </StackPanel>
+                            <Border.ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="重命名标签页"
+                                              InputGestureText="F2"
+                                              Command="{Binding DataContext.EnterEditingTitleModeCommand}">
+                                        <MenuItem.Icon>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe8ac;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="关闭标签页"
+                                              InputGestureText="Ctrl + W"
+                                              Command="{Binding  DataContext.CloseTabCommand, Source={x:Reference TabMsg}}"
+                                              CommandParameter="{Binding DataContext}"
+                                    >
+                                        <MenuItem.Icon>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe711;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            <hc:SimplePanel>
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                                    <TextBlock Text="{Binding Title}" 
+                                               VerticalAlignment="Center"
+                                               TextTrimming="WordEllipsis"
+                                               MaxWidth="120"/>
+                                    <Button Content="&#xe711;" 
+                                            FontFamily="./font/#Segoe Fluent Icons" 
+                                            Margin="3,0,-5,0"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            Height="20"
+                                            Width="20"
+                                            ToolTip="关闭标签页"
+                                            Style="{StaticResource ButtonCustom}"
+                                            Background="Transparent"
+                                            FontWeight="Bold"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            hc:BackgroundSwitchElement.MouseHoverBackground="Gray"
+                                            hc:BorderElement.CornerRadius="5"
+                                            Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
+                                            CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"/>
+                                </StackPanel>
+                                <TextBox Text="{Binding Title}"
+                                         Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                         VerticalAlignment="Center" 
+                                         IsVisibleChanged="TabTitleEditorTextBox_IsVisibleChanged">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding ConfirmEditingTitleModeCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
+                            </hc:SimplePanel>
+                            
                         </Border>
                     </DataTemplate>
                 </TabControl.ItemTemplate>

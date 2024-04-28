@@ -193,11 +193,11 @@
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxApikey" Text="{Binding Path=Config.API_KEY, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.API_KEY, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxAzureApikey" Text="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="5,0,0,0" >
@@ -245,7 +245,7 @@
                     <StackPanel Grid.Column="2" Margin="5,0,0,0" >
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxAnthropicApikey" Text="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                 </Grid>
@@ -260,25 +260,25 @@
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxGooglesearchEngineid" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxGooglesearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxAzureDalleId" TextWrapping="Wrap" Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="5,0,0,0">
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxBingsearchKey" TextWrapping="Wrap" Text="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxWolframKey" TextWrapping="Wrap" Text="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" VerticalAlignment="Center"/>
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="170" Content="Python 解释器" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>

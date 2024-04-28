@@ -563,10 +563,38 @@ public partial class ChatWindowMessage : ObservableObject
     };
 }
 
-public partial class ChatWindowMessageTab(string headerStr) : ObservableObject
+public partial class ChatWindowMessageTab : ObservableObject
 {
+    public static bool IsEmptyTab(ChatWindowMessageTab? tab)
+    {
+        return tab is null || (tab.Messages.Count == 0 && !tab.UserHasGivenTitle);
+    }
+
+    private static int totalTabIndexCount;
+    private readonly int assignedTabIndex = ++totalTabIndexCount;
+    private string? title;
+    public string? Title
+    {
+        get => title ?? $"对话 {assignedTabIndex}";
+        set => SetProperty(ref title, value);
+    }
+    public bool UserHasGivenTitle => title is not null;
     [ObservableProperty]
-    private string title = headerStr;
+    private bool isEditingTitle;
+    [RelayCommand]
+    private void EnterEditingTitleMode()
+    {
+        IsEditingTitle = true;
+    }
+    [RelayCommand]
+    private void ConfirmEditingTitleMode()
+    {
+        IsEditingTitle = false;
+        if (syncedSession is not null)
+        {
+            syncedSession.Title = Title;
+        }
+    }
     [ObservableProperty]
     private bool isLoading;
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
@@ -610,6 +638,14 @@ public partial class ChatWindowMessageTab(string headerStr) : ObservableObject
     {
         Messages.Clear();
         syncedSession = session;
+        if (UserHasGivenTitle)
+        {
+            session.Title = Title;
+        }
+        else
+        {
+            Title = session.Title;
+        }
         foreach (var msg in session.Messages)
         {
             if (msg.Hidden)
@@ -730,6 +766,14 @@ public partial class ChatWindowMessageTab(string headerStr) : ObservableObject
 
         return doc;
     }
+    public void Reset()
+    {
+        syncedSession = null;
+        Title = null;
+        IsEditingTitle = false;
+        IsLoading = false;
+        Messages.Clear();
+    }
 }
 
 /// <summary>
@@ -757,7 +801,7 @@ public partial class ChatWindowViewModel : ObservableObject
     [RelayCommand]
     private void CreateTab()
     {
-        ChatWindowMessageTabs.Add(new ChatWindowMessageTab($"新对话 {ChatWindowMessageTabs.Count + 1}"));
+        ChatWindowMessageTabs.Add(new ChatWindowMessageTab());
         SelectedTabIndex = ChatWindowMessageTabs.Count - 1;
     }
     [RelayCommand]
@@ -766,14 +810,27 @@ public partial class ChatWindowViewModel : ObservableObject
         ChatWindowMessageTabs.Remove(tabToClose);
         if (ChatWindowMessageTabs.Count == 0)
         {
-            ChatWindowMessageTabs.Add(new ChatWindowMessageTab("新对话 1"));
+            ChatWindowMessageTabs.Add(new ChatWindowMessageTab());
         }
         if (!IsSelectedTabValid)
         {
             SelectedTabIndex = ChatWindowMessageTabs.Count - 1;
         }
     }
-    public ObservableCollection<ChatWindowMessageTab> ChatWindowMessageTabs { get; } = [new ChatWindowMessageTab("新对话 1")];
+    [RelayCommand]
+    private void CloseCurrentTab()
+    {
+        if (IsSelectedTabValid)
+        {
+            CloseTab(SelectedMessageTab!);
+        }
+    }
+    [RelayCommand]
+    private void SelectedTabEnterEditTitleMode()
+    {
+        SelectedMessageTab?.EnterEditingTitleModeCommand.Execute(null);
+    }
+    public ObservableCollection<ChatWindowMessageTab> ChatWindowMessageTabs { get; } = [new ChatWindowMessageTab()];
     public ChatWindowMessageTab? SelectedMessageTab =>
         IsSelectedTabValid
         ? ChatWindowMessageTabs[SelectedTabIndex]
@@ -867,6 +924,7 @@ public partial class ChatWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task ResetAsync()
     {
+        SelectedMessageTab?.Reset();
         await State.ClearSession(SelectedTabIndex);
     }
 
@@ -882,7 +940,7 @@ public partial class ChatWindowViewModel : ObservableObject
             return;
         }
 
-        ChatWindowMessageTab tempMessages = new("");
+        ChatWindowMessageTab tempMessages = new();
         await tempMessages.SyncChatSession(State.SessionList[SelectedTabIndex]!, SelectedTabIndex, State, State.Config.EnableMarkdown);
         var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
@@ -908,7 +966,7 @@ public partial class ChatWindowViewModel : ObservableObject
     private async Task LoadAsync()
     {
         var newTabCreated = false;
-        if (SelectedMessageTab is not null && SelectedMessageTab.Messages.Count != 0)
+        if (!ChatWindowMessageTab.IsEmptyTab(SelectedMessageTab))
         {
             CreateTab();
             newTabCreated = true;

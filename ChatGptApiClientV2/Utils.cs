@@ -49,15 +49,27 @@ public static class TabControlHelper
         typeof(ICommand),
         typeof(TabControlHelper),
         new PropertyMetadata(null));
-
-    public static void SetAddTabCommand(UIElement element, ICommand value)
+    public static void SetAddTabCommand(UIElement element, ICommand? value)
     {
         element.SetValue(AddTabCommandProperty, value);
     }
-
-    public static ICommand GetAddTabCommand(UIElement element)
+    public static ICommand? GetAddTabCommand(UIElement element)
     {
-        return (ICommand)element.GetValue(AddTabCommandProperty);
+        return element.GetValue(AddTabCommandProperty) as ICommand;
+    }
+
+    public static readonly DependencyProperty AddTabBtnTooltip = DependencyProperty.RegisterAttached(
+        "AddTabBtnTooltip",
+        typeof(object),
+        typeof(TabControlHelper),
+        new PropertyMetadata(null));
+    public static void SetAddTabBtnTooltip(UIElement element, object? value)
+    {
+        element.SetValue(AddTabBtnTooltip, value);
+    }
+    public static object? GetAddTabBtnTooltip(UIElement element)
+    {
+        return element.GetValue(AddTabBtnTooltip);
     }
 }
 

@@ -270,4 +270,19 @@ public partial class ChatWindow
     {
         ((ChatWindowViewModel)DataContext).State.Config.RefreshTheme();
     }
+
+    private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        MainGird.Focus();
+    }
+
+    private void TabTitleEditorTextBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if(e.NewValue is true)
+        {
+            var textBox = (TextBox)sender;
+            textBox.Focus();
+            textBox.SelectAll();
+        }
+    }
 }

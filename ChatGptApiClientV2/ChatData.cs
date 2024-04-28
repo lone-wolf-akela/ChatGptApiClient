@@ -570,6 +570,20 @@ public class ChatCompletionRequest
         public FunctionType Function { get; set; } = new();
     }
     public List<IMessage> Messages { get; set; } = [];
+    private string? title;
+    public string? Title
+    {
+        set => title = value;
+        get
+        {
+            if (title is not null) { return title; }
+            var firstUserMessage = Messages.FirstOrDefault(m => m.Role == RoleType.User);
+            var firstTextContent = firstUserMessage?.Content.FirstOrDefault(c => c.Type == IMessage.ContentCategory.Text) as IMessage.TextContent;
+            var firstLine = firstTextContent?.Text.Trim().Split('\n').FirstOrDefault();
+            var first20Chars = firstLine?[..Math.Min(firstLine.Length, 20)];
+            return first20Chars;
+        }
+    }
 
     public Dictionary<string, List<string>> PluginData { get; set; } = [];
 
