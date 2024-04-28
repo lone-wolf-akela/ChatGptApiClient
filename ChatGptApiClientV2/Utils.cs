@@ -33,12 +33,12 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
-using SharpToken;
 using System.Windows.Interop;
 using System.Threading;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.ML.Tokenizers;
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
@@ -262,12 +262,12 @@ public static partial class Utils
     }
 
 
-    private static GptEncoding? tokenEncoding;
+    private static Tokenizer? gpt4Tokenizer;
     public static int GetStringTokenNum(string str)
     {
-        tokenEncoding ??= GptEncoding.GetEncoding("cl100k_base");
-        var token = tokenEncoding.Encode(str);
-        return token.Count;
+        gpt4Tokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
+        var tokenCount = gpt4Tokenizer.CountTokens(str);
+        return tokenCount;
     }
 
     public static async Task<string> ImageFileToBase64(string filename, CancellationToken cancellationToken = default)
