@@ -40,6 +40,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 // ReSharper disable UnusedParameterInPartialMethod
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
+// ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
 
@@ -560,8 +563,12 @@ public partial class ChatWindowMessage : ObservableObject
     };
 }
 
-public partial class ChatWindowMessageList : ObservableObject
+public partial class ChatWindowMessageTab(string headerStr) : ObservableObject
 {
+    [ObservableProperty]
+    private string title = headerStr;
+    [ObservableProperty]
+    private bool isLoading;
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
     [RelayCommand]
     private void RemoveMessage(ChatWindowMessage msg)
@@ -725,15 +732,6 @@ public partial class ChatWindowMessageList : ObservableObject
     }
 }
 
-public partial class ChatWindowMessageTab(string headerStr) : ObservableObject
-{
-    [ObservableProperty]
-    private string title = headerStr;
-    [ObservableProperty]
-    private bool isLoading;
-    public ChatWindowMessageList Messages { get; } = new();
-}
-
 /// <summary>
 /// ChatWindow.xaml 的交互逻辑
 /// </summary>
@@ -810,7 +808,7 @@ public partial class ChatWindowViewModel : ObservableObject
 
     private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown, int tabIndex)
     {
-        await ChatWindowMessageTabs[tabIndex].Messages.SyncChatSession(session, tabIndex, State, enableMarkdown);
+        await ChatWindowMessageTabs[tabIndex].SyncChatSession(session, tabIndex, State, enableMarkdown);
         ScrollToEndEvent?.Invoke(tabIndex);
 
         PrintCommand.NotifyCanExecuteChanged();
@@ -818,17 +816,17 @@ public partial class ChatWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(SessionTokenNum));
     }
 
-    public int SessionTokenNum => State.GetSessionTokens(SelectedTabIndex) + (SelectedMessageTab?.Messages.GetCurrentStreamTokenNum() ?? 0);
+    public int SessionTokenNum => State.GetSessionTokens(SelectedTabIndex) + (SelectedMessageTab?.GetCurrentStreamTokenNum() ?? 0);
 
     private void AddStreamText(string text, int tabIndex)
     {
-        ChatWindowMessageTabs[tabIndex].Messages.AddStreamText(text);
+        ChatWindowMessageTabs[tabIndex].AddStreamText(text);
         ScrollToEndEvent?.Invoke(tabIndex);
         OnPropertyChanged(nameof(SessionTokenNum));
     }
     private void AddMessage(RoleType role, int tabIndex)
     {
-        ChatWindowMessageTabs[tabIndex].Messages.AddMessage(
+        ChatWindowMessageTabs[tabIndex].AddMessage(
             role, 
             State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic 
             ? AssistantType.Claude 
@@ -838,7 +836,7 @@ public partial class ChatWindowViewModel : ObservableObject
 
     private void SetStreamProgress(double progress, string text, int tabIndex)
     {
-        ChatWindowMessageTabs[tabIndex].Messages.SetStreamProgress(progress, text);
+        ChatWindowMessageTabs[tabIndex].SetStreamProgress(progress, text);
         ScrollToEndEvent?.Invoke(tabIndex);
     }
 
@@ -884,7 +882,7 @@ public partial class ChatWindowViewModel : ObservableObject
             return;
         }
 
-        ChatWindowMessageList tempMessages = new();
+        ChatWindowMessageTab tempMessages = new("");
         await tempMessages.SyncChatSession(State.SessionList[SelectedTabIndex]!, SelectedTabIndex, State, State.Config.EnableMarkdown);
         var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
@@ -910,7 +908,7 @@ public partial class ChatWindowViewModel : ObservableObject
     private async Task LoadAsync()
     {
         var newTabCreated = false;
-        if (SelectedMessageTab is not null && SelectedMessageTab.Messages.Messages.Count != 0)
+        if (SelectedMessageTab is not null && SelectedMessageTab.Messages.Count != 0)
         {
             CreateTab();
             newTabCreated = true;
@@ -925,7 +923,7 @@ public partial class ChatWindowViewModel : ObservableObject
     private const string OpenFileAttachmentDialogGuid = "B8F42507-693B-4713-8671-A76F02ED5ADB";
 
     [RelayCommand]
-    private void Addfile()
+    private void AddFile()
     {
         var dlg = new OpenFileDialog
         {

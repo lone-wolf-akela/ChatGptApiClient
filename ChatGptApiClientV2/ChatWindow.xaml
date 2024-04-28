@@ -212,12 +212,12 @@
                               FontSize="8"
                               BadgeMargin="0,-5,-5,0"
                               Panel.ZIndex="100">
-                        <Button Command="{Binding AddfileCommand}" ToolTip="添加附件（图片或TXT文档）" Content="&#xE723;" />
+                        <Button Command="{Binding AddFileCommand}" ToolTip="添加附件（图片或TXT文档）" Content="&#xE723;" />
                     </hc:Badge>
                     <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;" Panel.ZIndex="1"/>
                     <Button Click="BtnScreenshot_Click" 
                             ToolTip="导出长截图" 
-                            IsEnabled="{Binding SelectedMessageTab.Messages.Messages.Count, Converter={local:Int2BoolConverter}, FallbackValue=False}" 
+                            IsEnabled="{Binding SelectedMessageTab.Messages.Count, Converter={local:Int2BoolConverter}, FallbackValue=False}" 
                             Content="&#xe91b;" 
                             Panel.ZIndex="1"/>
                 </hc:UniformSpacingPanel>
@@ -400,7 +400,7 @@
                                          Background="Transparent"
                                          BorderThickness="0"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                         ItemsSource="{Binding Path= Messages.Messages, Mode=OneWay}"
+                                         ItemsSource="{Binding Path=Messages, Mode=OneWay}"
                                          KeyboardNavigation.TabNavigation="None"
                                          KeyboardNavigation.ControlTabNavigation="None"
                                          KeyboardNavigation.DirectionalNavigation="None"
@@ -458,9 +458,9 @@
                                                             </i:Interaction.Triggers>
                                                             <DockPanel Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityConverter}}">
                                                                 <StackPanel DockPanel.Dock="Top" 
-                                                Orientation="Horizontal"
-                                                HorizontalAlignment="Right"
-                                                Margin="0,10,10,0">
+                                                                            Orientation="Horizontal"
+                                                                            HorizontalAlignment="Right"
+                                                                            Margin="0,10,10,0">
                                                                     <StackPanel.Visibility>
                                                                         <MultiBinding Converter="{local:LargerToVisibilityConverter}">
                                                                             <Binding ElementName="LstEditingMsg" Path="ActualHeight"/>
@@ -476,9 +476,9 @@
                                                                     <Button Content="放弃修改" Command="{Binding CancelEditingModeCommand}"/>
                                                                 </StackPanel>
                                                                 <StackPanel DockPanel.Dock="Bottom" 
-                                                Orientation="Horizontal"
-                                                HorizontalAlignment="Right"
-                                                Margin="0,5,10,10">
+                                                                            Orientation="Horizontal"
+                                                                            HorizontalAlignment="Right"
+                                                                            Margin="0,5,10,10">
                                                                     <StackPanel.Resources>
                                                                         <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
                                                                             <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
@@ -488,12 +488,12 @@
                                                                     <Button Content="放弃修改" Command="{Binding CancelEditingModeCommand}"/>
                                                                 </StackPanel>
                                                                 <ListBox x:Name="LstEditingMsg"
-                                            ItemsSource="{Binding EditorModeContents}"
-                                            HorizontalContentAlignment="Stretch"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Padding="10,5,10,0"
-                                            PreviewMouseWheel="ScrollToParentProcecssor">
+                                                                         ItemsSource="{Binding EditorModeContents}"
+                                                                         HorizontalContentAlignment="Stretch"
+                                                                         Background="Transparent"
+                                                                         BorderThickness="0"
+                                                                         Padding="10,5,10,0"
+                                                                         PreviewMouseWheel="ScrollToParentProcecssor">
                                                                     <ListBox.ItemContainerStyle>
                                                                         <Style TargetType="ListBoxItem">
                                                                             <Setter Property="Template">
@@ -508,14 +508,14 @@
                                                                     <ListBox.ItemTemplate>
                                                                         <DataTemplate>
                                                                             <TextBox Text="{Binding Text, Mode=TwoWay}"
-                                                        VerticalContentAlignment="Top"
-                                                        TextWrapping="WrapWithOverflow"
-                                                        AcceptsReturn="True"
-                                                        Margin="0,5,0,5"
-                                                        FontSize="14"
-                                                        FontFamily="Segoe UI, Microsoft YaHei UI"
-                                                        Padding="5"
-                                                        IsEnabled="{Binding IsEditable}">
+                                                                                     VerticalContentAlignment="Top"
+                                                                                     TextWrapping="WrapWithOverflow"
+                                                                                     AcceptsReturn="True"
+                                                                                     Margin="0,5,0,5"
+                                                                                     FontSize="14"
+                                                                                     FontFamily="Segoe UI, Microsoft YaHei UI"
+                                                                                     Padding="5"
+                                                                                     IsEnabled="{Binding IsEditable}">
                                                                                 <TextBox.Style>
                                                                                     <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxBaseStyle}">
                                                                                         <Setter Property="MinHeight" Value="75"/>
@@ -533,17 +533,16 @@
                                                             </DockPanel>
                                                             <hc:SimplePanel Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityReConverter}}">
                                                                 <FlowDocumentScrollViewer Style="{x:Null}" 
-                                                            Document="{Binding Path=RenderedMessage}" 
-                                                            IsToolBarVisible="False" 
-                                                            VerticalScrollBarVisibility="Hidden"
-                                                            PreviewMouseWheel="ScrollToParentProcecssor">
+                                                                                          Document="{Binding Path=RenderedMessage}" 
+                                                                                          IsToolBarVisible="False" 
+                                                                                          VerticalScrollBarVisibility="Hidden"
+                                                                                          PreviewMouseWheel="ScrollToParentProcecssor">
                                                                 </FlowDocumentScrollViewer>
                                                                 <hc:SimplePanel VerticalAlignment="Top" 
-                                                    HorizontalAlignment="Right"
-                                                    Margin="0,3,10,0"
-                                                    Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type hc:SimplePanel}}, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                                    d:Visibility="Visible"
-                                                    >
+                                                                                HorizontalAlignment="Right"
+                                                                                Margin="0,3,10,0"
+                                                                                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type hc:SimplePanel}}, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                                                d:Visibility="Visible">
                                                                     <hc:SimplePanel.Resources>
                                                                         <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
                                                                             <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons"/>
@@ -562,14 +561,14 @@
                                                                         </Style>
                                                                     </hc:SimplePanel.Resources>
                                                                     <StackPanel Orientation="Horizontal"
-                                                    Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                                                                                Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityReConverter}}">
                                                                         <Button Content="&#xe8c8;" ToolTip="复制" Command="{Binding CopyMessageCommand}"/>
                                                                         <Button Content="&#xe70f;" ToolTip="编辑" Command="{Binding EnterEditingModeCommand}"/>
                                                                         <Button Content="&#xe74d;" ToolTip="删除" Command="{Binding TryDeleteMessageCommand}"/>
                                                                     </StackPanel>
                                                                     <StackPanel Orientation="Horizontal"
-                                                    Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                                                        <Button Content="&#xe73d;" ToolTip="确认删除" Foreground="#F00000" Command="{Binding DataContext.Messages.RemoveMessageCommand, ElementName=LstMsg}" CommandParameter="{Binding}"/>
+                                                                                Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                                        <Button Content="&#xe73d;" ToolTip="确认删除" Foreground="#F00000" Command="{Binding DataContext.RemoveMessageCommand, ElementName=LstMsg}" CommandParameter="{Binding}"/>
                                                                         <Button Content="&#xe711;" ToolTip="取消删除" Command="{Binding CancelDeleteMessageCommand}"/>
                                                                     </StackPanel>
                                                                 </hc:SimplePanel>
