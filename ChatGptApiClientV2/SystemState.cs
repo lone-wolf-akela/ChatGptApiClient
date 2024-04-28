@@ -214,8 +214,7 @@ public partial class SystemState : ObservableObject
                 ContractResolver = contractResolver,
                 Formatting = Formatting.Indented,
                 StringEscapeHandling = StringEscapeHandling.Default,
-                NullValueHandling = NullValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Auto
+                NullValueHandling = NullValueHandling.Ignore
             };
             var promptsJson = JsonConvert.SerializeObject(InitialPrompts, settings);
 
