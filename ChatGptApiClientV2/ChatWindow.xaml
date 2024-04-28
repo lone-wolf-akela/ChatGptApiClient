@@ -153,12 +153,14 @@
                                     Margin="8,0,8,8">
                                 <ListBox x:Name="LstPrompt" 
                                          Style="{StaticResource DropDownListStyle}"
-                                         ItemsSource="{Binding State.InitialPrompts.PromptsOptions}"
-                                         SelectedItem="{Binding State.InitialPrompts.SelectedOption}">
+                                         VirtualizingPanel.ScrollUnit="Pixel"
+                                         ItemsSource="{Binding State.InitialPrompts.PromptsOptions, FallbackValue=[]}"
+                                         SelectedItem="{Binding State.InitialPrompts.SelectedOption, FallbackValue=-1}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                             <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup"/>
                                             <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Margin" Value="0,0,0,5"/>
                                             <Style.Triggers>
                                                 <MultiTrigger>
                                                     <MultiTrigger.Conditions>
@@ -176,7 +178,10 @@
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock TextWrapping="Wrap" Width="700" Text="{Binding Text}"/>
+                                            <StackPanel>
+                                                <TextBlock TextWrapping="Wrap" Width="700" Text="{Binding Text}" Margin="0,0,0,5"/>
+                                                <hc:Divider Margin="0"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>

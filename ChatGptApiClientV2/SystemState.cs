@@ -62,7 +62,7 @@ public partial class PromptsOption : ObservableObject
                 }
             }
             var str = sb.ToString();
-            str = RemoveExtraNewLine().Replace(str, "\n");
+            str = RemoveExtraNewLine().Replace(str, "\n").Trim();
             return str;
         }
     }
