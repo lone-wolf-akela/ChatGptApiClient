@@ -337,7 +337,7 @@
                 <hc:SimplePanel x:Name="PanelDropFiles" Opacity="0.6" Visibility="Collapsed" 
                                 AllowDrop="True" DragOver="PanelDropFiles_DragOver" Drop="PanelDropFiles_Drop">
                     <Rectangle Fill="white" Stroke="{DynamicResource PrimaryTextBrush}" RadiusX="5" RadiusY="5" StrokeThickness="3" SnapsToDevicePixels="True" StrokeDashArray="2 3" StrokeDashCap="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
-                    <TextBlock Text="拖放文件至此以添加附件" FontSize="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <TextBlock Text="拖放文件至此以添加附件" Foreground="Black" FontSize="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </hc:SimplePanel>
             </hc:SimplePanel>
         </DockPanel>
@@ -397,6 +397,7 @@
                                     <TextBlock Text="{Binding Title}" 
                                                VerticalAlignment="Center"
                                                TextTrimming="WordEllipsis"
+                                               ToolTip="{Binding Title}"
                                                MaxWidth="120"/>
                                     <Button Content="&#xe711;" 
                                             FontFamily="./font/#Segoe Fluent Icons" 

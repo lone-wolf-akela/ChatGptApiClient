@@ -979,12 +979,24 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     private const string OpenFileAttachmentDialogGuid = "B8F42507-693B-4713-8671-A76F02ED5ADB";
-    public void AddSingleFileAttachment(string file)
+    public async Task AddSingleFileAttachment(string file)
     {
-        FileAttachments.Add(new FileAttachmentInfo(file, FileAttachments));
+        if (!await SystemState.FileCanReadAsAttachment(file))
+        {
+            MessageBox.Show(
+                $"不支持将 {Path.GetFileName(file)} 所属的文件格式作为附件发送！",
+                "错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+                );
+        }
+        else
+        {
+            FileAttachments.Add(new FileAttachmentInfo(file, FileAttachments));
+        }
     }
     [RelayCommand]
-    private void AddFile()
+    private async Task AddFileAsync()
     {
         var dlg = new OpenFileDialog
         {
@@ -993,7 +1005,7 @@ public partial class ChatWindowViewModel : ObservableObject
         };
         if (dlg.ShowDialog() == true)
         {
-            AddSingleFileAttachment(dlg.FileName);
+            await AddSingleFileAttachment(dlg.FileName);
         }
     }
 

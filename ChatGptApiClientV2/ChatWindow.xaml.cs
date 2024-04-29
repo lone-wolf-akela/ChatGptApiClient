@@ -327,7 +327,7 @@ public partial class ChatWindow
         }
     }
 
-    private void PanelDropFiles_Drop(object sender, DragEventArgs e)
+    private async void PanelDropFiles_Drop(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) { return; }
 
@@ -337,7 +337,7 @@ public partial class ChatWindow
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) { return; }
         foreach(var file in files)
         {
-            ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(file);
+            await ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(file);
         }
     }
 

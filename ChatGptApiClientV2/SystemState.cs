@@ -423,6 +423,223 @@ public partial class SystemState : ObservableObject
             await Send(sessionIndex, cancellationToken);
         }
     }
+    private interface IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default);
+        public Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default);
+    }
+    private class TextFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime.StartsWith("text/"));
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a text file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await File.ReadAllTextAsync(file, cancellationToken)).Trim()
+            };
+        }
+    }
+    private class PdfFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "application/pdf");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a pdf file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await Utils.PdfFileToText(file, cancellationToken)).Trim()
+            };
+        }
+    }
+    private class DocxFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a docx file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await OfficeReader.DocxToText(file, cancellationToken)).Trim()
+            };
+        }
+    }
+    private class PptxFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a pptx file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await OfficeReader.PptxToText(file, cancellationToken)).Trim()
+            };
+        }
+    }
+    public class XlsxFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a xlsx file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await OfficeReader.XlsxToText(file, cancellationToken)).Trim()
+            };
+        }
+    }
+    private class SupportedImageFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "image/jpeg" or "image/png" or "image/webp" or "image/gif");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a supproted image file: {file}");
+            }
+            var base64 = await Utils.ImageFileToBase64(file, cancellationToken);
+            var image = Utils.Base64ToBitmapImage(base64);
+            Size imageSize = new(image.PixelWidth, image.PixelHeight);
+            return new ImageAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                ImageBase64Url = base64,
+                HighResMode = state.Config.UploadHiresImage,
+                ImageSize = imageSize
+            };
+        }
+    }
+    private class ConvertibleImageFileAttachmentReader : IFileAttachmentReader
+    {
+        private string? filePathCache;
+        private DateTime? fileModifiedTimeCache;
+        private string? base64PngCache;
+        private static DateTime GetFileModifiedTime(string file)
+        {
+            var fileInfo = new FileInfo(file);
+            return fileInfo.LastWriteTimeUtc;
+        }
+        public async Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            if (!mime.StartsWith("image/"))
+            {
+                return false;
+            }
+            if (filePathCache == file
+                && fileModifiedTimeCache == GetFileModifiedTime(file)
+                && base64PngCache is not null)
+            {
+                return true;
+            }
+            try
+            {
+                var base64Original = await Utils.ImageFileToBase64(file, cancellationToken);
+                base64PngCache = Utils.ConvertToBase64Png(base64Original);
+                filePathCache = file;
+                fileModifiedTimeCache = GetFileModifiedTime(file);
+                return true;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+        }
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if(!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a image file convertible to png: {file}");
+            }
+            var image = Utils.Base64ToBitmapImage(base64PngCache!);
+            Size imageSize = new(image.PixelWidth, image.PixelHeight);
+            return new ImageAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                ImageBase64Url = base64PngCache!,
+                HighResMode = state.Config.UploadHiresImage,
+                ImageSize = imageSize
+            };
+        }
+    }
+    private static readonly List<IFileAttachmentReader> FileAttachmentReaders =
+    [
+        new TextFileAttachmentReader(),
+        new PdfFileAttachmentReader(),
+        new DocxFileAttachmentReader(),
+        new PptxFileAttachmentReader(),
+        new XlsxFileAttachmentReader(),
+        new SupportedImageFileAttachmentReader(),
+        new ConvertibleImageFileAttachmentReader()
+    ];
+    public static async Task<bool> FileCanReadAsAttachment(string file, CancellationToken cancellationToken = default)
+    {
+        foreach (var reader in FileAttachmentReaders)
+        {
+            if (await reader.CanReadFile(file, cancellationToken))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    private async Task<IAttachmentInfo> OpenFileAsAttachment(string file, CancellationToken cancellationToken = default)
+    {
+        foreach (var reader in FileAttachmentReaders)
+        {
+            if (await reader.CanReadFile(file, cancellationToken))
+            {
+                return await reader.OpenFileAsAttachment(this, file, cancellationToken);
+            }
+        }
+        var mime = MimeTypes.GetMimeType(file);
+        throw new NotSupportedException($"Unsupported file type: {mime}");
+    }
     public async Task UserSendText(string text, IEnumerable<string> files, int sessionIndex, CancellationToken cancellationToken = default)
     {
         if (sessionIndex >= SessionList.Count)
@@ -440,36 +657,7 @@ public partial class SystemState : ObservableObject
         List<IAttachmentInfo> attachments = [];
         foreach (var file in files)
         {
-            var mime = MimeTypes.GetMimeType(file);
-            if (mime.StartsWith("text/"))
-            {
-                attachments.Add(new TextAttachmentInfo
-                {
-                    FileName = Path.GetFileName(file),
-                    Content = (await File.ReadAllTextAsync(file, cancellationToken)).Trim()
-                });
-            }
-            else if (mime.StartsWith("application/pdf"))
-            {
-                attachments.Add(new TextAttachmentInfo
-                {
-                    FileName = Path.GetFileName(file),
-                    Content = (await Utils.PdfFileToText(file, cancellationToken)).Trim()
-                });
-            }
-            else if (mime.StartsWith("image/"))
-            {
-                var base64 = await Utils.ImageFileToBase64(file, cancellationToken);
-                var image = Utils.Base64ToBitmapImage(base64);
-                Size imageSize = new(image.PixelWidth, image.PixelHeight);
-                attachments.Add(new ImageAttachmentInfo
-                {
-                    FileName = Path.GetFileName(file),
-                    ImageBase64Url = await Utils.ImageFileToBase64(file, cancellationToken),
-                    HighResMode = Config.UploadHiresImage,
-                    ImageSize = imageSize
-                });
-            }
+            attachments.Add(await OpenFileAsAttachment(file, cancellationToken));
         }
 
         var textContent = new IMessage.TextContent { Text = text };

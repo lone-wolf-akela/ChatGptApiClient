@@ -293,7 +293,7 @@ public static partial class Utils
         return $"data:{mime};base64,{base64}";
     }
 
-    [GeneratedRegex("^data:(?<mime>[a-z]+\\/[a-z]+);base64,(?<data>.+)$")]
+    [GeneratedRegex(@"^data:(?<mime>[a-z\-\+\.]+\/[a-z\-\+\.]+);base64,(?<data>.+)$")]
     private static partial Regex Base64UrlExtract();
     public static string ExtractBase64FromUrl(string urlOrData)
     {
@@ -330,15 +330,11 @@ public static partial class Utils
         bitmapImage.Freeze();
         return bitmapImage;
     }
-
-    public static string OptimizeBase64Png(string base64)
+    public static string ConvertToBase64Png(string base64)
     {
-        // optimize the input data
-        // used for dall-e generated image, as they are almost not compressed
-        // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
         var data = ExtractBase64FromUrl(base64);
         var bytes = Convert.FromBase64String(data);
-        
+
         using var ms = new MemoryStream(bytes);
         var imageSource = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
 
@@ -350,6 +346,14 @@ public static partial class Utils
         var outBase64 = Convert.ToBase64String(msOutput.ToArray());
 
         return $"data:image/png;base64,{outBase64}";
+    }
+
+    public static string OptimizeBase64Png(string base64)
+    {
+        // optimize the input data
+        // used for dall-e generated image, as they are almost not compressed
+        // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
+        return ConvertToBase64Png(base64);
     }
 
     private static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
