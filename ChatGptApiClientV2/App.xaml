@@ -221,8 +221,13 @@
                                     <RowDefinition x:Name="RowDefinition0" Height="Auto" />
                                     <RowDefinition x:Name="RowDefinition1" Height="*" />
                                 </Grid.RowDefinitions>
-                                <DockPanel Grid.Column="0" Grid.Row="0">
-                                    <TabPanel x:Name="headerPanel" Background="Transparent" IsItemsHost="true" Margin="0,5,0,0" DockPanel.Dock="Left"/>
+                                <DockPanel Grid.Column="0" Grid.Row="0" hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}">
+                                    <TabPanel x:Name="headerPanel" 
+                                              Background="Transparent" 
+                                              IsItemsHost="true" 
+                                              Margin="0,5,0,0" 
+                                              DockPanel.Dock="Left" 
+                                              hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}"/>
                                     <Button x:Name="AddBtn"
                                             DockPanel.Dock="Left"
                                             FontFamily="./font/#Segoe Fluent Icons"
@@ -275,6 +280,7 @@
             <Style x:Key="TopRoundTabItemStyle" TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}">
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="MinHeight" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Bottom"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
@@ -315,15 +321,9 @@
                                     <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,2" />
                                     <Setter Property="LayoutTransform">
                                         <Setter.Value>
-                                            <ScaleTransform ScaleX="1.1"/>
+                                            <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
                                         </Setter.Value>
                                     </Setter>
-                                    <Setter Property="RenderTransform">
-                                        <Setter.Value>
-                                            <ScaleTransform ScaleY="1.1"/>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Setter Property="RenderTransformOrigin" Value="0.5,1"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
