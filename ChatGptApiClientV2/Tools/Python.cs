@@ -74,7 +74,7 @@ public class PythonFunc : IToolFunction
 
     public Type ArgsType => typeof(Args);
 
-    private void PreparePython(string pythonDll)
+    private static void PreparePython(string pythonDll)
     {
         if (!File.Exists(pythonDll))
         {
@@ -88,7 +88,7 @@ public class PythonFunc : IToolFunction
         }
         Directory.CreateDirectory("sandbox");
     }
-    private async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "", CancellationToken cancellationToken = default)
+    private static async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "", CancellationToken cancellationToken = default)
     {
         if (version != "")
         {
@@ -110,7 +110,7 @@ public class PythonFunc : IToolFunction
             await task;
         }
     }
-    private async Task PreparePackage(Utils.PythonEnv pythonEnv, string code)
+    private static async Task PreparePackage(Utils.PythonEnv pythonEnv, string code)
     {
         string[] packages = [
             "sympy",

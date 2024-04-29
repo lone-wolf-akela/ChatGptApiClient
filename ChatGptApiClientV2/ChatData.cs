@@ -440,7 +440,7 @@ public class UserMessage : IMessage
             };
         }
     }
-    public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.IContent>();
+    public IEnumerable<IMessage.IContent> Content { get; set; } = [];
     public RoleType Role => RoleType.User;
     public string? Name { get; set; }
     public bool Hidden => false;
@@ -526,7 +526,7 @@ public class ToolMessage : IMessage
     public RoleType Role => RoleType.Tool;
     public string? Name => null;
     public string ToolCallId { get; set; } = "";
-    [Obsolete]
+    [Obsolete("Prefer to use `GetToolcallMessage` method to provide generated data.")]
     public class GeneratedImage : ICloneable
     {
         public string ImageBase64Url { get; set; } = "";
@@ -540,7 +540,7 @@ public class ToolMessage : IMessage
             };
         }
     }
-    [Obsolete]
+    [Obsolete("Prefer to use `GetToolcallMessage` method to provide generated data.")]
     public List<GeneratedImage> GeneratedImages { get; set; } = [];
     public bool Hidden { get; set; }
     public int CountToken() => ((IMessage)this).CountTokenBase();
@@ -550,9 +550,9 @@ public class ToolMessage : IMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             ToolCallId = ToolCallId,
-#pragma warning disable CS0612 // 类型或成员已过时
+#pragma warning disable CS0618 // 类型或成员已过时
             GeneratedImages = (from g in GeneratedImages select (GeneratedImage)g.Clone()).ToList(),
-#pragma warning restore CS0612 // 类型或成员已过时
+#pragma warning restore CS0618 // 类型或成员已过时
             Hidden = Hidden
         };
     }

@@ -607,6 +607,27 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+    private class RtfFileAttachmentReader : IFileAttachmentReader
+    {
+        public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
+        {
+            var mime = MimeTypes.GetMimeType(file);
+            return Task.FromResult(mime is "application/rtf");
+        }
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        {
+            if (!await CanReadFile(file, cancellationToken))
+            {
+                throw new InvalidOperationException($"File is not a rtf file: {file}");
+            }
+            return new TextAttachmentInfo
+            {
+                FileName = Path.GetFileName(file),
+                Content = (await Utils.RtfFileToText(file, cancellationToken)).Trim()
+            };
+        }
+    }
+
     private static readonly List<IFileAttachmentReader> FileAttachmentReaders =
     [
         new TextFileAttachmentReader(),
@@ -615,7 +636,8 @@ public partial class SystemState : ObservableObject
         new PptxFileAttachmentReader(),
         new XlsxFileAttachmentReader(),
         new SupportedImageFileAttachmentReader(),
-        new ConvertibleImageFileAttachmentReader()
+        new ConvertibleImageFileAttachmentReader(),
+        new RtfFileAttachmentReader()
     ];
     public static async Task<bool> FileCanReadAsAttachment(string file, CancellationToken cancellationToken = default)
     {

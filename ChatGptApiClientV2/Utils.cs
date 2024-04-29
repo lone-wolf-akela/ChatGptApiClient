@@ -408,6 +408,16 @@ public static partial class Utils
         }, cancellationToken);
     }
 
+    public static async Task<string> RtfFileToText(string filename, CancellationToken cancellationToken = default)
+    {
+        var doc = new FlowDocument();
+        await using var fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
+        var range = new TextRange(doc.ContentStart, doc.ContentEnd);
+        range.Load(fs, DataFormats.Rtf);
+        var text = new TextRange(doc.ContentStart, doc.ContentEnd).Text;
+        return text;
+    }
+
     // from https://stackoverflow.com/questions/354477/method-to-determine-if-path-string-is-local-or-remote-machine
     public static bool IsPathRemote(string path)
     {
@@ -425,6 +435,7 @@ public static partial class Utils
     // ReSharper disable InconsistentNaming
     // ReSharper disable UnusedMember.Local
     // ReSharper disable UnusedMember.Global
+#pragma warning disable IDE0051 // 删除未使用的私有成员
     private const string IID_IImageList = "46EB5926-582E-4017-9FDF-E8998DAA0950";
     private const string IID_IImageList2 = "192B9D83-50FC-457B-90A0-2B82A8B5DAE1";
 
@@ -447,6 +458,7 @@ public static partial class Utils
         public static partial void DestroyIcon(IntPtr hIcon);
 
         [DllImport("Shell32.dll", CharSet = CharSet.Unicode)]
+#pragma warning disable SYSLIB1054 // use LibraryImport instead of DllImport -> does not work for SHFILEINFO
         public static extern IntPtr SHGetFileInfo(
             string pszPath,
             uint dwFileAttributes,
@@ -454,6 +466,7 @@ public static partial class Utils
             uint cbFileInfo,
             uint uFlags
         );
+#pragma warning restore SYSLIB1054
     }
 
     [Flags]
@@ -646,6 +659,7 @@ public static partial class Utils
         [PreserveSig]
         int GetOverlayImage(int iOverlay, ref int piIndex);
     }
+#pragma warning restore IDE0051 // 删除未使用的私有成员
     // ReSharper restore UnusedMember.Global
     // ReSharper restore UnusedMember.Local
     // ReSharper restore InconsistentNaming

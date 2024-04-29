@@ -129,11 +129,9 @@ public partial class ChatWindow
 
     private void ScrollToEnd(int tabIndex)
     {
+        if (tabIndex != TabMsg.SelectedIndex) { return; }
         var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
-        if (lstBox is null)
-        {
-            return;
-        }
+        if (lstBox is null) { return; }
         var scrollViewer = GetScrollViewer(lstBox);
         scrollViewer?.UpdateLayout();
         scrollViewer?.ScrollToEnd();
@@ -174,7 +172,6 @@ public partial class ChatWindow
     private const string SaveScreenshotDialogGuid = "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
     private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
-        var tabIndex = TabMsg.SelectedIndex;
         var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
         if (lstBox is null)
         {

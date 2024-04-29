@@ -698,12 +698,12 @@ public partial class ChatWindowMessageTab : ObservableObject
             }
             else if (msg is ToolMessage toolMsg)
             {
-#pragma warning disable CS0612 // 类型或成员已过时
+#pragma warning disable CS0618 // 类型或成员已过时
                 foreach (var img in toolMsg.GeneratedImages)
                 {
                     await chatMsg.AddImage(img.ImageBase64Url, null, img.Description);
                 }
-#pragma warning restore CS0612 // 类型或成员已过时
+#pragma warning restore CS0618 // 类型或成员已过时
             }
             Messages.Add(chatMsg);
         }
