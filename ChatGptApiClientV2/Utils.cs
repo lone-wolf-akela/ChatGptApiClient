@@ -124,32 +124,6 @@ public class BorderClipConverter : MarkupExtension, IMultiValueConverter
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
-// from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
-public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is int i)
-        {
-            return i == 0 ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        return Visibility.Collapsed;
-    }
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is Visibility v)
-        {
-            return v == Visibility.Visible ? 0 : 1;
-        }
-
-        return 0;
-    }
-
-    public override object ProvideValue(IServiceProvider serviceProvider) => this;
-}
-
 public class Int2BoolConverter : MarkupExtension, IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -211,6 +185,7 @@ public class LargerToVisibilityConverter : MarkupExtension, IMultiValueConverter
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
+// from https://stackoverflow.com/questions/6145888/how-to-bind-an-enum-to-a-combobox-control-in-wpf
 public class EnumValueDescription(Enum value, string desc)
 {
     public Enum Value { get; set; } = value;
@@ -472,7 +447,7 @@ public static partial class Utils
         {
             if (string.Compare(dir.Root.FullName, d.Name, StringComparison.OrdinalIgnoreCase) == 0)
             {
-                return (d.DriveType == DriveType.Network);
+                return d.DriveType == DriveType.Network;
             }
         }
 
@@ -571,7 +546,7 @@ public static partial class Utils
         AddOverlays = 0x000000020,
 
         /// <summary>Get the index of the overlay in the upper 8 bits of the iIcon</summary>
-        OverlayIndex = 0x000000040,
+        OverlayIndex = 0x000000040
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -586,7 +561,7 @@ public static partial class Utils
 
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
         public string szTypeName;
-    };
+    }
 
 
     [StructLayout(LayoutKind.Sequential)]
@@ -598,8 +573,8 @@ public static partial class Utils
     [StructLayout(LayoutKind.Sequential)]
     internal struct POINT
     {
-        int x;
-        int y;
+        public int x;
+        public int y;
     }
 
     [StructLayout(LayoutKind.Sequential)]

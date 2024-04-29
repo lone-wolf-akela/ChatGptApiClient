@@ -139,7 +139,7 @@ public class MessageConverter : JsonConverter<IMessage>
             RoleType.User => jobj.ToObject<UserMessage>(serializer) ?? throw new JsonSerializationException(),
             RoleType.Assistant => jobj.ToObject<AssistantMessage>(serializer) ?? throw new JsonSerializationException(),
             RoleType.Tool => jobj.ToObject<ToolMessage>(serializer) ?? throw new JsonSerializationException(),
-            _ => throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException()
         };
         canRead = true;
         return result;
@@ -200,7 +200,7 @@ public interface IMessage : ICloneable
                                         throw new JsonSerializationException(),
                 ContentCategory.ImageUrl => jobj.ToObject<ImageContent>(serializer) ??
                                             throw new JsonSerializationException(),
-                _ => throw new JsonSerializationException(),
+                _ => throw new JsonSerializationException()
             };
             canRead = true;
             return result;
@@ -305,9 +305,9 @@ public interface IMessage : ICloneable
                     Math.Round(ImageSize.Value.Height * ratio));
             }
 
-            var tileNum = Math.Ceiling(ImageSize.Value.Width / tileSize) *
+            var tileCount = Math.Ceiling(ImageSize.Value.Width / tileSize) *
                           Math.Ceiling(ImageSize.Value.Height / tileSize);
-            count += (int)tileNum * tokenPerTile;
+            count += (int)tileCount * tokenPerTile;
 
             return count;
         }
@@ -343,11 +343,7 @@ public interface IMessage : ICloneable
 
     public int CountTokenBase()
     {
-        var count = 3;
-        foreach (var c in Content)
-        {
-            count += c.CountToken();
-        }
+        var count = 3 + Content.Sum(c => c.CountToken());
 
         if (Name is not null)
         {
@@ -424,7 +420,7 @@ public class UserMessage : IMessage
                                                        throw new JsonSerializationException(),
                 IAttachmentInfo.AttachmentType.Image => jobj.ToObject<ImageAttachmentInfo>(serializer) ??
                                                         throw new JsonSerializationException(),
-                _ => throw new JsonSerializationException(),
+                _ => throw new JsonSerializationException()
             };
             canRead = true;
             return result;
@@ -490,10 +486,7 @@ public class UserMessage : IMessage
     {
         var count = ((IMessage)this).CountTokenBase();
         var attachments = GenerateAttachmentContentList();
-        foreach (var c in attachments)
-        {
-            count += c.CountToken();
-        }
+        count += attachments.Sum(c => c.CountToken());
 
         return count;
     }

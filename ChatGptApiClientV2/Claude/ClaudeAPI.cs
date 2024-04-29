@@ -103,7 +103,7 @@ public class ContentConverter : JsonConverter<IContent>
                                        throw new JsonSerializationException(),
             ContentCategory.ToolResult => jobj.ToObject<ToolResultContent>(serializer) ??
                                           throw new JsonSerializationException(),
-            _ => throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException()
         };
         canRead = true;
         return result;
@@ -290,7 +290,7 @@ public enum StopReason
     /// <summary>
     /// (no description from official document)
     /// </summary>
-    [EnumMember(Value = "tool_use")] ToolUse,
+    [EnumMember(Value = "tool_use")] ToolUse
 }
 
 public class CreateMessageResponse

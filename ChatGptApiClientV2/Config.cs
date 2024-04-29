@@ -344,7 +344,7 @@ public partial class Config : ObservableValidator
                 // ReSharper disable SimplifyConditionalTernaryExpression
                 var functionCallSupported =
                     id.Contains("0301") ? false :
-                    (id.Contains("vision") && id.Contains("1106")) ? false :
+                    id.Contains("vision") && id.Contains("1106") ? false :
                     id.Contains("0314") ? false :
                     true;
                 // ReSharper restore SimplifyConditionalTernaryExpression

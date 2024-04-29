@@ -47,7 +47,7 @@ public class ServerEndpointOptions
         Azure,
         Claude,
         Custom
-    };
+    }
 
     public ServiceType Service { get; set; }
     public string Endpoint { get; set; } = "";
@@ -66,14 +66,9 @@ public interface IServerEndpoint
 {
     public static IServerEndpoint BuildServerEndpoint(ServerEndpointOptions options)
     {
-        if (options.Service == ServerEndpointOptions.ServiceType.Claude)
-        {
-            return ClaudeEndpointBase.BuildClaudeEndpoint(options);
-        }
-        else
-        {
-            return new OpenAIEndpoint(options);
-        }
+        return options.Service == ServerEndpointOptions.ServiceType.Claude
+            ? ClaudeEndpointBase.BuildClaudeEndpoint(options)
+            : new OpenAIEndpoint(options);
     }
 
     public Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default);
@@ -158,27 +153,27 @@ public class OpenAIEndpoint : IServerEndpoint
                            ?? throw new InvalidOperationException("Could not find _info field");
 
         var uriInfo = uriInfoField.GetValue(uri);
-        var uriInfoStringField = (uriInfo?.GetType().GetField("String",
-                                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        var uriInfoStringField = uriInfo?.GetType().GetField("String",
+                                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                                  ?? throw new InvalidOperationException("Could not find String field in _info");
         uriInfoStringField.SetValue(uriInfo, base64Uri);
 
-        var uriInfoMoreInfoField = (uriInfo.GetType().GetField("_moreInfo",
+        var uriInfoMoreInfoField = uriInfo.GetType().GetField("_moreInfo",
                                        System.Reflection.BindingFlags.NonPublic |
-                                       System.Reflection.BindingFlags.Instance))
+                                       System.Reflection.BindingFlags.Instance)
                                    ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
         var uriInfoMoreInfo = uriInfoMoreInfoField.GetValue(uriInfo);
 
-        var uriInfoMoreInfoAbsoluteUriField = (uriInfoMoreInfo?.GetType().GetField("AbsoluteUri",
+        var uriInfoMoreInfoAbsoluteUriField = uriInfoMoreInfo?.GetType().GetField("AbsoluteUri",
                                                   System.Reflection.BindingFlags.Public |
-                                                  System.Reflection.BindingFlags.Instance))
+                                                  System.Reflection.BindingFlags.Instance)
                                               ?? throw new InvalidOperationException(
                                                   "Could not find AbsoluteUri field in MoreInfo");
         uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, base64Uri);
 
-        var uriInfoMoreInfoPathField = (uriInfoMoreInfo.GetType().GetField("Path",
+        var uriInfoMoreInfoPathField = uriInfoMoreInfo.GetType().GetField("Path",
                                            System.Reflection.BindingFlags.Public |
-                                           System.Reflection.BindingFlags.Instance))
+                                           System.Reflection.BindingFlags.Instance)
                                        ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
         uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, base64Uri["data:".Length..]);
 
@@ -435,16 +430,11 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
 
     public static ClaudeEndpointBase BuildClaudeEndpoint(ServerEndpointOptions o)
     {
-        if (o.Tools is not null && o.Tools.Any())
-        {
-            // for now, tool use is not supported in streaming mode
-            // see https://docs.anthropic.com/claude/docs/tool-use
-            return new ClaudeEndpointNonStreaming(o);
-        }
-        else
-        {
-            return new ClaudeEndpointStreaming(o);
-        }
+        // for now, tool use is not supported in streaming mode
+        // see https://docs.anthropic.com/claude/docs/tool-use
+        return o.Tools is not null && o.Tools.Any()
+            ? new ClaudeEndpointNonStreaming(o)
+            : new ClaudeEndpointStreaming(o);
     }
 
     protected ClaudeEndpointBase(ServerEndpointOptions o)
@@ -681,7 +671,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         var sb = new StringBuilder();
         for (var i = 0; i < input.Length; i++)
         {
-            char lastChar = i > 0 ? input[i - 1] : '\0';
+            var lastChar = i > 0 ? input[i - 1] : '\0';
             if (punctuationPair.TryGetValue(input[i], out var chinesePunc) && IsChinese(lastChar))
             {
                 sb.Append(chinesePunc);

@@ -22,7 +22,7 @@ public enum StreamingResponseType
     ContentBlockStop,
     [EnumMember(Value = "message_delta")] MessageDelta,
     [EnumMember(Value = "message_stop")] MessageStop,
-    [EnumMember(Value = "error")] Error,
+    [EnumMember(Value = "error")] Error
 }
 
 public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
@@ -99,7 +99,7 @@ public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
                                                  throw new JsonSerializationException(),
             StreamingResponseType.Error => jobj.ToObject<StreamingError>(serializer) ??
                                            throw new JsonSerializationException(),
-            _ => throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException()
         };
         canRead = true;
         return result;
@@ -121,7 +121,7 @@ public class StreamingMessageStart : IStreamingResponse
 [JsonConverter(typeof(StringEnumConverter))]
 public enum StreamingContentBlockType
 {
-    [EnumMember(Value = "text")] Text,
+    [EnumMember(Value = "text")] Text
 }
 
 public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlock>
@@ -163,7 +163,7 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
         {
             StreamingContentBlockType.Text => jobj.ToObject<StreamingContentBlockText>(serializer) ??
                                               throw new JsonSerializationException(),
-            _ => throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException()
         };
         canRead = true;
         return result;
@@ -192,7 +192,7 @@ public class StreamingContentBlockStart : IStreamingResponse
 [JsonConverter(typeof(StringEnumConverter))]
 public enum StreamingContentBlockDeltaContentType
 {
-    [EnumMember(Value = "text_delta")] TextDelta,
+    [EnumMember(Value = "text_delta")] TextDelta
 }
 
 public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreamingContentBlockDeltaContent>
@@ -235,7 +235,7 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
         {
             StreamingContentBlockDeltaContentType.TextDelta =>
                 jobj.ToObject<StreamingContentBlockTextDelta>(serializer) ?? throw new JsonSerializationException(),
-            _ => throw new JsonSerializationException(),
+            _ => throw new JsonSerializationException()
         };
         canRead = true;
         return result;

@@ -166,6 +166,6 @@ public class ModelVersionInfo
         {
             ModelType = "claude-3", Name = "claude-3-opus-20240229", Description = "Opus (大, 2024-02-29)",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true
-        },
+        }
     ];
 }

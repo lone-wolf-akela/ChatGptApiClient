@@ -50,7 +50,7 @@ public partial class Settings
         var window = new PopupWindow
         {
             PopupElement = picker,
-            Owner = this,
+            Owner = this
         };
 
         const bool showBackground = false;

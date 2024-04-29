@@ -86,7 +86,7 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    public IEnumerable<Utils.PythonEnv> PythonEnvs => Utils.FindPythonEnvs();
+    public static IEnumerable<Utils.PythonEnv> PythonEnvs => Utils.FindPythonEnvs();
 
     public void UnLoadViewModel()
     {

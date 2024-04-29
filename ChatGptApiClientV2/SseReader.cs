@@ -87,7 +87,7 @@ internal sealed class SseReader(Stream stream) : IDisposable
             return null;
         if (lineText.Length == 0)
             return SseLine.Empty;
-        if (TryParseLine(lineText, out SseLine line))
+        if (TryParseLine(lineText, out var line))
             return line;
         return null;
     }
@@ -117,7 +117,7 @@ internal sealed class SseReader(Stream stream) : IDisposable
         var colonIndex = lineSpan.IndexOf(':');
         var fieldValue = lineSpan[(colonIndex + 1)..];
 
-        bool hasSpace = fieldValue.Length > 0 && fieldValue[0] == ' ';
+        var hasSpace = fieldValue.Length > 0 && fieldValue[0] == ' ';
         line = new SseLine(lineText, colonIndex, hasSpace);
         return true;
     }

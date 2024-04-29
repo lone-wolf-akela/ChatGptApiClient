@@ -333,7 +333,7 @@ public partial class SystemState : ObservableObject
             PresencePenalty = Config.PresencePenalty,
             Seed = Config.Seed,
             Temperature = temperature,
-            TopP = Config.TopP,
+            TopP = Config.TopP
         };
 
         if (serverOptions.MaxTokens is null && selectedModel.Name.Contains("vision"))
