@@ -27,7 +27,11 @@
            xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
            mc:Ignorable="d" Icon="/chatgpt-icon.ico"
            Title="ChatWindow" Height="600" Width="1000"
+           AllowDrop="True"
            MouseDown="Window_MouseDown"
+           DragEnter="Window_DragEnter"
+           DragLeave="Window_DragLeave"
+           DragOver="Window_DragOver"
            Loaded="Window_Loaded">
     <d:Window.DataContext>
         <local:ChatWindowViewModel/>
@@ -250,83 +254,92 @@
                             Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityConverter}}"/>
                 </hc:SimplePanel>
             </StackPanel>
-            <DockPanel Margin="0,0,5,0">
-                <StackPanel DockPanel.Dock="Bottom" 
+            <hc:SimplePanel>
+                <DockPanel Margin="0,0,5,0">
+                    <StackPanel DockPanel.Dock="Bottom" 
                             Visibility="{Binding IsFileAttachmentsEmpty, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                    <ListBox x:Name="LstFiles" 
+                        <ListBox x:Name="LstFiles" 
                              Background="Transparent" 
                              ItemsSource="{Binding FileAttachments}" 
                              BorderThickness="0" 
                              ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
                              ScrollViewer.VerticalScrollBarVisibility="Hidden"
                              Margin="0">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                                <Setter Property="Focusable" Value="False"/>
-                                <Setter Property="Padding" Value="3,3,3,3"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <hc:SimplePanel>
-                                    <Image Source="{Binding Icon}" Height="64" Width="64" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,10,5,0"/>
-                                    <Button Command="{Binding RemoveFileCommand}"
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
+                                    <Setter Property="Focusable" Value="False"/>
+                                    <Setter Property="Padding" Value="3,3,3,3"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <hc:SimplePanel>
+                                        <Image Source="{Binding Icon}" Height="64" Width="64" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,10,5,0"/>
+                                        <Button Command="{Binding RemoveFileCommand}"
                                             Background="Transparent" 
                                             BorderBrush="Transparent" 
                                             VerticalAlignment="Top"
                                             HorizontalAlignment="Right"
                                             Padding="0" 
                                             Margin="0,0,-5,0">
-                                        <hc:SimplePanel Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
-                                                                <Setter Property="Foreground" Value="#343434"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
-                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
-                                                                <Setter Property="Foreground" Value="#343434"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </hc:SimplePanel>
-                                    </Button>
-                                </hc:SimplePanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                    <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
-                </StackPanel>
-                <hc:TextBox x:Name="TxtInput" 
-                             Text="{Binding TextInput, UpdateSourceTrigger=PropertyChanged}"
-                             FontFamily="Segoe UI, Microsoft YaHei UI"
-                             VerticalContentAlignment="Top" 
-                             TextWrapping="WrapWithOverflow" 
-                             AcceptsReturn="True" 
-                             VerticalScrollBarVisibility="Auto" 
-                             Padding="5"
-                             hc:InfoElement.Placeholder="在此输入对话内容"/>
-            </DockPanel>
+                                            <hc:SimplePanel Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#343434"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#343434"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </hc:SimplePanel>
+                                        </Button>
+                                    </hc:SimplePanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                    </StackPanel>
+                    <hc:TextBox x:Name="TxtInput" 
+                                Text="{Binding TextInput, UpdateSourceTrigger=PropertyChanged}"
+                                FontFamily="Segoe UI, Microsoft YaHei UI"
+                                VerticalContentAlignment="Top" 
+                                TextWrapping="WrapWithOverflow" 
+                                AcceptsReturn="True" 
+                                VerticalScrollBarVisibility="Auto" 
+                                Padding="5"
+                                PreviewDragEnter="TxtInput_PreviewDragEnter"
+                                PreviewDragOver="TxtInput_PreviewDragOver"
+                                hc:InfoElement.Placeholder="在此输入对话内容"/>
+                </DockPanel>
+                <hc:SimplePanel x:Name="PanelDropFiles" Opacity="0.6" Visibility="Collapsed" 
+                                AllowDrop="True" DragOver="PanelDropFiles_DragOver" Drop="PanelDropFiles_Drop">
+                    <Rectangle Fill="white" Stroke="{DynamicResource PrimaryTextBrush}" RadiusX="5" RadiusY="5" StrokeThickness="3" SnapsToDevicePixels="True" StrokeDashArray="2 3" StrokeDashCap="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
+                    <TextBlock Text="拖放文件至此以添加附件" FontSize="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                </hc:SimplePanel>
+            </hc:SimplePanel>
         </DockPanel>
         <Border Grid.Row="1" 
                 CornerRadius="5" 

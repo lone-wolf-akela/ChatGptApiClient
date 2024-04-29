@@ -27,7 +27,6 @@ using System.Windows.Media.Imaging;
 using System.Diagnostics;
 using Microsoft.Win32;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
 
 namespace ChatGptApiClientV2;
 
@@ -283,6 +282,80 @@ public partial class ChatWindow
             var textBox = (TextBox)sender;
             textBox.Focus();
             textBox.SelectAll();
+        }
+    }
+
+    private void Window_DragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            PanelDropFiles.Visibility = Visibility.Visible;
+            e.Handled = true;
+        }
+        e.Effects = DragDropEffects.None;
+    }
+    private static bool IsMouseOverElement(UIElement element)
+    {
+        var mousePos = Mouse.GetPosition(element);
+        return mousePos.X >= 0 && mousePos.X <= element.RenderSize.Width &&
+               mousePos.Y >= 0 && mousePos.Y <= element.RenderSize.Height;
+    }
+    private void Window_DragLeave(object sender, DragEventArgs e)
+    {
+        if(!IsMouseOverElement(PanelDropFiles))
+        {
+            PanelDropFiles.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void Window_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            PanelDropFiles.Visibility = Visibility.Visible; 
+            e.Handled = true;
+        }
+        e.Effects = DragDropEffects.None;
+    }
+
+    private void PanelDropFiles_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+            e.Handled = true;
+        }
+    }
+
+    private void PanelDropFiles_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) { return; }
+
+        PanelDropFiles.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) { return; }
+        foreach(var file in files)
+        {
+            ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(file);
+        }
+    }
+
+    private void TxtInput_PreviewDragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            PanelDropFiles.Visibility = Visibility.Visible;
+            e.Handled = true;
+        }
+    }
+
+    private void TxtInput_PreviewDragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            PanelDropFiles.Visibility = Visibility.Visible;
+            e.Handled = true;
         }
     }
 }

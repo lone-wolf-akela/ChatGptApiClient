@@ -979,7 +979,10 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     private const string OpenFileAttachmentDialogGuid = "B8F42507-693B-4713-8671-A76F02ED5ADB";
-
+    public void AddSingleFileAttachment(string file)
+    {
+        FileAttachments.Add(new FileAttachmentInfo(file, FileAttachments));
+    }
     [RelayCommand]
     private void AddFile()
     {
@@ -990,7 +993,7 @@ public partial class ChatWindowViewModel : ObservableObject
         };
         if (dlg.ShowDialog() == true)
         {
-            FileAttachments.Add(new FileAttachmentInfo(dlg.FileName, FileAttachments));
+            AddSingleFileAttachment(dlg.FileName);
         }
     }
 
