@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+
 // ReSharper disable InconsistentNaming
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedMember.Global
@@ -123,7 +124,11 @@ internal sealed class SseReader(Stream stream) : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if (_disposedValue) { return; }
+        if (_disposedValue)
+        {
+            return;
+        }
+
         if (disposing)
         {
             _reader.Dispose();
@@ -132,6 +137,7 @@ internal sealed class SseReader(Stream stream) : IDisposable
 
         _disposedValue = true;
     }
+
     public void Dispose()
     {
         Dispose(disposing: true);

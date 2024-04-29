@@ -27,8 +27,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	POPPLERWRAPPER_API char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
-	POPPLERWRAPPER_API void poppler_free_text(const char* text);
+POPPLERWRAPPER_API char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
+POPPLERWRAPPER_API void poppler_free_text(const char* text);
 #ifdef __cplusplus
 }
 #endif

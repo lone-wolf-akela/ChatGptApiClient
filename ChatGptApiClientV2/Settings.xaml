@@ -26,268 +26,340 @@
            Title="Settings" Height="650" Width="1080"
            Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <d:Window.DataContext>
-        <local:SettingsViewModel/>
+        <local:SettingsViewModel />
     </d:Window.DataContext>
     <hc:SimplePanel>
         <hc:SimplePanel.LayoutTransform>
-            <ScaleTransform ScaleX="{Binding Config.UiScale}" ScaleY="{Binding Config.UiScale}"/>
+            <ScaleTransform ScaleX="{Binding Config.UiScale}" ScaleY="{Binding Config.UiScale}" />
         </hc:SimplePanel.LayoutTransform>
         <DockPanel Margin="10,10,10,10">
-            <Button DockPanel.Dock="Bottom" 
-                    Content="关闭" 
-                    HorizontalAlignment="Right" 
-                    Width="100" 
+            <Button DockPanel.Dock="Bottom"
+                    Content="关闭"
+                    HorizontalAlignment="Right"
+                    Width="100"
                     Height="50"
                     Command="hc:ControlCommands.CloseWindow"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
+                    CommandParameter="{Binding RelativeSource={RelativeSource Self}}" />
             <StackPanel>
-                <hc:Divider Margin="0" Content="UI选项" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="UI选项" HorizontalContentAlignment="Left" />
                 <Grid Margin="0,0,0,5">
                     <Grid.ColumnDefinitions>
                         <!-- 0:Label   0 -->
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="75" />
                         <!-- 1:Control 0 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                         <!-- 2:Margin    -->
-                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="5" />
                         <!-- 3:Divider   -->
-                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
                         <!-- 4:Label   1 -->
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="75" />
                         <!-- 5:Control 1 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                         <!-- 6:Margin    -->
-                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="5" />
                         <!-- 7:Divider   -->
-                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
                         <!-- 8:Label   2 -->
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100" />
                         <!-- 9:Control 2 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Column="3" Margin="0" Orientation="Vertical"/>
-                    <hc:Divider Grid.Column="7" Margin="0" Orientation="Vertical"/>
-                    <Label Grid.Column="0" Content="主题" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <hc:Divider Grid.Column="3" Margin="0" Orientation="Vertical" />
+                    <hc:Divider Grid.Column="7" Margin="0" Orientation="Vertical" />
+                    <Label Grid.Column="0" Content="主题" VerticalAlignment="Center" HorizontalAlignment="Left" />
                     <hc:ButtonGroup Grid.Column="1" Style="{StaticResource ButtonGroupSolidDynamicColor}">
-                        <RadioButton Content="跟随系统" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}"/>
-                        <RadioButton Content="浅色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}"/>
-                        <RadioButton Content="深色" IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}"/>
+                        <RadioButton Content="跟随系统"
+                                     IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}" />
+                        <RadioButton Content="浅色"
+                                     IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}" />
+                        <RadioButton Content="深色"
+                                     IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}" />
                     </hc:ButtonGroup>
-                    <Label Grid.Column="4" Content="主题颜色" HorizontalAlignment="Left"/>
+                    <Label Grid.Column="4" Content="主题颜色" HorizontalAlignment="Left" />
                     <StackPanel Grid.Column="5" HorizontalAlignment="Left" Orientation="Horizontal">
-                        <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统" IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}" Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0"/>
-                        <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}">
-                            <TextBox Width="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}"/>
-                            <Button Background="{Binding Config.CustomThemeColor}" 
-                                    hc:BorderElement.CornerRadius="0" 
-                                    VerticalAlignment="Stretch" 
+                        <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统"
+                                      IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}"
+                                      Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0" />
+                        <StackPanel Orientation="Horizontal"
+                                    IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}">
+                            <TextBox Width="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}" />
+                            <Button Background="{Binding Config.CustomThemeColor}"
+                                    hc:BorderElement.CornerRadius="0"
+                                    VerticalAlignment="Stretch"
                                     Click="BtnShowColorPicker_Click"
                                     CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                    Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}" 
-                                    Margin="0,0,5,0"/>
+                                    Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}"
+                                    Margin="0,0,5,0" />
                         </StackPanel>
                     </StackPanel>
-                    <Label Grid.Column="8" Content="UI 缩放" HorizontalAlignment="Left"/>
+                    <Label Grid.Column="8" Content="UI 缩放" HorizontalAlignment="Left" />
                     <DockPanel Grid.Column="9">
-                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtUiScale" Text="{Binding ElementName=SlidUiScale,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="SlidUiScale" Minimum="0.5" Maximum="2" LargeChange="0.1" Value="{Binding Path=Config.UiScale, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtUiScale"
+                                 Text="{Binding ElementName=SlidUiScale,Path=Value,StringFormat=N2}"
+                                 InputScope="Number" VerticalAlignment="Center" />
+                        <Slider x:Name="SlidUiScale" Minimum="0.5" Maximum="2" LargeChange="0.1"
+                                Value="{Binding Path=Config.UiScale, Mode=TwoWay}" Margin="0,0,5,0"
+                                VerticalAlignment="Center" />
                     </DockPanel>
                 </Grid>
-                <hc:Divider Margin="0" Content="模型参数" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="模型参数" HorizontalContentAlignment="Left" />
                 <Grid Margin="0,0,0,5">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto" />
                         <!-- Margin -->
-                        <RowDefinition Height="5"/>
-                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="5" />
+                        <RowDefinition Height="auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <!-- 0:Label   0 -->
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="75" />
                         <!-- 1:Control 0 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                         <!-- 2:Margin    -->
-                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="5" />
                         <!-- 3:Divider   -->
-                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
                         <!-- 4:Label   1 -->
-                        <ColumnDefinition Width="75"/>
+                        <ColumnDefinition Width="75" />
                         <!-- 5:Control 1 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                         <!-- 6:Margin    -->
-                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="5" />
                         <!-- 7:Divider   -->
-                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
                         <!-- 8:Label   2 -->
-                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100" />
                         <!-- 9:Control 2 -->
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Row="0" Grid.Column="3" Margin="0" Orientation="Vertical"/>
-                    <hc:Divider Grid.Row="0" Grid.Column="7" Margin="0" Orientation="Vertical"/>
-                    <hc:Divider Grid.Row="2" Grid.Column="3" Margin="0" Orientation="Vertical"/>
-                    <hc:Divider Grid.Row="2" Grid.Column="7" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Row="0" Grid.Column="3" Margin="0" Orientation="Vertical" />
+                    <hc:Divider Grid.Row="0" Grid.Column="7" Margin="0" Orientation="Vertical" />
+                    <hc:Divider Grid.Row="2" Grid.Column="3" Margin="0" Orientation="Vertical" />
+                    <hc:Divider Grid.Row="2" Grid.Column="7" Margin="0" Orientation="Vertical" />
 
-                    <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="0" Grid.Column="4" Content="种子" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="4" Content="重复惩罚" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label Grid.Row="2" Grid.Column="8" Content="Top P" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
+                    <Label Grid.Row="0" Grid.Column="4" Content="种子" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
+                    <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
+                    <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
+                    <Label Grid.Row="2" Grid.Column="4" Content="重复惩罚" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
+                    <Label Grid.Row="2" Grid.Column="8" Content="Top P" VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
 
                     <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname"
-                             Text="{Binding Config.UserNickName, UpdateSourceTrigger=PropertyChanged}"/>
+                             Text="{Binding Config.UserNickName, UpdateSourceTrigger=PropertyChanged}" />
 
                     <DockPanel Grid.Row="0" Grid.Column="5">
-                        <CheckBox DockPanel.Dock="Right" Width="70" Content="随机" IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}" VerticalAlignment="Center"/>
-                        <TextBox x:Name="TxtSeed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}" IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}" InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <CheckBox DockPanel.Dock="Right" Width="70" Content="随机"
+                                  IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}"
+                                  VerticalAlignment="Center" />
+                        <TextBox x:Name="TxtSeed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}"
+                                 IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}"
+                                 InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center" />
                     </DockPanel>
-                    <DockPanel  Grid.Row="0" Grid.Column="9">
-                        <TextBox Width="70" x:Name="TxtMaxTokens" DockPanel.Dock="Right" Text="{Binding ElementName=SlidMaxTokens,Path=Value,StringFormat=N0}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="SlidMaxTokens" Maximum="32768" Value="{Binding Path=Config.MaxTokens, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <DockPanel Grid.Row="0" Grid.Column="9">
+                        <TextBox Width="70" x:Name="TxtMaxTokens" DockPanel.Dock="Right"
+                                 Text="{Binding ElementName=SlidMaxTokens,Path=Value,StringFormat=N0}"
+                                 InputScope="Number" VerticalAlignment="Center" />
+                        <Slider x:Name="SlidMaxTokens" Maximum="32768"
+                                Value="{Binding Path=Config.MaxTokens, Mode=TwoWay}" TickFrequency="1"
+                                IsSnapToTickEnabled="True" Margin="0,0,5,0" VerticalAlignment="Center" />
                     </DockPanel>
                     <DockPanel Grid.Row="2" Grid.Column="1">
-                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTemp" Text="{Binding ElementName=SlidTemp,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="SlidTemp" Maximum="2" LargeChange="0.2" Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTemp"
+                                 Text="{Binding ElementName=SlidTemp,Path=Value,StringFormat=N2}" InputScope="Number"
+                                 VerticalAlignment="Center" />
+                        <Slider x:Name="SlidTemp" Maximum="2" LargeChange="0.2"
+                                Value="{Binding Path=Config.Temperature, Mode=TwoWay}" Margin="0,0,5,0"
+                                VerticalAlignment="Center" />
                     </DockPanel>
                     <DockPanel Grid.Row="2" Grid.Column="5">
-                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtPresencePenalty" Text="{Binding ElementName=SlidPresencePenalty,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="SlidPresencePenalty" Minimum="-2" Maximum="2" LargeChange="0.4" Value="{Binding Path=Config.PresencePenalty, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtPresencePenalty"
+                                 Text="{Binding ElementName=SlidPresencePenalty,Path=Value,StringFormat=N2}"
+                                 InputScope="Number" VerticalAlignment="Center" />
+                        <Slider x:Name="SlidPresencePenalty" Minimum="-2" Maximum="2" LargeChange="0.4"
+                                Value="{Binding Path=Config.PresencePenalty, Mode=TwoWay}" Margin="0,0,5,0"
+                                VerticalAlignment="Center" />
                     </DockPanel>
                     <DockPanel Grid.Row="2" Grid.Column="9">
-                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTopP" Text="{Binding ElementName=SlidTopP,Path=Value,StringFormat=N2}" InputScope="Number" VerticalAlignment="Center"/>
-                        <Slider x:Name="SlidTopP" Maximum="1" LargeChange="0.1" Value="{Binding Path=Config.TopP, Mode=TwoWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                        <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtTopP"
+                                 Text="{Binding ElementName=SlidTopP,Path=Value,StringFormat=N2}" InputScope="Number"
+                                 VerticalAlignment="Center" />
+                        <Slider x:Name="SlidTopP" Maximum="1" LargeChange="0.1"
+                                Value="{Binding Path=Config.TopP, Mode=TwoWay}" Margin="0,0,5,0"
+                                VerticalAlignment="Center" />
                     </DockPanel>
                 </Grid>
-                <hc:Divider Margin="0" Content="OpenAI 聊天服务器和密钥" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="OpenAI 聊天服务器和密钥" HorizontalContentAlignment="Left" />
                 <Grid Margin="0,0,0,5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI 服务源" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <ComboBox ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
-                                      SelectedValuePath="Value"
-                                      DisplayMemberPath="Description"
-                                      SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI 服务源" VerticalAlignment="Center"
+                                   HorizontalContentAlignment="Left" />
+                            <ComboBox
+                                ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                SelectedValuePath="Value"
+                                DisplayMemberPath="Description"
+                                SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}" />
                         </DockPanel>
-                        <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxServiceurl" 
-                                     TextWrapping="Wrap" 
-                                     VerticalAlignment="Center" 
+                        <DockPanel Margin="0,0,0,5"
+                                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <TextBox x:Name="TxtbxServiceurl"
+                                     TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
                                      IsEnabled="{Binding Path=Config.ServiceURLEditable}"
                                      Text="{Binding Config.ServiceURL, UpdateSourceTrigger=PropertyChanged}" />
 
                         </DockPanel>
-                        <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox x:Name="TxtbxAzureendpoint" 
-                                     TextWrapping="Wrap" 
+                        <DockPanel Margin="0,0,0,5"
+                                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <TextBox x:Name="TxtbxAzureendpoint"
+                                     TextWrapping="Wrap"
                                      VerticalAlignment="Center"
                                      Text="{Binding Config.AzureEndpoint, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
-                        <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.API_KEY, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                        <DockPanel Margin="0,0,0,5"
+                                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.API_KEY, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
-                        <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                        <DockPanel Margin="0,0,0,5"
+                                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="5,0,0,0" >
-                        <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
+                    <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                        <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5"
+                                Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
                             <StackPanel>
-                                <Label Content="Azure 部署 ID"  VerticalAlignment="Stretch" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"/>
-                                <ListBox Margin="0,0,0,5" 
-                                         Height="100" 
+                                <Label Content="Azure 部署 ID" VerticalAlignment="Stretch"
+                                       HorizontalContentAlignment="Left" HorizontalAlignment="Stretch" />
+                                <ListBox Margin="0,0,0,5"
+                                         Height="100"
                                          ItemsSource="{Binding Config.AzureDeploymentList}"
-                                         SelectedIndex="{Binding SelectedAzureDeploymentIdIndex}"/>
+                                         SelectedIndex="{Binding SelectedAzureDeploymentIdIndex}" />
                                 <DockPanel>
-                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="删除选中" Command="{Binding BtnDelAzureDeploymentIdCommand}"/>
-                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0" Command="{Binding BtnAddAzureDeploymentIdCommand}"/>
-                                    <TextBox Text="{Binding TextAddAzureDeploymentId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,5,0" />
+                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="删除选中"
+                                            Command="{Binding BtnDelAzureDeploymentIdCommand}" />
+                                    <Button MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0"
+                                            Command="{Binding BtnAddAzureDeploymentIdCommand}" />
+                                    <TextBox
+                                        Text="{Binding TextAddAzureDeploymentId, UpdateSourceTrigger=PropertyChanged}"
+                                        Margin="0,0,5,0" />
                                 </DockPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </Grid>
-                <hc:Divider Margin="0" Content="Anthropic 聊天服务器和密钥" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="Anthropic 聊天服务器和密钥" HorizontalContentAlignment="Left" />
                 <Grid Margin="0,0,0,5">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic 服务源" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <ComboBox ItemsSource="{Binding Path=Config.AnthropicServiceProvider, Converter={local:EnumToCollectionConverter}}"
-                                      SelectedValuePath="Value"
-                                      DisplayMemberPath="Description"
-                                      SelectedValue="{Binding Path=Config.AnthropicServiceProvider, Mode=TwoWay}"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic 服务源"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <ComboBox
+                                ItemsSource="{Binding Path=Config.AnthropicServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                SelectedValuePath="Value"
+                                DisplayMemberPath="Description"
+                                SelectedValue="{Binding Path=Config.AnthropicServiceProvider, Mode=TwoWay}" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic Service URL" HorizontalContentAlignment="Left" Width="100"/>
-                            <TextBox x:Name="TxtbxAnthropicServiceurl" 
-                                     TextWrapping="Wrap" 
-                                     VerticalAlignment="Center" 
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic Service URL"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <TextBox x:Name="TxtbxAnthropicServiceurl"
+                                     TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
                                      IsEnabled="{Binding Path=Config.AnthropicServiceURLEditable}"
                                      Text="{Binding Config.AnthropicServiceURL, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="5,0,0,0" >
+                    <StackPanel Grid.Column="2" Margin="5,0,0,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic API KEY" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="Anthropic API KEY"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
                 </Grid>
-                <hc:Divider Margin="0" Content="插件设置" HorizontalContentAlignment="Left"/>
+                <hc:Divider Margin="0" Content="插件设置" HorizontalContentAlignment="Left" />
                 <Grid Margin="0,0,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical"/>
+                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Engine ID"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchEngineID, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Google Search Key"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
-                        <DockPanel Margin="0,0,0,5" Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <TextBox Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        <DockPanel Margin="0,0,0,5"
+                                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <TextBox Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}"
+                                     TextWrapping="Wrap" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="5,0,0,0">
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Bing Search Key"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.BingSearchAPIKey, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}" IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center"/>
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="WolframAlpha AppID"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.WolframAlphaAppid, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
-                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Python 解释器" VerticalAlignment="Center" HorizontalContentAlignment="Left"/>
-                            <ComboBox ItemsSource="{Binding PythonEnvs, Mode=OneTime}" 
+                            <Label DockPanel.Dock="Left" MinWidth="170" Content="Python 解释器" VerticalAlignment="Center"
+                                   HorizontalContentAlignment="Left" />
+                            <ComboBox ItemsSource="{Binding PythonEnvs, Mode=OneTime}"
                                       SelectedValue="{Binding Config.PythonDllPath}"
                                       SelectedValuePath="DllPath"
                                       SelectedItem="{Binding Config.PythonEnv, Mode=OneWayToSource}"
                                       DisplayMemberPath="ExecutablePath"
-                                      VerticalAlignment="Center"/>
+                                      VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
                 </Grid>

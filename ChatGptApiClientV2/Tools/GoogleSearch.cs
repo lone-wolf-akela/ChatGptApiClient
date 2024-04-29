@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -44,22 +45,29 @@ public class GoogleSearch : IToolCollection
         new WebsiteAccessFunc(),
         new WebsiteNextPageFunc()
     ];
+
     public string DisplayName => "Google 搜索";
 }
+
 public class GoogleSearchFunc : IToolFunction
 {
     public class Args
     {
-        [Description("The search query.")]
-        public string Query { get; set; } = "";
-        [Description("The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
+        [Description("The search query.")] public string Query { get; set; } = "";
+
+        [Description(
+            "The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
         public uint StartIndex { get; set; } = 1;
     }
-    public string Description => "Look for info on the Internet using Google search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
+
+    public string Description =>
+        "Look for info on the Internet using Google search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
+
     public string Name => "google_search";
     public Type ArgsType => typeof(Args);
 
     private static readonly HttpClient HttpClient;
+
     static GoogleSearchFunc()
     {
         var httpClientHandler = new HttpClientHandler
@@ -68,7 +76,9 @@ public class GoogleSearchFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -89,6 +99,7 @@ public class GoogleSearchFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Google search. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -107,11 +118,11 @@ public class GoogleSearchFunc : IToolFunction
 
         var parameters = new Dictionary<string, string?>
         {
-            {"cx",              state.Config.GoogleSearchEngineID},
-            {"key",             state.Config.GoogleSearchAPIKey},
-            {"q",               args.Query },
-            {"start",           args.StartIndex.ToString()},
-            {"fields",          "queries(request(count,startIndex),nextPage(count,startIndex)),items(title,link,snippet)"}
+            { "cx", state.Config.GoogleSearchEngineID },
+            { "key", state.Config.GoogleSearchAPIKey },
+            { "q", args.Query },
+            { "start", args.StartIndex.ToString() },
+            { "fields", "queries(request(count,startIndex),nextPage(count,startIndex)),items(title,link,snippet)" }
         };
 
         const string serviceUrl = "https://www.googleapis.com/customsearch/v1";
@@ -164,15 +175,18 @@ public class GoogleSearchFunc : IToolFunction
             {
                 return [new Paragraph(new Run("Google 搜索..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
             return [new Paragraph(new Run("Google 搜索..."))];
         }
+
         args.Query = args.Query.Trim();
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "非常疑惑.png",
             "菲谢尔-这是什么？.png",
             "刻晴-疑问.png",
@@ -197,18 +211,25 @@ public class GoogleSearchFunc : IToolFunction
         return [paragraph];
     }
 }
+
 public class WebsiteAccessFunc : IToolFunction
 {
     private const int ContentPageLimit = 4096;
+
     public class Args
     {
         [Description("The URL of the website to access.")]
         public string Url { get; set; } = "";
     }
-    public string Description => "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
+
+    public string Description =>
+        "Access a website. Content will be truncated if it's too long. You can call 'website_nextpage' to get the remaining content if needed.";
+
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -229,6 +250,7 @@ public class WebsiteAccessFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -290,8 +312,10 @@ public class WebsiteAccessFunc : IToolFunction
                 var contentRemained = content[ContentPageLimit..];
                 state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
                 content = content[..ContentPageLimit];
-                content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
+                content +=
+                    $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
             }
+
             msgContents[0].Text += $"Content: {content}";
             await browser.CloseAsync();
         }
@@ -318,6 +342,7 @@ public class WebsiteAccessFunc : IToolFunction
             {
                 return [new Paragraph(new Run("访问网站..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)
@@ -325,7 +350,8 @@ public class WebsiteAccessFunc : IToolFunction
             return [new Paragraph(new Run("访问网站..."))];
         }
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "达达利亚-冲浪.png",
             "优菈-让我看看.png",
             "菲米尼-爱好.png",
@@ -351,20 +377,27 @@ public class WebsiteAccessFunc : IToolFunction
         return [paragraph];
     }
 }
+
 public class WebsiteNextPageFunc : IToolFunction
 {
     private const int ContentPageLimit = 4096;
-    public string Description => "Get the next page of content from the past call to website_access. The content will be truncated if it's too long. If so, call website_nextpage again to get the remaining content when needed.";
+
+    public string Description =>
+        "Get the next page of content from the past call to website_access. The content will be truncated if it's too long. If so, call website_nextpage again to get the remaining content when needed.";
 
     public string Name => "website_nextpage";
+
     public class Args
     {
-        [Description("The URL of the website to access. Must be a URL that has been called with website_access previously.")]
+        [Description(
+            "The URL of the website to access. Must be a URL that has been called with website_access previously.")]
         public string Url { get; set; } = "";
     }
+
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -383,6 +416,7 @@ public class WebsiteNextPageFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Website Access. The args are: {argstr}\n\n";
                 return Task.FromResult(result);
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -402,7 +436,8 @@ public class WebsiteNextPageFunc : IToolFunction
         }
         catch (KeyNotFoundException)
         {
-            msgContents[0].Text += $"Error: {args.Url} has not been visited. You must first call website_access to get the content.\n\n";
+            msgContents[0].Text +=
+                $"Error: {args.Url} has not been visited. You must first call website_access to get the content.\n\n";
             return Task.FromResult(result);
         }
 
@@ -417,12 +452,14 @@ public class WebsiteNextPageFunc : IToolFunction
             var contentRemained = content[ContentPageLimit..];
             state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
             content = content[..ContentPageLimit];
-            content += $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
+            content +=
+                $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
         }
         else
         {
             state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
         }
+
         msgContents[0].Text += $"Content: {content}";
         msg.Hidden = true; // Hide success results from user
         return Task.FromResult(result);
@@ -430,7 +467,8 @@ public class WebsiteNextPageFunc : IToolFunction
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
     {
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "紬_急急急.png",
             "柯莱-学习时间.png",
             "夏洛蒂-您继续.png",
@@ -449,6 +487,7 @@ public class WebsiteNextPageFunc : IToolFunction
             {
                 return [new Paragraph(new Run("访问下一页..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)

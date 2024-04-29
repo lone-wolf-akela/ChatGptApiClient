@@ -84,8 +84,10 @@ public partial class Settings
             window.UpdateLayout();
 
             // then, move to target position, clamp to working area
-            var maxLeft = workArea.Right - (window.PopupElement.ActualWidth + window.BorderThickness.Left + window.BorderThickness.Right);
-            var maxTop = workArea.Bottom - (window.PopupElement.ActualHeight + window.BorderThickness.Top + window.BorderThickness.Bottom);
+            var maxLeft = workArea.Right - (window.PopupElement.ActualWidth + window.BorderThickness.Left +
+                                            window.BorderThickness.Right);
+            var maxTop = workArea.Bottom - (window.PopupElement.ActualHeight + window.BorderThickness.Top +
+                                            window.BorderThickness.Bottom);
             point.X = Math.Clamp(point.X, workArea.Left, maxLeft);
             point.Y = Math.Clamp(point.Y, workArea.Top, maxTop);
             window.Left = point.X;
@@ -93,10 +95,10 @@ public partial class Settings
         };
 
         picker.Confirmed += (_, _) =>
-            {
-                ((SettingsViewModel)DataContext).Config.CustomThemeColor = picker.SelectedBrush;
-                window.Close();
-            };
+        {
+            ((SettingsViewModel)DataContext).Config.CustomThemeColor = picker.SelectedBrush;
+            window.Close();
+        };
         picker.Canceled += (_, _) => window.Close();
         window.ShowDialog((FrameworkElement)sender, showBackground);
     }

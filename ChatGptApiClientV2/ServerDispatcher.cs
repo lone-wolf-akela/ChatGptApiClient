@@ -34,6 +34,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using static ChatGptApiClientV2.ChatCompletionRequest;
+
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 namespace ChatGptApiClientV2;
@@ -47,6 +48,7 @@ public class ServerEndpointOptions
         Claude,
         Custom
     };
+
     public ServiceType Service { get; set; }
     public string Endpoint { get; set; } = "";
     public string Key { get; set; } = "";
@@ -73,6 +75,7 @@ public interface IServerEndpoint
             return new OpenAIEndpoint(options);
         }
     }
+
     public Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default);
     public IAsyncEnumerable<string> Streaming(CancellationToken cancellationToken = default);
     public string SystemFingerprint { get; }
@@ -100,11 +103,13 @@ public class OpenAIEndpoint : IServerEndpoint
         {
             // use reflection to hijack the _endpoint (Uri Type) field, which is private
             var endpointField =
-                client.GetType().GetField("_endpoint", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                client.GetType().GetField("_endpoint",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 ?? throw new InvalidOperationException("Could not find _endpoint field");
             endpointField.SetValue(client, new Uri(options.Endpoint));
         }
     }
+
     private IEnumerable<ChatCompletionsFunctionToolDefinition> GetToolDefinitions()
     {
         var lst =
@@ -117,6 +122,7 @@ public class OpenAIEndpoint : IServerEndpoint
             };
         return lst;
     }
+
     private static Uri ImageBase64StrToUri(string base64Uri)
     {
         if (!base64Uri.StartsWith("data:"))
@@ -142,32 +148,43 @@ public class OpenAIEndpoint : IServerEndpoint
         Console.WriteLine(uri.ToString());
         Console.WriteLine(uri.AbsolutePath);
 
-        var uriField = uri.GetType().GetField("_string", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?? throw new InvalidOperationException("Could not find _string field");
+        var uriField = uri.GetType().GetField("_string",
+                           System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                       ?? throw new InvalidOperationException("Could not find _string field");
         uriField.SetValue(uri, base64Uri);
 
-        var uriInfoField = uri.GetType().GetField("_info", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            ?? throw new InvalidOperationException("Could not find _info field");
+        var uriInfoField = uri.GetType().GetField("_info",
+                               System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                           ?? throw new InvalidOperationException("Could not find _info field");
 
         var uriInfo = uriInfoField.GetValue(uri);
-        var uriInfoStringField = (uriInfo?.GetType().GetField("String", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            ?? throw new InvalidOperationException("Could not find String field in _info");
+        var uriInfoStringField = (uriInfo?.GetType().GetField("String",
+                                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                                 ?? throw new InvalidOperationException("Could not find String field in _info");
         uriInfoStringField.SetValue(uriInfo, base64Uri);
 
-        var uriInfoMoreInfoField = (uriInfo.GetType().GetField("_moreInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
-            ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
+        var uriInfoMoreInfoField = (uriInfo.GetType().GetField("_moreInfo",
+                                       System.Reflection.BindingFlags.NonPublic |
+                                       System.Reflection.BindingFlags.Instance))
+                                   ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
         var uriInfoMoreInfo = uriInfoMoreInfoField.GetValue(uriInfo);
 
-        var uriInfoMoreInfoAbsoluteUriField = (uriInfoMoreInfo?.GetType().GetField("AbsoluteUri", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            ?? throw new InvalidOperationException("Could not find AbsoluteUri field in MoreInfo");
+        var uriInfoMoreInfoAbsoluteUriField = (uriInfoMoreInfo?.GetType().GetField("AbsoluteUri",
+                                                  System.Reflection.BindingFlags.Public |
+                                                  System.Reflection.BindingFlags.Instance))
+                                              ?? throw new InvalidOperationException(
+                                                  "Could not find AbsoluteUri field in MoreInfo");
         uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, base64Uri);
 
-        var uriInfoMoreInfoPathField = (uriInfoMoreInfo.GetType().GetField("Path", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
+        var uriInfoMoreInfoPathField = (uriInfoMoreInfo.GetType().GetField("Path",
+                                           System.Reflection.BindingFlags.Public |
+                                           System.Reflection.BindingFlags.Instance))
+                                       ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
         uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, base64Uri["data:".Length..]);
 
         return uri;
     }
+
     private static ChatRequestMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
@@ -185,8 +202,8 @@ public class OpenAIEndpoint : IServerEndpoint
                 {
                     var detailLevel =
                         imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                        ? ChatMessageImageDetailLevel.Low
-                        : ChatMessageImageDetailLevel.High;
+                            ? ChatMessageImageDetailLevel.Low
+                            : ChatMessageImageDetailLevel.High;
                     var uri = ImageBase64StrToUri(imageContent.ImageUrl.Url);
                     contentLst.Add(new ChatMessageImageContentItem(uri, detailLevel));
                 }
@@ -195,11 +212,13 @@ public class OpenAIEndpoint : IServerEndpoint
                     throw new ArgumentException("Invalid content type");
                 }
             }
+
             var chatRequestUserMessage = new ChatRequestUserMessage(contentLst);
             if (chatDataMsg.Name is not null)
             {
                 chatRequestUserMessage.Name = chatDataMsg.Name;
             }
+
             return chatRequestUserMessage;
         }
 
@@ -228,7 +247,7 @@ public class OpenAIEndpoint : IServerEndpoint
                     toolCall.Id,
                     toolCall.Function.Name,
                     toolCall.Function.Arguments
-                    );
+                );
             chatRequestAssistantMsg.ToolCalls.AddRange(convertedToolCalls);
             return chatRequestAssistantMsg;
         }
@@ -265,7 +284,8 @@ public class OpenAIEndpoint : IServerEndpoint
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             chatCompletionsOptions.Messages.AddRange(GetChatRequestMessages(session.Messages));
 
-            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken).ConfigureAwait(false);
+            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken)
+                .ConfigureAwait(false);
             responseSb.Clear();
             errorMessage = null;
             systemFingerprint = "";
@@ -279,7 +299,8 @@ public class OpenAIEndpoint : IServerEndpoint
         }
     }
 
-    public async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<string> Streaming(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -341,6 +362,7 @@ public class OpenAIEndpoint : IServerEndpoint
                             arg = new StringBuilder();
                             funcArgsByIndex[toolCallUpdate.ToolCallIndex] = arg;
                         }
+
                         arg.Append(toolCallUpdate.ArgumentsUpdate);
                     }
                 }
@@ -359,6 +381,7 @@ public class OpenAIEndpoint : IServerEndpoint
     }
 
     public string SystemFingerprint => systemFingerprint;
+
     public AssistantMessage ResponseMessage
     {
         get
@@ -374,6 +397,7 @@ public class OpenAIEndpoint : IServerEndpoint
             return response;
         }
     }
+
     public IEnumerable<ToolCallType> ToolCalls
     {
         get
@@ -408,6 +432,7 @@ public class OpenAIEndpoint : IServerEndpoint
 public abstract partial class ClaudeEndpointBase : IServerEndpoint
 {
     private const string ApiVersion = "2023-06-01";
+
     public static ClaudeEndpointBase BuildClaudeEndpoint(ServerEndpointOptions o)
     {
         if (o.Tools is not null && o.Tools.Any())
@@ -421,6 +446,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
             return new ClaudeEndpointStreaming(o);
         }
     }
+
     protected ClaudeEndpointBase(ServerEndpointOptions o)
     {
         options = o;
@@ -460,6 +486,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         {
             contents.AddRange(userMsg.GenerateAttachmentContentList());
         }
+
         foreach (var content in contents)
         {
             if (chatDataMsg is ToolMessage tooMsg)
@@ -547,10 +574,12 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 lastRole = msg.Role;
             }
         }
+
         return mergedMessages;
     }
 
-    protected async Task BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming, CancellationToken cancellationToken)
+    protected async Task BuildSessionPrepare(ChatCompletionRequest session, bool isStreaming,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -568,12 +597,14 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                         {
                             throw new ArgumentException("System message must be text");
                         }
+
                         var allText = from content in msg.Content
-                                      select ((IMessage.TextContent)content).Text;
+                            select ((IMessage.TextContent)content).Text;
                         systemMessage = string.Join("\n\n", allText);
                         continue;
                     }
                 }
+
                 messages.Add(ChatDataMessageToClaudeMessage(msg));
             }
 
@@ -598,7 +629,8 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 RequestUri = new Uri(Url.Combine(options.Endpoint, "messages")),
                 Content = postContent
             };
-            httpResponse = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            httpResponse =
+                await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             errorMessage = null;
         }
         catch (Exception e)
@@ -615,15 +647,18 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
 
     [GeneratedRegex(@"\p{IsCJKUnifiedIdeographs}")]
     private static partial Regex CjkCharRegex();
+
     private static bool IsChinese(char c)
     {
         var r = CjkCharRegex();
         return r.IsMatch(c.ToString());
     }
+
     private static bool IsEnglishOrNumber(char c)
     {
         return c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9');
     }
+
     protected static string NormalizeChinesePunctuation(string input)
     {
         var punctuationPair = new Dictionary<char, char>
@@ -652,6 +687,7 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 sb.Append(chinesePunc);
                 continue;
             }
+
             if (IsEnglishOrNumber(input[i]) && IsChinese(lastChar))
             {
                 sb.Append(' ');
@@ -660,10 +696,13 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
             {
                 sb.Append(' ');
             }
+
             sb.Append(input[i]);
         }
+
         return sb.ToString();
     }
+
     public abstract AssistantMessage ResponseMessage { get; }
     public abstract IEnumerable<ToolCallType> ToolCalls { get; }
 
@@ -673,10 +712,10 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
     private readonly ServerEndpointOptions options;
 }
 
-
 public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
 {
     private const string ApiBeta = "tools-2024-04-04";
+
     public ClaudeEndpointNonStreaming(ServerEndpointOptions o) : base(o)
     {
         if (!string.IsNullOrWhiteSpace(ApiBeta))
@@ -684,14 +723,17 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
-    public override async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
+
+    public override async Task BuildSession(ChatCompletionRequest session,
+        CancellationToken cancellationToken = default)
     {
         await BuildSessionPrepare(session, false, cancellationToken).ConfigureAwait(false);
         textResponseLst.Clear();
         toolUseResponseLst.Clear();
     }
 
-    public override async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<string> Streaming(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -712,7 +754,8 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        await using var responseStream =
+            await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(responseStream);
         var responseStr = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
@@ -721,15 +764,14 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
         {
             if (!httpResponse.IsSuccessStatusCode)
             {
-
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
-                    ?? throw new JsonSerializationException(responseStr);
+                            ?? throw new JsonSerializationException(responseStr);
                 errorMessage = $"{error.Error.Type}: {error.Error.Message}";
                 yield break;
             }
 
             var responseData = JsonConvert.DeserializeObject<Claude.CreateMessageResponse>(responseStr, settings)
-                ?? throw new JsonSerializationException($"Unable to parse response: {responseStr}");
+                               ?? throw new JsonSerializationException($"Unable to parse response: {responseStr}");
 
             foreach (var content in responseData.Content)
             {
@@ -746,6 +788,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
                     throw new InvalidOperationException($"Invalid content type: {content.Type}");
                 }
             }
+
             var allTextResponse = from content in textResponseLst select content.Text;
             combinedTextResponse = string.Join("\n\n", allTextResponse);
         }
@@ -754,6 +797,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             errorMessage = e.Message;
             yield break;
         }
+
         if (!string.IsNullOrEmpty(combinedTextResponse))
         {
             yield return combinedTextResponse;
@@ -773,9 +817,11 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             {
                 foreach (var content in textResponseLst)
                 {
-                    assistantTextContent.Add(new IMessage.TextContent { Text = NormalizeChinesePunctuation(content.Text) });
+                    assistantTextContent.Add(new IMessage.TextContent
+                        { Text = NormalizeChinesePunctuation(content.Text) });
                 }
             }
+
             var response = new AssistantMessage
             {
                 Content = assistantTextContent,
@@ -784,6 +830,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             return response;
         }
     }
+
     public override IEnumerable<ToolCallType> ToolCalls
     {
         get
@@ -803,6 +850,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
             }
         }
     }
+
     private readonly List<Claude.TextContent> textResponseLst = [];
     private readonly List<Claude.ToolUseContent> toolUseResponseLst = [];
 }
@@ -810,6 +858,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
 public class ClaudeEndpointStreaming : ClaudeEndpointBase
 {
     private const string ApiBeta = "";
+
     public ClaudeEndpointStreaming(ServerEndpointOptions o) : base(o)
     {
         if (!string.IsNullOrWhiteSpace(ApiBeta))
@@ -818,7 +867,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         }
     }
 
-    public override async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
+    public override async Task BuildSession(ChatCompletionRequest session,
+        CancellationToken cancellationToken = default)
     {
         await BuildSessionPrepare(session, true, cancellationToken).ConfigureAwait(false);
         // messageStart = null;
@@ -827,7 +877,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         indexToContentBlockDeltas.Clear();
     }
 
-    public override async IAsyncEnumerable<string> Streaming([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public override async IAsyncEnumerable<string> Streaming(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (errorMessage is not null)
         {
@@ -848,7 +899,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             ContractResolver = contractResolver
         };
 
-        await using var responseStream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        await using var responseStream =
+            await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         if (!httpResponse.IsSuccessStatusCode)
         {
             try
@@ -856,18 +908,19 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
                 using var errorReader = new StreamReader(responseStream);
                 var responseStr = await errorReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
-                    ?? throw new JsonSerializationException(responseStr);
+                            ?? throw new JsonSerializationException(responseStr);
                 errorMessage = $"{error.Error.Type}: {error.Error.Message}";
             }
             catch (Exception e)
             {
                 errorMessage = e.Message;
             }
+
             yield break;
         }
 
         using var reader = new SseReader(responseStream);
-        while(true)
+        while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -877,15 +930,25 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
                 break;
             }
 
-            if (line.Value.IsEmpty) { continue; }
-            if (line.Value.IsComment) { continue; }
+            if (line.Value.IsEmpty)
+            {
+                continue;
+            }
+
+            if (line.Value.IsComment)
+            {
+                continue;
+            }
 
             var fieldName = line.Value.FieldName;
             var fieldValue = line.Value.FieldValue;
 
-            if (!fieldName.Span.SequenceEqual("data".AsSpan())) { continue; }
+            if (!fieldName.Span.SequenceEqual("data".AsSpan()))
+            {
+                continue;
+            }
 
-            if(fieldValue.Span.SequenceEqual("[DONE]".AsSpan()))
+            if (fieldValue.Span.SequenceEqual("[DONE]".AsSpan()))
             {
                 break;
             }
@@ -906,7 +969,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
                 errorMessage = $"Error: Invalid chat response: {exception.Message}";
                 yield break;
             }
-            if(responseChunk is Claude.StreamingMessageStart /*msgStart*/)
+
+            if (responseChunk is Claude.StreamingMessageStart /*msgStart*/)
             {
                 // not used
                 // messageStart = msgStart;
@@ -925,11 +989,12 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             }
             else if (responseChunk is Claude.StreamingContentBlockDelta contentDelta)
             {
-                if(!indexToContentBlockDeltas.TryGetValue(contentDelta.Index, out var deltaList))
+                if (!indexToContentBlockDeltas.TryGetValue(contentDelta.Index, out var deltaList))
                 {
                     deltaList = [];
                     indexToContentBlockDeltas[contentDelta.Index] = deltaList;
                 }
+
                 deltaList.Add(contentDelta);
                 if (contentDelta.Delta is Claude.StreamingContentBlockTextDelta delta)
                 {
@@ -977,7 +1042,7 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
 
                 var contentIndex = indexToContentBlockStart.Keys.ToList();
                 contentIndex.Sort();
-                foreach(var index in contentIndex)
+                foreach (var index in contentIndex)
                 {
                     msgBuilder.Clear();
                     var start = indexToContentBlockStart[index].ContentBlock;
@@ -985,18 +1050,23 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
                     {
                         continue;
                     }
+
                     msgBuilder.Append(textContentStart.Text);
-                    foreach(var delta in indexToContentBlockDeltas[index])
+                    foreach (var delta in indexToContentBlockDeltas[index])
                     {
                         if (delta.Delta is not Claude.StreamingContentBlockTextDelta textContentDelta)
                         {
                             throw new InvalidOperationException("Invalid delta type");
                         }
+
                         msgBuilder.Append(textContentDelta.Text);
                     }
-                    assistantTextContent.Add(new IMessage.TextContent { Text = NormalizeChinesePunctuation(msgBuilder.ToString()) });
+
+                    assistantTextContent.Add(new IMessage.TextContent
+                        { Text = NormalizeChinesePunctuation(msgBuilder.ToString()) });
                 }
             }
+
             var response = new AssistantMessage
             {
                 Content = assistantTextContent,
@@ -1005,6 +1075,7 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             return response;
         }
     }
+
     public override IEnumerable<ToolCallType> ToolCalls => [];
 
     //private StreamingMessageStart? messageStart;

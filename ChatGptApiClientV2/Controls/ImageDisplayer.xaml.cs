@@ -101,7 +101,8 @@ public partial class ImageDisplayer
     private static void OnImageTooltipChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (ImageDisplayer)d;
-        control.TgglDetails.Visibility = !string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Visible : Visibility.Collapsed;
+        control.TgglDetails.Visibility =
+            !string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ImageGrid_MouseEnter(object sender, MouseEventArgs e)
@@ -123,6 +124,7 @@ public partial class ImageDisplayer
             encoder.Frames.Add(BitmapFrame.Create(Image));
             encoder.Save(fs);
         }
+
         var imageName = Path.ChangeExtension(tmpName, "png");
         File.Move(tmpName, imageName);
         Process.Start(new ProcessStartInfo(imageName) { UseShellExecute = true });

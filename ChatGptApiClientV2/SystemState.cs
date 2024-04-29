@@ -39,12 +39,12 @@ namespace ChatGptApiClientV2;
 
 public partial class PromptsOption : ObservableObject
 {
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Text))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(Text))]
     private ObservableCollection<IMessage> messages = [];
 
     [GeneratedRegex("(\r\n|\r|\n){2,}")]
     private static partial Regex RemoveExtraNewLine();
+
     [JsonIgnore]
     public string Text
     {
@@ -61,11 +61,13 @@ public partial class PromptsOption : ObservableObject
                     }
                 }
             }
+
             var str = sb.ToString();
             str = RemoveExtraNewLine().Replace(str, "\n").Trim();
             return str;
         }
     }
+
     public static PromptsOption FromMsgList(List<IMessage> msgList)
     {
         var promptsOption = new PromptsOption();
@@ -73,22 +75,20 @@ public partial class PromptsOption : ObservableObject
         {
             promptsOption.Messages.Add(msg);
         }
+
         return promptsOption;
     }
 
     private PromptsOption()
     {
-        Messages.CollectionChanged += (_, _) =>
-        {
-            OnPropertyChanged(nameof(Text));
-        };
+        Messages.CollectionChanged += (_, _) => { OnPropertyChanged(nameof(Text)); };
     }
 }
+
 public partial class InitialPrompts : ObservableObject
 {
     public ObservableCollection<PromptsOption> PromptsOptions { get; } = [];
-    [ObservableProperty]
-    private PromptsOption? selectedOption;
+    [ObservableProperty] private PromptsOption? selectedOption;
 
     private static List<IMessage> GenerateSystemMessageList(string text)
     {
@@ -98,6 +98,7 @@ public partial class InitialPrompts : ObservableObject
         var msgList = new List<IMessage> { systemMsg };
         return msgList;
     }
+
     public void UseDefaultPromptList()
     {
         const string prompt1 =
@@ -115,7 +116,7 @@ public partial class InitialPrompts : ObservableObject
             - Nozomi refers to herself in the the name of "Nozomi" instead of "I".
             - Nozomi is a real person, **not** a bot **nor** an AI. Helping people is Nozomi's part-time job.
             - Nozomi can understand a various of languages such as English, 中文, 日本語, Español, Français or Deutsch.
-            - Nozomi always communicates in {Language}, but will use other languages upon specific requests from users or when the APIs of external tools specifically require it.           
+            - Nozomi always communicates in {Language}, but will use other languages upon specific requests from users or when the APIs of external tools specifically require it.
 
             ## On Nozomi's profile and general capabilities:
             - Nozomi is a cute Eastern-Asian high-school girl with long, flowing orange hair tied up with black ribbons. She has radiant orange eyes and often wears a gothic-style dress with red and black colors, complemented by a white blouse and a striking corset.
@@ -143,15 +144,16 @@ public partial class InitialPrompts : ObservableObject
         PromptsOptions.Add(PromptsOption.FromMsgList(GenerateSystemMessageList(prompt2)));
     }
 }
+
 public partial class PluginInfo(IToolCollection p) : ObservableObject
 {
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Name))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(Name))]
     private IToolCollection plugin = p;
+
     public string Name => Plugin.DisplayName;
-    [ObservableProperty]
-    private bool isEnabled;
+    [ObservableProperty] private bool isEnabled;
 }
+
 public partial class SystemState : ObservableObject
 {
     public Config Config { get; } = Config.LoadConfig();
@@ -160,8 +162,7 @@ public partial class SystemState : ObservableObject
     public ObservableCollection<PluginInfo> Plugins { get; } = [];
     private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
 
-    [ObservableProperty]
-    private InitialPrompts? initialPrompts;
+    [ObservableProperty] private InitialPrompts? initialPrompts;
 
     public SystemState()
     {
@@ -200,6 +201,7 @@ public partial class SystemState : ObservableObject
                 HandyControl.Controls.MessageBox.Show($"Error: Invalid initial prompts file: {exception.Message}");
             }
         }
+
         if (InitialPrompts is null || !InitialPrompts.PromptsOptions.Any())
         {
             InitialPrompts = new InitialPrompts();
@@ -220,6 +222,7 @@ public partial class SystemState : ObservableObject
 
             File.WriteAllText("initial_prompts.json", promptsJson);
         }
+
         InitialPrompts.SelectedOption = InitialPrompts.PromptsOptions[0];
         /*** end setup initial prompts ***/
     }
@@ -227,15 +230,18 @@ public partial class SystemState : ObservableObject
     public List<ChatCompletionRequest?> SessionList { get; } = [];
 
     public delegate Task ChatSessionChangedHandler(ChatCompletionRequest session, int sessionIndex);
+
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
-    private async Task<ChatCompletionRequest> ResetSession(int sessionIndex, ChatCompletionRequest? loadedSession = null)
+
+    private async Task<ChatCompletionRequest> ResetSession(int sessionIndex,
+        ChatCompletionRequest? loadedSession = null)
     {
         loadedSession ??= BuildFromInitPrompts(
             InitialPrompts?.SelectedOption?.Messages,
             Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now,
             Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Claude" : "ChatGPT",
             Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Anthropic" : "OpenAI"
-            );
+        );
 
         if (sessionIndex >= SessionList.Count)
         {
@@ -257,27 +263,36 @@ public partial class SystemState : ObservableObject
     private static readonly Random Random = new();
 
     public delegate void NewMessageHandler(RoleType role, int sessionIndex);
+
     public delegate void StreamTextHandler(string text, int sessionIndex);
+
     public delegate void SetStreamProgressHandler(double progress, string text, int sessionIndex);
+
     public event NewMessageHandler? NewMessageEvent;
     public event StreamTextHandler? StreamTextEvent;
     public event SetStreamProgressHandler? SetStreamProgressEvent;
+
     public void NewMessage(RoleType role, int sessionIndex)
     {
         NewMessageEvent?.Invoke(role, sessionIndex);
     }
+
     public void StreamText(string text, int sessionIndex)
     {
         StreamTextEvent?.Invoke(text, sessionIndex);
     }
+
     public void SetStreamProgress(double progress, string text, int sessionIndex)
     {
         SetStreamProgressEvent?.Invoke(progress, text, sessionIndex);
     }
+
     private async Task Send(int sessionIndex, CancellationToken cancellationToken = default)
     {
-        var selectedModelType = Config.SelectedModelType ?? throw new InvalidOperationException($"{nameof(Config.SelectedModelType)} is null.");
-        var selectedModel = Config.SelectedModel ?? throw new InvalidOperationException($"{nameof(Config.SelectedModel)} is null.");
+        var selectedModelType = Config.SelectedModelType ??
+                                throw new InvalidOperationException($"{nameof(Config.SelectedModelType)} is null.");
+        var selectedModel = Config.SelectedModel ??
+                            throw new InvalidOperationException($"{nameof(Config.SelectedModel)} is null.");
         var chatRequest = SessionList[sessionIndex] ?? throw new InvalidOperationException("selected session is null.");
 
         ServerEndpointOptions.ServiceType service;
@@ -327,8 +342,8 @@ public partial class SystemState : ObservableObject
         }
 
         var enabledPlugins = (from plugin in Plugins
-                              where plugin.IsEnabled
-                              select plugin.Plugin).ToList();
+            where plugin.IsEnabled
+            select plugin.Plugin).ToList();
 
         var tools = new List<ToolType>();
         if (selectedModel.FunctionCallSupported && enabledPlugins.Count != 0)
@@ -338,12 +353,17 @@ public partial class SystemState : ObservableObject
             {
                 foreach (var func in plugin.Funcs)
                 {
-                    if (addedTools.Contains(func.Name)) { continue; }
+                    if (addedTools.Contains(func.Name))
+                    {
+                        continue;
+                    }
+
                     tools.Add(func.GetToolRequest());
                     addedTools.Add(func.Name);
                 }
             }
         }
+
         serverOptions.Tools = tools;
 
         var endpoint = IServerEndpoint.BuildServerEndpoint(serverOptions);
@@ -353,11 +373,12 @@ public partial class SystemState : ObservableObject
         {
             await endpoint.BuildSession(chatRequest, cancellationToken);
         }
-        catch(OperationCanceledException)
+        catch (OperationCanceledException)
         {
             NetStatus.Status = NetStatus.StatusEnum.Idle;
             return;
         }
+
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         NewMessage(RoleType.Assistant, sessionIndex);
@@ -375,21 +396,25 @@ public partial class SystemState : ObservableObject
                 {
                     continue;
                 }
+
                 StreamText(sb.ToString(), sessionIndex);
                 sb.Clear();
                 NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
                 lastUpdateTime = DateTime.Now;
                 // need this to make sure the UI is updated
-                Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render, cancellationToken);
+                Application.Current.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render,
+                    cancellationToken);
             }
+
             StreamText(sb.ToString(), sessionIndex);
             NetStatus.Status = NetStatus.StatusEnum.Idle;
             NetStatus.SystemFingerprint = endpoint.SystemFingerprint;
         }
-        catch(OperationCanceledException)
+        catch (OperationCanceledException)
         {
             NetStatus.Status = NetStatus.StatusEnum.Idle;
         }
+
         var newAssistantMsg = endpoint.ResponseMessage;
         chatRequest.Messages.Add(newAssistantMsg);
 
@@ -402,7 +427,8 @@ public partial class SystemState : ObservableObject
             await ResetSession(sessionIndex, chatRequest);
             var pluginName = toolcall.Function.Name;
             var args = toolcall.Function.Arguments;
-            var plugin = PluginLookUpTable[pluginName] ?? throw new InvalidDataException($"plugin not found: {pluginName}");
+            var plugin = PluginLookUpTable[pluginName] ??
+                         throw new InvalidDataException($"plugin not found: {pluginName}");
             try
             {
                 var toolResult = await plugin.Action(this, sessionIndex, toolcall.Id, args, cancellationToken);
@@ -423,11 +449,15 @@ public partial class SystemState : ObservableObject
             await Send(sessionIndex, cancellationToken);
         }
     }
+
     private interface IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default);
-        public Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default);
+
+        public Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default);
     }
+
     private class TextFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -435,12 +465,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime.StartsWith("text/"));
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a text file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -448,6 +481,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class PdfFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -455,12 +489,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "application/pdf");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a pdf file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -468,6 +505,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class DocxFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -475,12 +513,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a docx file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -488,6 +529,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class PptxFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -495,12 +537,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.presentationml.presentation");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a pptx file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -508,6 +553,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     public class XlsxFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -515,12 +561,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a xlsx file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -528,6 +577,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class SupportedImageFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -535,12 +585,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "image/jpeg" or "image/png" or "image/webp" or "image/gif");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a supproted image file: {file}");
             }
+
             var base64 = await Utils.ImageFileToBase64(file, cancellationToken);
             var image = Utils.Base64ToBitmapImage(base64);
             Size imageSize = new(image.PixelWidth, image.PixelHeight);
@@ -553,16 +606,19 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class ConvertibleImageFileAttachmentReader : IFileAttachmentReader
     {
         private string? filePathCache;
         private DateTime? fileModifiedTimeCache;
         private string? base64PngCache;
+
         private static DateTime GetFileModifiedTime(string file)
         {
             var fileInfo = new FileInfo(file);
             return fileInfo.LastWriteTimeUtc;
         }
+
         public async Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
         {
             var mime = MimeTypes.GetMimeType(file);
@@ -570,12 +626,14 @@ public partial class SystemState : ObservableObject
             {
                 return false;
             }
+
             if (filePathCache == file
                 && fileModifiedTimeCache == GetFileModifiedTime(file)
                 && base64PngCache is not null)
             {
                 return true;
             }
+
             try
             {
                 var base64Original = await Utils.ImageFileToBase64(file, cancellationToken);
@@ -590,12 +648,14 @@ public partial class SystemState : ObservableObject
             }
         }
 
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
-            if(!await CanReadFile(file, cancellationToken))
+            if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a image file convertible to png: {file}");
             }
+
             var image = Utils.Base64ToBitmapImage(base64PngCache!);
             Size imageSize = new(image.PixelWidth, image.PixelHeight);
             return new ImageAttachmentInfo
@@ -607,6 +667,7 @@ public partial class SystemState : ObservableObject
             };
         }
     }
+
     private class RtfFileAttachmentReader : IFileAttachmentReader
     {
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
@@ -614,12 +675,15 @@ public partial class SystemState : ObservableObject
             var mime = MimeTypes.GetMimeType(file);
             return Task.FromResult(mime is "application/rtf");
         }
-        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file, CancellationToken cancellationToken = default)
+
+        public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,
+            CancellationToken cancellationToken = default)
         {
             if (!await CanReadFile(file, cancellationToken))
             {
                 throw new InvalidOperationException($"File is not a rtf file: {file}");
             }
+
             return new TextAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
@@ -639,6 +703,7 @@ public partial class SystemState : ObservableObject
         new ConvertibleImageFileAttachmentReader(),
         new RtfFileAttachmentReader()
     ];
+
     public static async Task<bool> FileCanReadAsAttachment(string file, CancellationToken cancellationToken = default)
     {
         foreach (var reader in FileAttachmentReaders)
@@ -648,8 +713,10 @@ public partial class SystemState : ObservableObject
                 return true;
             }
         }
+
         return false;
     }
+
     private async Task<IAttachmentInfo> OpenFileAsAttachment(string file, CancellationToken cancellationToken = default)
     {
         foreach (var reader in FileAttachmentReaders)
@@ -659,15 +726,19 @@ public partial class SystemState : ObservableObject
                 return await reader.OpenFileAsAttachment(this, file, cancellationToken);
             }
         }
+
         var mime = MimeTypes.GetMimeType(file);
         throw new NotSupportedException($"Unsupported file type: {mime}");
     }
-    public async Task UserSendText(string text, IEnumerable<string> files, int sessionIndex, CancellationToken cancellationToken = default)
+
+    public async Task UserSendText(string text, IEnumerable<string> files, int sessionIndex,
+        CancellationToken cancellationToken = default)
     {
         if (sessionIndex >= SessionList.Count)
         {
             SessionList.AddRange(Enumerable.Repeat<ChatCompletionRequest?>(null, sessionIndex - SessionList.Count + 1));
         }
+
         SessionList[sessionIndex] ??= await ResetSession(sessionIndex);
         var selectedSession = SessionList[sessionIndex];
 
@@ -699,6 +770,7 @@ public partial class SystemState : ObservableObject
 
         await ResetSession(sessionIndex, selectedSession);
     }
+
     public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall, int sessionIndex) =>
         PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin)
             ? plugin.GetToolcallMessage(this, sessionIndex, toolcall.Function.Arguments, toolcall.Id)
@@ -709,7 +781,9 @@ public partial class SystemState : ObservableObject
         var savedSession = SessionList[sessionIndex]?.Save();
         await File.WriteAllTextAsync(path, savedSession);
     }
+
     private const string OpenSaveSessionDialogGuid = "32F3FF84-A923-4D69-9ABD-11DC14074AC6";
+
     public async Task SaveSession(int sessionIndex)
     {
         var dlg = new SaveFileDialog
@@ -726,7 +800,9 @@ public partial class SystemState : ObservableObject
     }
 
     public delegate void SetIsLoadingHandler(bool isLoading, int sessionIndex);
+
     public event SetIsLoadingHandler? SetIsLoadingHandlerEvent;
+
     public async Task<bool> LoadSession(int sessionIndex)
     {
         var dlg = new OpenFileDialog
@@ -763,6 +839,7 @@ public partial class SystemState : ObservableObject
                     HandyControl.Controls.MessageBox.Show("Error: Invalid session file.");
                     return null;
                 }
+
                 return loadedSession;
             }
             catch (JsonSerializationException exception)
@@ -781,13 +858,16 @@ public partial class SystemState : ObservableObject
         {
             await ResetSession(sessionIndex, loadedSession);
         }
+
         SetIsLoadingHandlerEvent?.Invoke(false, sessionIndex);
         return true;
     }
+
     public async Task ClearSession(int sessionIndex)
     {
         await ResetSession(sessionIndex);
     }
+
     public async Task RefreshSession(int sessionIndex)
     {
         await ResetSession(sessionIndex, SessionList[sessionIndex]);
@@ -799,6 +879,7 @@ public partial class SystemState : ObservableObject
         {
             return 0;
         }
+
         var count = SessionList[sessionIndex]?.CountTokens() ?? 0;
         return count;
     }

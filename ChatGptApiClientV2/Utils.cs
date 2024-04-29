@@ -39,9 +39,11 @@ using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.ML.Tokenizers;
+
 // ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2;
+
 public static class TabControlHelper
 {
     public static readonly DependencyProperty AddTabCommandProperty = DependencyProperty.RegisterAttached(
@@ -49,10 +51,12 @@ public static class TabControlHelper
         typeof(ICommand),
         typeof(TabControlHelper),
         new PropertyMetadata(null));
+
     public static void SetAddTabCommand(UIElement element, ICommand? value)
     {
         element.SetValue(AddTabCommandProperty, value);
     }
+
     public static ICommand? GetAddTabCommand(UIElement element)
     {
         return element.GetValue(AddTabCommandProperty) as ICommand;
@@ -63,10 +67,12 @@ public static class TabControlHelper
         typeof(object),
         typeof(TabControlHelper),
         new PropertyMetadata(null));
+
     public static void SetAddTabBtnTooltip(UIElement element, object? value)
     {
         element.SetValue(AddTabBtnTooltip, value);
     }
+
     public static object? GetAddTabBtnTooltip(UIElement element)
     {
         return element.GetValue(AddTabBtnTooltip);
@@ -84,6 +90,7 @@ public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter
             _ => new CornerRadius(0)
         };
     }
+
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value;
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
@@ -126,16 +133,20 @@ public class Int2VisibilityReConverter : MarkupExtension, IValueConverter
         {
             return i == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
+
         return Visibility.Collapsed;
     }
+
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is Visibility v)
         {
             return v == Visibility.Visible ? 0 : 1;
         }
+
         return 0;
     }
+
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
@@ -147,16 +158,20 @@ public class Int2BoolConverter : MarkupExtension, IValueConverter
         {
             return i != 0;
         }
+
         return false;
     }
+
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool b)
         {
             return b ? 1 : 0;
         }
+
         return 0;
     }
+
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
@@ -184,12 +199,15 @@ public class LargerToVisibilityConverter : MarkupExtension, IMultiValueConverter
         {
             return d1 > d2 ? Visibility.Visible : Visibility.Collapsed;
         }
+
         return Visibility.Collapsed;
     }
+
     public object?[] ConvertBack(object? value, Type[] targetType, object? parameter, CultureInfo culture)
     {
         throw new InvalidOperationException();
     }
+
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
@@ -198,34 +216,41 @@ public class EnumValueDescription(Enum value, string desc)
     public Enum Value { get; set; } = value;
     public string Description { get; set; } = desc;
 }
+
 public static class EnumHelper
 {
     private static string Description(this Enum value)
     {
-        var attributes = value.GetType().GetField(value.ToString())?.GetCustomAttributes(typeof(DescriptionAttribute), false);
+        var attributes = value.GetType().GetField(value.ToString())
+            ?.GetCustomAttributes(typeof(DescriptionAttribute), false);
         if (attributes is not null && attributes.Length != 0)
         {
             return ((DescriptionAttribute)attributes.First()).Description;
         }
+
         // If no description is found
         return value.ToString();
     }
+
     public static IEnumerable<EnumValueDescription> GetAllValuesAndDescriptions(Type t)
     {
         if (!t.IsEnum)
         {
             throw new ArgumentException($"{nameof(t)} must be an enum type");
         }
+
         return Enum.GetValues(t)
             .Cast<Enum>()
             .Select(e => new EnumValueDescription(e, e.Description()))
             .ToList();
     }
 }
+
 [ValueConversion(typeof(Enum), typeof(IEnumerable<EnumValueDescription>))]
 public class EnumToCollectionConverter : MarkupExtension, IValueConverter
 {
     private readonly Dictionary<Type, IEnumerable<EnumValueDescription>> cache = [];
+
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         // => GetAllValuesAndDescriptions(value.GetType());
@@ -233,21 +258,25 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
         {
             return new List();
         }
+
         if (cache.TryGetValue(value.GetType(), out var cached))
         {
             return cached;
         }
+
         var result = EnumHelper.GetAllValuesAndDescriptions(value.GetType());
         cache[value.GetType()] = result;
         return result;
     }
+
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
 public static partial class Utils
 {
-    public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius, Thickness thickness)
+    public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius,
+        Thickness thickness)
     {
         var geometry = new StreamGeometry();
 
@@ -256,26 +285,31 @@ public static partial class Utils
 
         // Top side and top-right corner
         context.LineTo(new Point(width - radius.TopRight - thickness.Right, 0), true, false);
-        context.ArcTo(new Point(width - thickness.Right, radius.TopRight + thickness.Top), new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise, true, false);
+        context.ArcTo(new Point(width - thickness.Right, radius.TopRight + thickness.Top),
+            new Size(radius.TopRight, radius.TopRight), 0, false, SweepDirection.Clockwise, true, false);
 
         // Right side and bottom-right corner
         context.LineTo(new Point(width - thickness.Right, height - radius.BottomRight - thickness.Bottom), true, false);
-        context.ArcTo(new Point(width - radius.BottomRight - thickness.Right, height - thickness.Bottom), new Size(radius.BottomRight, radius.BottomRight), 0, false, SweepDirection.Clockwise, true, false);
+        context.ArcTo(new Point(width - radius.BottomRight - thickness.Right, height - thickness.Bottom),
+            new Size(radius.BottomRight, radius.BottomRight), 0, false, SweepDirection.Clockwise, true, false);
 
         // Bottom side and bottom-left corner
         context.LineTo(new Point(radius.BottomLeft + thickness.Left, height - thickness.Bottom), true, false);
-        context.ArcTo(new Point(thickness.Left, height - radius.BottomLeft - thickness.Bottom), new Size(radius.BottomLeft, radius.BottomLeft), 0, false, SweepDirection.Clockwise, true, false);
+        context.ArcTo(new Point(thickness.Left, height - radius.BottomLeft - thickness.Bottom),
+            new Size(radius.BottomLeft, radius.BottomLeft), 0, false, SweepDirection.Clockwise, true, false);
 
         // Left side and top-left corner
         context.LineTo(new Point(thickness.Left, radius.TopLeft + thickness.Top), true, false);
-        context.ArcTo(new Point(radius.TopLeft + thickness.Left, thickness.Top), new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise, true, false);
+        context.ArcTo(new Point(radius.TopLeft + thickness.Left, thickness.Top),
+            new Size(radius.TopLeft, radius.TopLeft), 0, false, SweepDirection.Clockwise, true, false);
 
         return geometry;
     }
 
 
     private static Tokenizer? gpt4Tokenizer;
-    public static int GetStringTokenNum(string str)
+
+    public static int GetStringTokenCount(string str)
     {
         gpt4Tokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
         var tokenCount = gpt4Tokenizer.CountTokens(str);
@@ -289,12 +323,14 @@ public static partial class Utils
         {
             throw new ArgumentException("The file is not an image.");
         }
+
         var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(filename, cancellationToken));
         return $"data:{mime};base64,{base64}";
     }
 
     [GeneratedRegex(@"^data:(?<mime>[a-z\-\+\.]+\/[a-z\-\+\.]+);base64,(?<data>.+)$")]
     private static partial Regex Base64UrlExtract();
+
     public static string ExtractBase64FromUrl(string urlOrData)
     {
         var r = Base64UrlExtract();
@@ -303,9 +339,11 @@ public static partial class Utils
         {
             return urlOrData;
         }
+
         var data = match.Groups["data"].Value;
         return data;
     }
+
     public static string ExtractMimeFromUrl(string url)
     {
         var r = Base64UrlExtract();
@@ -314,9 +352,11 @@ public static partial class Utils
         {
             throw new ArgumentException("The input is not a base64 data URL.");
         }
+
         var mime = match.Groups["mime"].Value;
         return mime;
     }
+
     public static BitmapImage Base64ToBitmapImage(string base64)
     {
         var data = ExtractBase64FromUrl(base64);
@@ -330,6 +370,7 @@ public static partial class Utils
         bitmapImage.Freeze();
         return bitmapImage;
     }
+
     public static string ConvertToBase64Png(string base64)
     {
         var data = ExtractBase64FromUrl(base64);
@@ -356,9 +397,9 @@ public static partial class Utils
         return ConvertToBase64Png(base64);
     }
 
-    private static T RandomSelectByStringHash<T>(string hashsrc, IList<T> list)
+    private static T RandomSelectByStringHash<T>(string hashSrc, IList<T> list)
     {
-        var bytes = Encoding.UTF8.GetBytes(hashsrc);
+        var bytes = Encoding.UTF8.GetBytes(hashSrc);
         var hash = System.Security.Cryptography.MD5.HashData(bytes);
         var value = Math.Abs(BitConverter.ToInt32(hash, 0));
 
@@ -366,9 +407,9 @@ public static partial class Utils
         return list[index];
     }
 
-    public static Floater CreateStickerFloater(IList<string> stickers, string hashsrc)
+    public static Floater CreateStickerFloater(IList<string> stickers, string hashSrc)
     {
-        var selectedSticker = RandomSelectByStringHash(hashsrc, stickers);
+        var selectedSticker = RandomSelectByStringHash(hashSrc, stickers);
 
         var uri = new Uri($"pack://application:,,,/images/{selectedSticker}");
         var bitmap = new BitmapImage(uri);
@@ -387,12 +428,16 @@ public static partial class Utils
 
         return floater;
     }
+
     // char* poppler_extract_text_from_pdf_file(const char* filename, size_t filename_len = 0);
     // void poppler_free_text(const char* text);
-    [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file", StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_extract_text_from_pdf_file",
+        StringMarshalling = StringMarshalling.Utf8)]
     private static partial IntPtr PopplerExtractTextFromPdfFile(string filename, int filenameLen);
+
     [LibraryImport("poppler-wrapper.dll", EntryPoint = "poppler_free_text")]
     private static partial void PopplerFreeText(IntPtr text);
+
     public static async Task<string> PdfFileToText(string filename, CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
@@ -402,6 +447,7 @@ public static partial class Utils
             {
                 throw new InvalidOperationException("Failed to extract text from PDF file.");
             }
+
             var text = Marshal.PtrToStringUTF8(ptr) ?? "";
             PopplerFreeText(ptr);
             return text;
@@ -429,6 +475,7 @@ public static partial class Utils
                 return (d.DriveType == DriveType.Network);
             }
         }
+
         return true;
     }
 
@@ -474,38 +521,55 @@ public static partial class Utils
     {
         /// <summary>get icon</summary>
         Icon = 0x000000100,
+
         /// <summary>get display name</summary>
         DisplayName = 0x000000200,
+
         /// <summary>get type name</summary>
         TypeName = 0x000000400,
+
         /// <summary>get attributes</summary>
         Attributes = 0x000000800,
+
         /// <summary>get icon location</summary>
         IconLocation = 0x000001000,
+
         /// <summary>return exe type</summary>
         ExeType = 0x000002000,
+
         /// <summary>get system icon index</summary>
         SysIconIndex = 0x000004000,
+
         /// <summary>put a link overlay on icon</summary>
         LinkOverlay = 0x000008000,
+
         /// <summary>show icon in selected state</summary>
         Selected = 0x000010000,
+
         /// <summary>get only specified attributes</summary>
         Attr_Specified = 0x000020000,
+
         /// <summary>get large icon</summary>
         LargeIcon = 0x000000000,
+
         /// <summary>get small icon</summary>
         SmallIcon = 0x000000001,
+
         /// <summary>get open icon</summary>
         OpenIcon = 0x000000002,
+
         /// <summary>get shell size icon</summary>
         ShellIconSize = 0x000000004,
+
         /// <summary>pszPath is a pidl</summary>
         PIDL = 0x000000008,
+
         /// <summary>use passed dwFileAttribute</summary>
         UseFileAttributes = 0x000000010,
+
         /// <summary>apply the appropriate overlays</summary>
         AddOverlays = 0x000000020,
+
         /// <summary>Get the index of the overlay in the upper 8 bits of the iIcon</summary>
         OverlayIndex = 0x000000040,
     }
@@ -516,8 +580,10 @@ public static partial class Utils
         public IntPtr hIcon;
         public int iIcon;
         public uint dwAttributes;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
         public string szDisplayName;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
         public string szTypeName;
     };
@@ -547,8 +613,8 @@ public static partial class Utils
         public int y;
         public int cx;
         public int cy;
-        public int xBitmap;    // x offset from the upper-left of bitmap
-        public int yBitmap;    // y offset from the upper-left of bitmap
+        public int xBitmap; // x offset from the upper-left of bitmap
+        public int yBitmap; // y offset from the upper-left of bitmap
         public int rgbBk;
         public int rgbFg;
         public int fStyle;
@@ -567,6 +633,7 @@ public static partial class Utils
         public int Unused2;
         public RECT rcImage;
     }
+
     [GeneratedComInterface]
     [Guid("46EB5926-582E-4017-9FDF-E8998DAA0950")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
@@ -670,6 +737,7 @@ public static partial class Utils
         public string TypeName { get; } = typeName;
         public int IconIndex { get; } = iconIndex;
     }
+
     private static ShellFileInfo GetShellFileInfo(string pszFile)
     {
         SHFILEINFO sfi = new();
@@ -679,19 +747,20 @@ public static partial class Utils
             ref sfi,
             (uint)Marshal.SizeOf(sfi),
             (uint)(SHGFI.SysIconIndex | SHGFI.LargeIcon | SHGFI.UseFileAttributes | SHGFI.DisplayName | SHGFI.TypeName)
-            );
+        );
         return new ShellFileInfo(sfi.szDisplayName, sfi.szTypeName, sfi.iIcon);
     }
 
     private static IntPtr? GetJumboIcon(int iImage)
     {
         IImageList? spiml = null;
-        Guid guil = new(IID_IImageList2);//or IID_IImageList
+        Guid guil = new(IID_IImageList2); //or IID_IImageList
         var result = Shell32.SHGetImageList(Shell32.SHIL_JUMBO, ref guil, ref spiml);
         if (result != 0)
         {
             return null;
         }
+
         var hIcon = IntPtr.Zero;
         spiml?.GetIcon(iImage, Shell32.ILD_TRANSPARENT | Shell32.ILD_IMAGE, ref hIcon);
         return hIcon;
@@ -706,24 +775,27 @@ public static partial class Utils
         {
             return null;
         }
+
         // 使用WPF的Imaging类来创建BitmapSource
         var iconSrc = Imaging.CreateBitmapSourceFromHIcon(
             hIcon.Value,
             Int32Rect.Empty,
             BitmapSizeOptions.FromEmptyOptions()
         );
-        iconSrc.Freeze();  // 重要：冻结图像，使其可以跨线程使用
+        iconSrc.Freeze(); // 重要：冻结图像，使其可以跨线程使用
 
         Shell32.DestroyIcon(hIcon.Value); // 清理非托管资源
 
         return iconSrc;
     }
+
     private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)
     {
         return from folder in folders
-               where File.Exists(Path.Combine(folder, fileName))
-               select folder;
+            where File.Exists(Path.Combine(folder, fileName))
+            select folder;
     }
+
     private static IEnumerable<string> FindPathContains(string fileName)
     {
         var path = Environment.GetEnvironmentVariable("PATH");
@@ -731,6 +803,7 @@ public static partial class Utils
         {
             yield break;
         }
+
         var folders = path.Split(';');
         foreach (var folder in FindFolderContains(fileName, folders))
         {
@@ -743,9 +816,11 @@ public static partial class Utils
     {
         public string HomePath { get; } = homePath;
         public string ExecutablePath { get; } = executablePath;
+
         // ReSharper disable once UnusedMember.Global
         public string DllPath { get; } = dllPath;
     }
+
     private static PythonEnv? DetectPythonInFolder(string folder)
     {
         var exe = Path.Combine(folder, "python.exe");
@@ -753,6 +828,7 @@ public static partial class Utils
         {
             return null;
         }
+
         var dlls = Directory.GetFiles(folder, "python3*.dll").ToList();
         // remove python3.dll
         dlls.RemoveAll(x => x.EndsWith("python3.dll"));
@@ -760,8 +836,10 @@ public static partial class Utils
         {
             return null;
         }
+
         return new PythonEnv(folder, exe, dlls[0]);
     }
+
     public static IEnumerable<PythonEnv> FindPythonEnvs()
     {
         // system installed python
@@ -773,14 +851,15 @@ public static partial class Utils
                 yield return env;
             }
         }
+
         // find conda installed path
         var condaExeBase = FindPathContains("conda.exe");
         var condaBatBase = FindPathContains("conda.bat");
         var condaBases = condaExeBase.Concat(condaBatBase).Distinct();
         var condaEnvsPath = (from path in condaBases
-                             let envsPath = Path.GetFullPath(Path.Combine(path, "..", "envs"))
-                             where Directory.Exists(envsPath)
-                             select envsPath).Distinct();
+            let envsPath = Path.GetFullPath(Path.Combine(path, "..", "envs"))
+            where Directory.Exists(envsPath)
+            select envsPath).Distinct();
 
         foreach (var envsFolder in condaEnvsPath)
         {
@@ -805,6 +884,7 @@ public static partial class Utils
             {
                 return;
             }
+
             action();
             disposed = true;
         }

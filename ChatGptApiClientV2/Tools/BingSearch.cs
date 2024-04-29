@@ -28,6 +28,7 @@ using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -41,22 +42,29 @@ public class BingSearch : IToolCollection
         new WebsiteAccessFunc(),
         new WebsiteNextPageFunc()
     ];
+
     public string DisplayName => "Bing 搜索";
 }
+
 public class BingSearchFunc : IToolFunction
 {
     public class Args
     {
-        [Description("The search query.")]
-        public string Query { get; set; } = "";
-        [Description("The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]
+        [Description("The search query.")] public string Query { get; set; } = "";
+
+        [Description(
+            "The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]
         public uint StartOffset { get; set; } = 0;
     }
-    public string Description => "Look for info on the Internet using Bing search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
+
+    public string Description =>
+        "Look for info on the Internet using Bing search. If you need detailed info from searched results, feel free to call 'website_access' to access links in results.";
+
     public string Name => "bing_search";
     public Type ArgsType => typeof(Args);
 
     private static readonly HttpClient HttpClient;
+
     static BingSearchFunc()
     {
         var httpClientHandler = new HttpClientHandler
@@ -65,7 +73,9 @@ public class BingSearchFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -86,6 +96,7 @@ public class BingSearchFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Bing search. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -104,9 +115,9 @@ public class BingSearchFunc : IToolFunction
 
         var parameters = new Dictionary<string, string?>
         {
-            {"q",               args.Query },
-            {"offset",          args.StartOffset.ToString()},
-            {"responseFilter",  "Webpages"}
+            { "q", args.Query },
+            { "offset", args.StartOffset.ToString() },
+            { "responseFilter", "Webpages" }
         };
 
         const string serviceUrl = "https://api.bing.microsoft.com/v7.0/search";
@@ -165,6 +176,7 @@ public class BingSearchFunc : IToolFunction
             };
             filteredPages.Add(filteredPage);
         }
+
         filteredResponse["webPages"] = filteredPages;
 
         msgContents[0].Text += $"Results: {filteredResponse.ToString(Formatting.Indented)}\n\n";
@@ -185,15 +197,18 @@ public class BingSearchFunc : IToolFunction
             {
                 return [new Paragraph(new Run("Bing 搜索..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
             return [new Paragraph(new Run("Bing 搜索..."))];
         }
+
         args.Query = args.Query.Trim();
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "非常疑惑.png",
             "菲谢尔-这是什么？.png",
             "刻晴-疑问.png",

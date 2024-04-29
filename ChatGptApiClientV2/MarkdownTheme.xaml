@@ -30,12 +30,12 @@
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.CodeBlockStyleKey}">
         <Setter Property="Background" Value="#ffd3d3d3" />
-        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Foreground" Value="Black" />
         <Setter Property="FontFamily" Value="./font/#Cascadia Mono, Microsoft YaHei UI" />
     </Style>
     <Style TargetType="{x:Type Run}" x:Key="{x:Static markdig:Styles.CodeStyleKey}">
         <Setter Property="Background" Value="#ffd3d3d3" />
-        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Foreground" Value="Black" />
         <Setter Property="FontFamily" Value="./font/#Cascadia Mono, Microsoft YaHei UI" />
     </Style>
     <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdig:Styles.Heading1StyleKey}">
@@ -68,8 +68,10 @@
         <!-- no changes -->
     </Style>
     <Style TargetType="{x:Type Image}" x:Key="{x:Static markdig:Styles.ImageStyleKey}">
-        <Setter Property="MaxHeight" Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelHeight)}" />
-        <Setter Property="MaxWidth" Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelWidth)}" />
+        <Setter Property="MaxHeight"
+                Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelHeight)}" />
+        <Setter Property="MaxWidth"
+                Value="{Binding RelativeSource={RelativeSource Self}, Path=Source.(BitmapSource.PixelWidth)}" />
     </Style>
     <Style TargetType="{x:Type Section}" x:Key="{x:Static markdig:Styles.QuoteBlockStyleKey}">
         <Setter Property="BorderBrush" Value="LightGray" />
@@ -78,16 +80,16 @@
         <Setter Property="Padding" Value="16,0,0,0" />
     </Style>
     <Style TargetType="{x:Type Table}" x:Key="{x:Static markdig:Styles.TableStyleKey}">
-        <Setter Property="BorderBrush" Value="Black"/>
-        <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        <Setter Property="CellSpacing" Value="0"/>
+        <Setter Property="BorderBrush" Value="Black" />
+        <Setter Property="BorderThickness" Value="0,0,1,1" />
+        <Setter Property="CellSpacing" Value="0" />
     </Style>
     <Style TargetType="{x:Type TableCell}" x:Key="{x:Static markdig:Styles.TableCellStyleKey}">
-        <Setter Property="BorderBrush" Value="Black"/>
-        <Setter Property="BorderThickness" Value="1,1,0,0"/>
+        <Setter Property="BorderBrush" Value="Black" />
+        <Setter Property="BorderThickness" Value="1,1,0,0" />
     </Style>
     <Style TargetType="{x:Type TableRow}" x:Key="{x:Static markdig:Styles.TableHeaderStyleKey}">
-        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontWeight" Value="Bold" />
     </Style>
     <Style TargetType="{x:Type CheckBox}" x:Key="{x:Static markdig:Styles.TaskListStyleKey}">
         <Setter Property="Margin" Value="0,0,0,-2" />
@@ -110,7 +112,7 @@
     </Style>
     <Style TargetType="{x:Type Span}" x:Key="{x:Static markdig:Styles.MarkedStyleKey}">
         <Setter Property="Background" Value="Yellow" />
-        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Foreground" Value="Black" />
     </Style>
 
     <!-- MarkdownViewer Template-->
@@ -119,7 +121,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="markdig:MarkdownViewer">
                     <FlowDocumentScrollViewer Document="{TemplateBinding Document}"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

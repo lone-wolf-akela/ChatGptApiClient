@@ -20,11 +20,13 @@ public static partial class OfficeReader
             return workbookPart?.SharedStringTablePart?.SharedStringTable
                 .Elements<SharedStringItem>().ElementAt(int.Parse(cellValue)).InnerText;
         }
+
         return cellValue;
     }
 
     [GeneratedRegex("[A-Za-z]+")]
     private static partial Regex XlsxColumnNameMyRegex();
+
     private static string XlsxGetColumnName(string cellReference)
     {
         var regex = XlsxColumnNameMyRegex();
@@ -41,8 +43,10 @@ public static partial class OfficeReader
             columnIndex += (columnName[i] - 'A' + 1) * factor;
             factor *= 26;
         }
+
         return columnIndex - 1;
     }
+
     public static async Task<string> XlsxToText(string filename, CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
@@ -59,7 +63,11 @@ public static partial class OfficeReader
                 sb.AppendLine();
 
                 var sheetId = sheet.Id;
-                if (sheetId is null) { continue; }
+                if (sheetId is null)
+                {
+                    continue;
+                }
+
                 var worksheetPart = workbookPart?.GetPartById(sheetId!) as WorksheetPart;
                 foreach (var row in worksheetPart?.Worksheet.Descendants<Row>() ?? [])
                 {
@@ -68,22 +76,30 @@ public static partial class OfficeReader
                     foreach (var cell in cells)
                     {
                         var cellRef = cell.CellReference;
-                        if (cellRef is null) { continue; }
+                        if (cellRef is null)
+                        {
+                            continue;
+                        }
+
                         var columnIndex = XlsxGetColumnIndexFromName(XlsxGetColumnName(cellRef!));
                         for (; currentColumnIndex < columnIndex; currentColumnIndex++)
                         {
                             sb.Append(',');
                         }
+
                         var cellValue = XlsxGetCellValue(workbookPart, cell);
                         sb.Append($"\"{cellValue}\"");
                         sb.Append(',');
                         currentColumnIndex++;
                     }
+
                     sb.Length--; // remove the last comma
                     sb.AppendLine();
                 }
+
                 sb.AppendLine();
             }
+
             return sb.ToString();
         }, cancellationToken);
     }
@@ -96,15 +112,21 @@ public static partial class OfficeReader
             using var doc = WordprocessingDocument.Open(filename, false);
             var sb = new StringBuilder();
             var body = doc.MainDocumentPart?.Document.Body;
-            if (body is null) { return ""; }
+            if (body is null)
+            {
+                return "";
+            }
+
             foreach (var para in body.Elements<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
             {
                 foreach (var run in para.Elements<DocumentFormat.OpenXml.Wordprocessing.Run>())
                 {
                     sb.Append(run.InnerText);
                 }
+
                 sb.AppendLine();
             }
+
             return sb.ToString();
         }, cancellationToken);
     }
@@ -122,7 +144,11 @@ public static partial class OfficeReader
             foreach (var slideId in slideIdList?.ChildElements.OfType<SlideId>() ?? [])
             {
                 var relationshipId = slideId.RelationshipId;
-                if (relationshipId is null) { continue; }
+                if (relationshipId is null)
+                {
+                    continue;
+                }
+
                 var slidePart = presentationPart?.GetPartById(relationshipId!) as SlidePart;
                 sb.AppendLine($"Slide {slideIndex++}:");
                 var paragraphs = slidePart?.Slide.Descendants<DocumentFormat.OpenXml.Drawing.Paragraph>() ?? [];
@@ -132,8 +158,10 @@ public static partial class OfficeReader
                     sb.Append(string.Join(" ", texts));
                     sb.AppendLine();
                 }
+
                 sb.AppendLine();
             }
+
             return sb.ToString();
         }, cancellationToken);
     }

@@ -34,27 +34,27 @@
            DragOver="Window_DragOver"
            Loaded="Window_Loaded">
     <d:Window.DataContext>
-        <local:ChatWindowViewModel/>
+        <local:ChatWindowViewModel />
     </d:Window.DataContext>
     <FrameworkElement.CommandBindings>
-        <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink"/>
+        <CommandBinding Command="{x:Static markdig:Commands.Hyperlink}" Executed="OpenHyperlink" />
     </FrameworkElement.CommandBindings>
     <Grid x:Name="MainGird" Margin="10,10,10,0" Focusable="True">
         <Grid.LayoutTransform>
-            <ScaleTransform ScaleX="{Binding State.Config.UiScale}" ScaleY="{Binding State.Config.UiScale}"/>
+            <ScaleTransform ScaleX="{Binding State.Config.UiScale}" ScaleY="{Binding State.Config.UiScale}" />
         </Grid.LayoutTransform>
         <Grid.InputBindings>
-            <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding SendCommand}"/>
-            <KeyBinding Key="F2" Command="{Binding SelectedTabEnterEditTitleModeCommand}"/>
-            <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding CloseCurrentTabCommand}"/>
-            <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding CreateTabCommand}"/>
+            <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding SendCommand}" />
+            <KeyBinding Key="F2" Command="{Binding SelectedTabEnterEditTitleModeCommand}" />
+            <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding CloseCurrentTabCommand}" />
+            <KeyBinding Key="T" Modifiers="Ctrl" Command="{Binding CreateTabCommand}" />
         </Grid.InputBindings>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*" MinHeight="100"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="150" MinHeight="150"/>
-            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" MinHeight="100" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="150" MinHeight="150" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,5">
             <Button Click="BtnSettings_Click" ToolTip="其他设置" DockPanel.Dock="Right">
@@ -62,86 +62,93 @@
                     <EventTrigger RoutedEvent="MouseEnter">
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName="TxtSettings" 
-                                   Storyboard.TargetProperty="RenderTransform.Angle"
-                                   By="360" Duration="0:0:1"
-                                   AutoReverse="False" RepeatBehavior="Forever"/>
+                                <DoubleAnimation Storyboard.TargetName="TxtSettings"
+                                                 Storyboard.TargetProperty="RenderTransform.Angle"
+                                                 By="360" Duration="0:0:1"
+                                                 AutoReverse="False" RepeatBehavior="Forever" />
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
                     <EventTrigger RoutedEvent="MouseLeave">
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName="TxtSettings" 
-                                   Storyboard.TargetProperty="RenderTransform.Angle"
-                                   To="360" Duration="0:0:0"
-                                   AutoReverse="False"/>
+                                <DoubleAnimation Storyboard.TargetName="TxtSettings"
+                                                 Storyboard.TargetProperty="RenderTransform.Angle"
+                                                 To="360" Duration="0:0:0"
+                                                 AutoReverse="False" />
                             </Storyboard>
                         </BeginStoryboard>
                     </EventTrigger>
                 </Button.Triggers>
-                <TextBlock x:Name="TxtSettings" Text="&#xe713;" FontFamily="./font/#Segoe Fluent Icons" FontSize="{StaticResource SubHeadFontSize}"
+                <TextBlock x:Name="TxtSettings" Text="&#xe713;" FontFamily="./font/#Segoe Fluent Icons"
+                           FontSize="{StaticResource SubHeadFontSize}"
                            RenderTransformOrigin="0.5,0.5">
                     <TextBlock.RenderTransform>
-                        <RotateTransform Angle="0"/>
+                        <RotateTransform Angle="0" />
                     </TextBlock.RenderTransform>
                 </TextBlock>
             </Button>
             <StackPanel Orientation="Horizontal">
                 <StackPanel Margin="0,0,5,0" Orientation="Horizontal">
-                    <Label Content="模型"/>
-                    <ComboBox x:Name="CbxModel" Width="200" ItemsSource="{Binding State.Config.ModelOptions}" SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
+                    <Label Content="模型" />
+                    <ComboBox x:Name="CbxModel" Width="200" ItemsSource="{Binding State.Config.ModelOptions}"
+                              SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Description}"/>
+                                <TextBlock Text="{Binding Description}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Margin="0,0,0,0" Orientation="Horizontal">
-                    <Label Content="版本"/>
-                    <ComboBox x:Name="CbxModelVersion" Width="200" ItemsSource="{Binding State.Config.ModelVersionOptions}" SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
+                    <Label Content="版本" />
+                    <ComboBox x:Name="CbxModelVersion" Width="200"
+                              ItemsSource="{Binding State.Config.ModelVersionOptions}"
+                              SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Description}"/>
+                                <TextBlock Text="{Binding Description}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <hc:Divider Orientation="Vertical" Margin="10,0,10,0"/>
+                <hc:Divider Orientation="Vertical" Margin="10,0,10,0" />
                 <ToggleButton x:Name="TgglPlugin" Margin="0,0,10,0">
                     <StackPanel>
-                        <TextBlock Text="选择插件"/>
-                        <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True" StaysOpen="False">
-                            <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
-                                    BorderThickness="{DynamicResource BorderThickness}" 
-                                    BorderBrush="{DynamicResource BorderBrush}" 
-                                    Background="{DynamicResource SolidRegionBrush}" 
-                                    Effect="{StaticResource EffectShadow2}" 
+                        <TextBlock Text="选择插件" />
+                        <Popup IsOpen="{Binding IsChecked, ElementName=TgglPlugin}" AllowsTransparency="True"
+                               StaysOpen="False">
+                            <Border CornerRadius="{StaticResource DefaultCornerRadius}"
+                                    BorderThickness="{DynamicResource BorderThickness}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    Background="{DynamicResource SolidRegionBrush}"
+                                    Effect="{StaticResource EffectShadow2}"
                                     Margin="8,0,8,8">
-                                <ListBox x:Name="LstPlugin" 
+                                <ListBox x:Name="LstPlugin"
                                          Style="{StaticResource DropDownListStyle}"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" 
-                                         ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}" 
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ItemsSource="{Binding Path=State.Plugins, Mode=OneWay}"
                                          IsEnabled="{Binding State.Config.SelectedModelSupportTools}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
                                             <Setter Property="Background" Value="Transparent" />
-                                            <Setter Property="Padding" Value="3,3,3,3"/>
+                                            <Setter Property="Padding" Value="3,3,3,3" />
                                             <Style.Triggers>
                                                 <MultiTrigger>
                                                     <MultiTrigger.Conditions>
                                                         <Condition Property="IsSelected" Value="False" />
                                                         <Condition Property="IsMouseOver" Value="True" />
                                                     </MultiTrigger.Conditions>
-                                                    <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}" />
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource SolidSecondaryRegionBrush}" />
                                                 </MultiTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsEnabled, Mode=TwoWay}" />
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
@@ -151,35 +158,39 @@
                 </ToggleButton>
                 <ToggleButton x:Name="TgglPrompt" Margin="0,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="初始提示词"/>
-                        <Popup IsOpen="{Binding IsChecked, ElementName=TgglPrompt}" AllowsTransparency="True" StaysOpen="False">
-                            <Border CornerRadius="{StaticResource DefaultCornerRadius}" 
-                                    BorderThickness="{DynamicResource BorderThickness}" 
-                                    BorderBrush="{DynamicResource BorderBrush}" 
-                                    Background="{DynamicResource SolidRegionBrush}" 
-                                    Effect="{StaticResource EffectShadow2}" 
+                        <TextBlock Text="初始提示词" />
+                        <Popup IsOpen="{Binding IsChecked, ElementName=TgglPrompt}" AllowsTransparency="True"
+                               StaysOpen="False">
+                            <Border CornerRadius="{StaticResource DefaultCornerRadius}"
+                                    BorderThickness="{DynamicResource BorderThickness}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    Background="{DynamicResource SolidRegionBrush}"
+                                    Effect="{StaticResource EffectShadow2}"
                                     Margin="8,0,8,8">
-                                <ListBox x:Name="LstPrompt" 
+                                <ListBox x:Name="LstPrompt"
                                          Style="{StaticResource DropDownListStyle}"
                                          VirtualizingPanel.ScrollUnit="Pixel"
                                          ItemsSource="{Binding State.InitialPrompts.PromptsOptions, FallbackValue=[]}"
                                          SelectedItem="{Binding State.InitialPrompts.SelectedOption, FallbackValue=-1}">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                                            <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup"/>
+                                            <EventSetter Event="MouseLeftButtonUp" Handler="ClosePromptPopup" />
                                             <Setter Property="Background" Value="Transparent" />
-                                            <Setter Property="Margin" Value="0,0,0,5"/>
+                                            <Setter Property="Margin" Value="0,0,0,5" />
                                             <Style.Triggers>
                                                 <MultiTrigger>
                                                     <MultiTrigger.Conditions>
                                                         <Condition Property="IsSelected" Value="False" />
                                                         <Condition Property="IsMouseOver" Value="True" />
                                                     </MultiTrigger.Conditions>
-                                                    <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}" />
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource SolidSecondaryRegionBrush}" />
                                                 </MultiTrigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource TextIconBrush}"/>
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource PrimaryBrush}" />
+                                                    <Setter Property="Foreground"
+                                                            Value="{DynamicResource TextIconBrush}" />
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -187,8 +198,9 @@
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel>
-                                                <TextBlock TextWrapping="Wrap" Width="700" Text="{Binding Text}" Margin="0,0,0,5"/>
-                                                <hc:Divider Margin="0"/>
+                                                <TextBlock TextWrapping="Wrap" Width="700" Text="{Binding Text}"
+                                                           Margin="0,0,0,5" />
+                                                <hc:Divider Margin="0" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -197,118 +209,134 @@
                         </Popup>
                     </StackPanel>
                 </ToggleButton>
-                <hc:Divider Orientation="Vertical" Margin="10,0,10,0"/>
-                <CheckBox IsChecked="{Binding State.Config.EnableMarkdown}" 
-                          Content="Markdown格式化" 
-                          Command="{Binding SwitchMarkdownRenderingCommand}"/>
+                <hc:Divider Orientation="Vertical" Margin="10,0,10,0" />
+                <CheckBox IsChecked="{Binding State.Config.EnableMarkdown}"
+                          Content="Markdown格式化"
+                          Command="{Binding SwitchMarkdownRenderingCommand}" />
             </StackPanel>
         </DockPanel>
-        <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
+        <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="{DynamicResource BorderBrush}" />
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
             <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
-                <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5" VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
+                <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5"
+                                        VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
                     <hc:UniformSpacingPanel.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
-                            <Setter Property="Padding" Value="0"/>
-                            <Setter Property="Width" Value="30"/>
-                            <Setter Property="Height" Value="30"/>
-                            <Setter Property="FontSize" Value="{StaticResource SubHeadFontSize}"/>
-                            <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons"/>
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Width" Value="30" />
+                            <Setter Property="Height" Value="30" />
+                            <Setter Property="FontSize" Value="{StaticResource SubHeadFontSize}" />
+                            <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons" />
                         </Style>
                     </hc:UniformSpacingPanel.Resources>
-                    <Button Command="{Binding ResetCommand}" ToolTip="重置对话（清空当前对话历史）" Content="&#xE72C;" Panel.ZIndex="1"/>
-                    <Button Command="{Binding SaveCommand}" ToolTip="保存对话历史" Content="&#xe78c;" Panel.ZIndex="1"/>
-                    <Button Command="{Binding LoadCommand}" ToolTip="载入对话历史" Content="&#xe8da;" Panel.ZIndex="1"/>
-                    <hc:Badge Value="{Binding FileAttachments.Count}" 
-                              ShowBadge="{Binding FileAttachments.Count}" 
+                    <Button Command="{Binding ResetCommand}" ToolTip="重置对话（清空当前对话历史）" Content="&#xE72C;"
+                            Panel.ZIndex="1" />
+                    <Button Command="{Binding SaveCommand}" ToolTip="保存对话历史" Content="&#xe78c;" Panel.ZIndex="1" />
+                    <Button Command="{Binding LoadCommand}" ToolTip="载入对话历史" Content="&#xe8da;" Panel.ZIndex="1" />
+                    <hc:Badge Value="{Binding FileAttachments.Count}"
+                              ShowBadge="{Binding FileAttachments.Count}"
                               Style="{DynamicResource BadgePrimary}"
                               FontSize="8"
                               BadgeMargin="0,-5,-5,0"
                               Panel.ZIndex="100">
                         <Button Command="{Binding AddFileCommand}" ToolTip="添加附件（图片或TXT文档）" Content="&#xE723;" />
                     </hc:Badge>
-                    <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;" Panel.ZIndex="1"/>
-                    <Button Click="BtnScreenshot_Click" 
-                            ToolTip="导出长截图" 
-                            IsEnabled="{Binding SelectedMessageTab.Messages.Count, Converter={local:Int2BoolConverter}, FallbackValue=False}" 
-                            Content="&#xe91b;" 
-                            Panel.ZIndex="1"/>
+                    <Button Command="{Binding PrintCommand}" ToolTip="打印对话历史" Content="&#xe749;" Panel.ZIndex="1" />
+                    <Button Click="BtnScreenshot_Click"
+                            ToolTip="导出长截图"
+                            IsEnabled="{Binding SelectedMessageTab.Messages.Count, Converter={local:Int2BoolConverter}, FallbackValue=False}"
+                            Content="&#xe91b;"
+                            Panel.ZIndex="1" />
                 </hc:UniformSpacingPanel>
                 <hc:SimplePanel>
-                    <Button Command="{Binding SendCommand}" 
-                            VerticalAlignment="Bottom" 
-                            HorizontalAlignment="Stretch" 
-                            MinHeight="50" 
+                    <Button Command="{Binding SendCommand}"
+                            VerticalAlignment="Bottom"
+                            HorizontalAlignment="Stretch"
+                            MinHeight="50"
                             MinWidth="100"
                             Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                            <TextBlock TextAlignment="Center">
-                                发送<LineBreak/>Ctrl + Enter
-                            </TextBlock>
+                        <TextBlock TextAlignment="Center">
+                            发送<LineBreak />Ctrl + Enter
+                        </TextBlock>
                     </Button>
-                    <Button Command="{Binding SendCancelCommand}" 
-                            VerticalAlignment="Bottom" 
-                            HorizontalAlignment="Stretch" 
-                            MinHeight="50" 
+                    <Button Command="{Binding SendCancelCommand}"
+                            VerticalAlignment="Bottom"
+                            HorizontalAlignment="Stretch"
+                            MinHeight="50"
                             MinWidth="100"
                             Content="停止接收"
-                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityConverter}}" />
                 </hc:SimplePanel>
             </StackPanel>
             <hc:SimplePanel>
                 <DockPanel Margin="0,0,5,0">
-                    <StackPanel DockPanel.Dock="Bottom" 
-                            Visibility="{Binding IsFileAttachmentsEmpty, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                        <ListBox x:Name="LstFiles" 
-                             Background="Transparent" 
-                             ItemsSource="{Binding FileAttachments}" 
-                             BorderThickness="0" 
-                             ScrollViewer.HorizontalScrollBarVisibility="Hidden" 
-                             ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                             Margin="0">
+                    <StackPanel DockPanel.Dock="Bottom"
+                                Visibility="{Binding IsFileAttachmentsEmpty, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                        <ListBox x:Name="LstFiles"
+                                 Background="Transparent"
+                                 ItemsSource="{Binding FileAttachments}"
+                                 BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                 ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                 Margin="0">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
+                                    <StackPanel Orientation="Horizontal" />
                                 </ItemsPanelTemplate>
                             </ListBox.ItemsPanel>
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem" BasedOn="{StaticResource ListBoxItemBaseStyle}">
-                                    <Setter Property="Focusable" Value="False"/>
-                                    <Setter Property="Padding" Value="3,3,3,3"/>
-                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Focusable" Value="False" />
+                                    <Setter Property="Padding" Value="3,3,3,3" />
+                                    <Setter Property="Background" Value="Transparent" />
                                 </Style>
                             </ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <hc:SimplePanel>
-                                        <Image Source="{Binding Icon}" Height="64" Width="64" Stretch="Uniform" ToolTip="{Binding Path}" Margin="0,10,5,0"/>
+                                        <Image Source="{Binding Icon}" Height="64" Width="64" Stretch="Uniform"
+                                               ToolTip="{Binding Path}" Margin="0,10,5,0" />
                                         <Button Command="{Binding RemoveFileCommand}"
-                                            Background="Transparent" 
-                                            BorderBrush="Transparent" 
-                                            VerticalAlignment="Top"
-                                            HorizontalAlignment="Right"
-                                            Padding="0" 
-                                            Margin="0,0,-5,0">
-                                            <hc:SimplePanel Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF136;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                VerticalAlignment="Top"
+                                                HorizontalAlignment="Right"
+                                                Padding="0"
+                                                Margin="0,0,-5,0">
+                                            <hc:SimplePanel
+                                                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20"
+                                                           Text="&#xF136;" VerticalAlignment="Top"
+                                                           HorizontalAlignment="Right" Background="Transparent">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
-                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="Foreground" Value="White" />
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
-                                                                    <Setter Property="Foreground" Value="#343434"/>
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}"
+                                                                    Value="True">
+                                                                    <Setter Property="Foreground" Value="#343434" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </TextBlock.Style>
                                                 </TextBlock>
-                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF137;" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="Red" Background="Transparent"/>
-                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20" Text="&#xF13D;" VerticalAlignment="Top" HorizontalAlignment="Right" Background="Transparent">
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20"
+                                                           Text="&#xF137;" VerticalAlignment="Top"
+                                                           HorizontalAlignment="Right" Foreground="Red"
+                                                           Background="Transparent" />
+                                                <TextBlock FontFamily="./font/#Segoe Fluent Icons" FontSize="20"
+                                                           Text="&#xF13D;" VerticalAlignment="Top"
+                                                           HorizontalAlignment="Right" Background="Transparent">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
-                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="Foreground" Value="White" />
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}" Value="True">
-                                                                    <Setter Property="Foreground" Value="#343434"/>
+                                                                <DataTrigger
+                                                                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ContentControl}}"
+                                                                    Value="True">
+                                                                    <Setter Property="Foreground" Value="#343434" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -320,48 +348,53 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}" Margin="3,0,0,0" Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                        <CheckBox Content="以高分辨率解析图片" IsChecked="{Binding State.Config.UploadHiresImage}"
+                                  Margin="3,0,0,0"
+                                  Visibility="{Binding HasImageFileAttachment, Converter={StaticResource Boolean2VisibilityConverter}}" />
                     </StackPanel>
-                    <hc:TextBox x:Name="TxtInput" 
+                    <hc:TextBox x:Name="TxtInput"
                                 Text="{Binding TextInput, UpdateSourceTrigger=PropertyChanged}"
                                 FontFamily="Segoe UI, Microsoft YaHei UI"
-                                VerticalContentAlignment="Top" 
-                                TextWrapping="WrapWithOverflow" 
-                                AcceptsReturn="True" 
-                                VerticalScrollBarVisibility="Auto" 
+                                VerticalContentAlignment="Top"
+                                TextWrapping="WrapWithOverflow"
+                                AcceptsReturn="True"
+                                VerticalScrollBarVisibility="Auto"
                                 Padding="5"
                                 PreviewDragEnter="TxtInput_PreviewDragEnter"
                                 PreviewDragOver="TxtInput_PreviewDragOver"
-                                hc:InfoElement.Placeholder="在此输入对话内容"/>
+                                hc:InfoElement.Placeholder="在此输入对话内容" />
                 </DockPanel>
-                <hc:SimplePanel x:Name="PanelDropFiles" Opacity="0.6" Visibility="Collapsed" 
+                <hc:SimplePanel x:Name="PanelDropFiles" Opacity="0.6" Visibility="Collapsed"
                                 AllowDrop="True" DragOver="PanelDropFiles_DragOver" Drop="PanelDropFiles_Drop">
-                    <Rectangle Fill="white" Stroke="{DynamicResource PrimaryTextBrush}" RadiusX="5" RadiusY="5" StrokeThickness="3" SnapsToDevicePixels="True" StrokeDashArray="2 3" StrokeDashCap="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
-                    <TextBlock Text="拖放文件至此以添加附件" Foreground="Black" FontSize="30" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <Rectangle Fill="white" Stroke="{DynamicResource PrimaryTextBrush}" RadiusX="5" RadiusY="5"
+                               StrokeThickness="3" SnapsToDevicePixels="True" StrokeDashArray="2 3"
+                               StrokeDashCap="Round" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                    <TextBlock Text="拖放文件至此以添加附件" Foreground="Black" FontSize="30" VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
                 </hc:SimplePanel>
             </hc:SimplePanel>
         </DockPanel>
-        <Border Grid.Row="1" 
-                CornerRadius="5" 
+        <Border Grid.Row="1"
+                CornerRadius="5"
                 BorderThickness="0"
-                Margin="0,0,0,5" 
+                Margin="0,0,0,5"
                 Background="Transparent">
             <TabControl x:Name="TabMsg"
-                            Background="Transparent" 
-                            BorderThickness="0"
-                            Style="{StaticResource TabControlWithAddBtn}"
-                            SelectedIndex="{Binding SelectedTabIndex}"
-                            ItemsSource="{Binding ChatWindowMessageTabs}"
-                            local:TabControlHelper.AddTabCommand="{Binding CreateTabCommand}"
-                            local:TabControlHelper.AddTabBtnTooltip="打开新标签页 (Ctrl + T)">
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Style="{StaticResource TabControlWithAddBtn}"
+                        SelectedIndex="{Binding SelectedTabIndex}"
+                        ItemsSource="{Binding ChatWindowMessageTabs}"
+                        local:TabControlHelper.AddTabCommand="{Binding CreateTabCommand}"
+                        local:TabControlHelper.AddTabBtnTooltip="打开新标签页 (Ctrl + T)">
                 <TabControl.ItemContainerStyle>
                     <Style TargetType="TabItem" BasedOn="{StaticResource TopRoundTabItemStyle}">
-                        <Setter Property="hc:BorderElement.CornerRadius" Value="5,5,0,0"/>
+                        <Setter Property="hc:BorderElement.CornerRadius" Value="5,5,0,0" />
                     </Style>
                 </TabControl.ItemContainerStyle>
                 <TabControl.ItemTemplate>
                     <DataTemplate>
-                        <Border MinHeight="{StaticResource DefaultControlHeight}" 
+                        <Border MinHeight="{StaticResource DefaultControlHeight}"
                                 Padding="{StaticResource DefaultControlPadding}"
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Stretch"
@@ -370,37 +403,40 @@
                             <Border.InputBindings>
                                 <MouseBinding Gesture="MiddleClick"
                                               Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
-                                              CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"/>
+                                              CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}" />
                             </Border.InputBindings>
                             <Border.ContextMenu>
-                                <ContextMenu DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource Self}}">
+                                <ContextMenu
+                                    DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource Self}}">
                                     <MenuItem Header="重命名标签页"
                                               InputGestureText="F2"
                                               Command="{Binding DataContext.EnterEditingTitleModeCommand}">
                                         <MenuItem.Icon>
-                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe8ac;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe8ac;"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <MenuItem Header="关闭标签页"
                                               InputGestureText="Ctrl + W"
                                               Command="{Binding  DataContext.CloseTabCommand, Source={x:Reference TabMsg}}"
-                                              CommandParameter="{Binding DataContext}"
-                                    >
+                                              CommandParameter="{Binding DataContext}">
                                         <MenuItem.Icon>
-                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe711;" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe711;"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
                             </Border.ContextMenu>
                             <hc:SimplePanel>
-                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                                    <TextBlock Text="{Binding Title}" 
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                                    <TextBlock Text="{Binding Title}"
                                                VerticalAlignment="Center"
                                                TextTrimming="WordEllipsis"
                                                ToolTip="{Binding Title}"
-                                               MaxWidth="120"/>
-                                    <Button Content="&#xe711;" 
-                                            FontFamily="./font/#Segoe Fluent Icons" 
+                                               MaxWidth="120" />
+                                    <Button Content="&#xe711;"
+                                            FontFamily="./font/#Segoe Fluent Icons"
                                             Margin="3,0,-5,0"
                                             BorderThickness="0"
                                             Padding="0"
@@ -415,11 +451,11 @@
                                             hc:BackgroundSwitchElement.MouseHoverBackground="Gray"
                                             hc:BorderElement.CornerRadius="5"
                                             Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
-                                            CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}"/>
+                                            CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}" />
                                 </StackPanel>
                                 <TextBox Text="{Binding Title}"
                                          Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                         VerticalAlignment="Center" 
+                                         VerticalAlignment="Center"
                                          IsVisibleChanged="TabTitleEditorTextBox_IsVisibleChanged">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="LostFocus">
@@ -428,7 +464,7 @@
                                     </i:Interaction.Triggers>
                                 </TextBox>
                             </hc:SimplePanel>
-                            
+
                         </Border>
                     </DataTemplate>
                 </TabControl.ItemTemplate>
@@ -440,13 +476,13 @@
                                 CornerRadius="0,5,5,5">
                             <Border.Clip>
                                 <MultiBinding Converter="{local:BorderClipConverter}">
-                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}"/>
-                                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}"/>
-                                    <Binding Path="CornerRadius" RelativeSource="{RelativeSource Self}"/>
+                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
+                                    <Binding Path="ActualHeight" RelativeSource="{RelativeSource Self}" />
+                                    <Binding Path="CornerRadius" RelativeSource="{RelativeSource Self}" />
                                 </MultiBinding>
                             </Border.Clip>
                             <hc:SimplePanel>
-                                <ListBox x:Name="LstMsg" 
+                                <ListBox x:Name="LstMsg"
                                          Style="{StaticResource SmoothScrollListBox}"
                                          Background="Transparent"
                                          BorderThickness="0"
@@ -472,30 +508,49 @@
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <DockPanel Margin="0" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}">
-                                                <svgc:SvgViewbox x:Name="AvatarLeft" Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" Source="{Binding Avatar}" DockPanel.Dock="Left" Width="32" Height="32" VerticalAlignment="Top"/>
-                                                <hc:SimplePanel x:Name="AvatarLeftPlaceHolder" Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="15,0,5,0" DockPanel.Dock="Left" Width="64" Height="32" VerticalAlignment="Top"/>
-                                                <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}" Background="Transparent" BorderBrush="LightGray" BorderThickness="2" DockPanel.Dock="Right" Width="32" Height="32" VerticalAlignment="Top" Margin="5,0,15,0" Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"/>
-                                                <hc:SimplePanel x:Name="AvatarRightPlaceHolder" Visibility="{Binding Path=ShowRightBlank, Converter={StaticResource Boolean2VisibilityConverter}}" Margin="5,0,15,0" DockPanel.Dock="Right" Width="64" Height="32" VerticalAlignment="Top"/>
+                                            <DockPanel Margin="0"
+                                                       MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}">
+                                                <svgc:SvgViewbox x:Name="AvatarLeft"
+                                                                 Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                                 Margin="15,0,5,0" Source="{Binding Avatar}"
+                                                                 DockPanel.Dock="Left" Width="32" Height="32"
+                                                                 VerticalAlignment="Top" />
+                                                <hc:SimplePanel x:Name="AvatarLeftPlaceHolder"
+                                                                Visibility="{Binding Path=ShowLeftBlank, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                                Margin="15,0,5,0" DockPanel.Dock="Left" Width="64"
+                                                                Height="32" VerticalAlignment="Top" />
+                                                <hc:Gravatar x:Name="AvatarRight" Id="{Binding UserAvatarSource}"
+                                                             Background="Transparent" BorderBrush="LightGray"
+                                                             BorderThickness="2" DockPanel.Dock="Right" Width="32"
+                                                             Height="32" VerticalAlignment="Top" Margin="5,0,15,0"
+                                                             Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}" />
+                                                <hc:SimplePanel x:Name="AvatarRightPlaceHolder"
+                                                                Visibility="{Binding Path=ShowRightBlank, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                                Margin="5,0,15,0" DockPanel.Dock="Right" Width="64"
+                                                                Height="32" VerticalAlignment="Top" />
                                                 <DockPanel>
-                                                    <Path x:Name="RightTail" DockPanel.Dock="Right" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
-                                                        Stretch="Uniform" VerticalAlignment="Top" Margin="-2,16,0,0" 
-                                                        Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                                        Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
+                                                    <Path x:Name="RightTail" DockPanel.Dock="Right"
+                                                          Data="{StaticResource StraightBubbleTailGeometry}"
+                                                          Fill="{Binding BackgroundColor}"
+                                                          Stretch="Uniform" VerticalAlignment="Top" Margin="-2,16,0,0"
+                                                          Visibility="{Binding Path=ShowRightAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                          Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
                                                         <Path.RenderTransform>
                                                             <TransformGroup>
-                                                                <RotateTransform Angle="270"/>
+                                                                <RotateTransform Angle="270" />
                                                                 <ScaleTransform ScaleX="1" />
                                                             </TransformGroup>
                                                         </Path.RenderTransform>
                                                     </Path>
-                                                    <Path x:Name="LeftTail" DockPanel.Dock="Left" Data="{StaticResource StraightBubbleTailGeometry}" Fill="{Binding BackgroundColor}" 
-                                                            Stretch="Uniform" VerticalAlignment="Top" Margin="0,16,-2,0" 
-                                                            Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                                            Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
+                                                    <Path x:Name="LeftTail" DockPanel.Dock="Left"
+                                                          Data="{StaticResource StraightBubbleTailGeometry}"
+                                                          Fill="{Binding BackgroundColor}"
+                                                          Stretch="Uniform" VerticalAlignment="Top" Margin="0,16,-2,0"
+                                                          Visibility="{Binding Path=ShowLeftAvatar, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                          Width="15" Height="15" RenderTransformOrigin="0.5,0.5">
                                                         <Path.RenderTransform>
                                                             <TransformGroup>
-                                                                <RotateTransform Angle="270"/>
+                                                                <RotateTransform Angle="270" />
                                                                 <ScaleTransform ScaleX="-1" />
                                                             </TransformGroup>
                                                         </Path.RenderTransform>
@@ -504,39 +559,54 @@
                                                         <hc:SimplePanel>
                                                             <i:Interaction.Triggers>
                                                                 <i:EventTrigger EventName="MouseLeave">
-                                                                    <i:InvokeCommandAction Command="{Binding CancelDeleteMessageCommand}" />
+                                                                    <i:InvokeCommandAction
+                                                                        Command="{Binding CancelDeleteMessageCommand}" />
                                                                 </i:EventTrigger>
                                                             </i:Interaction.Triggers>
-                                                            <DockPanel Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                                                <StackPanel DockPanel.Dock="Top" 
+                                                            <DockPanel
+                                                                Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                                <StackPanel DockPanel.Dock="Top"
                                                                             Orientation="Horizontal"
                                                                             HorizontalAlignment="Right"
                                                                             Margin="0,10,10,0">
                                                                     <StackPanel.Visibility>
-                                                                        <MultiBinding Converter="{local:LargerToVisibilityConverter}">
-                                                                            <Binding ElementName="LstEditingMsg" Path="ActualHeight"/>
-                                                                            <Binding ElementName="LstMsg" Path="ActualHeight"/>
+                                                                        <MultiBinding
+                                                                            Converter="{local:LargerToVisibilityConverter}">
+                                                                            <Binding ElementName="LstEditingMsg"
+                                                                                Path="ActualHeight" />
+                                                                            <Binding ElementName="LstMsg"
+                                                                                Path="ActualHeight" />
                                                                         </MultiBinding>
                                                                     </StackPanel.Visibility>
                                                                     <StackPanel.Resources>
-                                                                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
-                                                                            <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                                                                        <Style TargetType="Button"
+                                                                               BasedOn="{StaticResource ButtonDefault}">
+                                                                            <Setter Property="Background"
+                                                                                Value="{DynamicResource SolidSecondaryRegionBrush}" />
                                                                         </Style>
                                                                     </StackPanel.Resources>
-                                                                    <Button Content="确认修改" Command="{Binding ConfirmEditingModeCommand}" Margin="0,0,10,0"/>
-                                                                    <Button Content="放弃修改" Command="{Binding CancelEditingModeCommand}"/>
+                                                                    <Button Content="确认修改"
+                                                                            Command="{Binding ConfirmEditingModeCommand}"
+                                                                            Margin="0,0,10,0" />
+                                                                    <Button Content="放弃修改"
+                                                                            Command="{Binding CancelEditingModeCommand}" />
                                                                 </StackPanel>
-                                                                <StackPanel DockPanel.Dock="Bottom" 
+                                                                <StackPanel DockPanel.Dock="Bottom"
                                                                             Orientation="Horizontal"
                                                                             HorizontalAlignment="Right"
                                                                             Margin="0,5,10,10">
                                                                     <StackPanel.Resources>
-                                                                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
-                                                                            <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                                                                        <Style TargetType="Button"
+                                                                               BasedOn="{StaticResource ButtonDefault}">
+                                                                            <Setter Property="Background"
+                                                                                Value="{DynamicResource SolidSecondaryRegionBrush}" />
                                                                         </Style>
                                                                     </StackPanel.Resources>
-                                                                    <Button Content="确认修改" Command="{Binding ConfirmEditingModeCommand}" Margin="0,0,10,0"/>
-                                                                    <Button Content="放弃修改" Command="{Binding CancelEditingModeCommand}"/>
+                                                                    <Button Content="确认修改"
+                                                                            Command="{Binding ConfirmEditingModeCommand}"
+                                                                            Margin="0,0,10,0" />
+                                                                    <Button Content="放弃修改"
+                                                                            Command="{Binding CancelEditingModeCommand}" />
                                                                 </StackPanel>
                                                                 <ListBox x:Name="LstEditingMsg"
                                                                          ItemsSource="{Binding EditorModeContents}"
@@ -549,7 +619,8 @@
                                                                         <Style TargetType="ListBoxItem">
                                                                             <Setter Property="Template">
                                                                                 <Setter.Value>
-                                                                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                                    <ControlTemplate
+                                                                                        TargetType="{x:Type ListBoxItem}">
                                                                                         <ContentPresenter />
                                                                                     </ControlTemplate>
                                                                                 </Setter.Value>
@@ -559,20 +630,26 @@
                                                                     <ListBox.ItemTemplate>
                                                                         <DataTemplate>
                                                                             <TextBox Text="{Binding Text, Mode=TwoWay}"
-                                                                                     VerticalContentAlignment="Top"
-                                                                                     TextWrapping="WrapWithOverflow"
-                                                                                     AcceptsReturn="True"
-                                                                                     Margin="0,5,0,5"
-                                                                                     FontSize="14"
-                                                                                     FontFamily="Segoe UI, Microsoft YaHei UI"
-                                                                                     Padding="5"
-                                                                                     IsEnabled="{Binding IsEditable}">
+                                                                                VerticalContentAlignment="Top"
+                                                                                TextWrapping="WrapWithOverflow"
+                                                                                AcceptsReturn="True"
+                                                                                Margin="0,5,0,5"
+                                                                                FontSize="14"
+                                                                                FontFamily="Segoe UI, Microsoft YaHei UI"
+                                                                                Padding="5"
+                                                                                IsEnabled="{Binding IsEditable}">
                                                                                 <TextBox.Style>
-                                                                                    <Style TargetType="TextBox" BasedOn="{StaticResource TextBoxBaseStyle}">
-                                                                                        <Setter Property="MinHeight" Value="75"/>
+                                                                                    <Style TargetType="TextBox"
+                                                                                        BasedOn="{StaticResource TextBoxBaseStyle}">
+                                                                                        <Setter Property="MinHeight"
+                                                                                            Value="75" />
                                                                                         <Style.Triggers>
-                                                                                            <DataTrigger Binding="{Binding IsEditable}" Value="false">
-                                                                                                <Setter Property="MinHeight" Value="0"/>
+                                                                                            <DataTrigger
+                                                                                                Binding="{Binding IsEditable}"
+                                                                                                Value="false">
+                                                                                                <Setter
+                                                                                                    Property="MinHeight"
+                                                                                                    Value="0" />
                                                                                             </DataTrigger>
                                                                                         </Style.Triggers>
                                                                                     </Style>
@@ -582,45 +659,60 @@
                                                                     </ListBox.ItemTemplate>
                                                                 </ListBox>
                                                             </DockPanel>
-                                                            <hc:SimplePanel Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                                                                <FlowDocumentScrollViewer Style="{x:Null}" 
-                                                                                          Document="{Binding Path=RenderedMessage}" 
-                                                                                          IsToolBarVisible="False" 
-                                                                                          VerticalScrollBarVisibility="Hidden"
-                                                                                          PreviewMouseWheel="ScrollToParentProcecssor">
+                                                            <hc:SimplePanel
+                                                                Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                                                                <FlowDocumentScrollViewer Style="{x:Null}"
+                                                                    Document="{Binding Path=RenderedMessage}"
+                                                                    IsToolBarVisible="False"
+                                                                    VerticalScrollBarVisibility="Hidden"
+                                                                    PreviewMouseWheel="ScrollToParentProcecssor">
                                                                 </FlowDocumentScrollViewer>
-                                                                <hc:SimplePanel VerticalAlignment="Top" 
-                                                                                HorizontalAlignment="Right"
-                                                                                Margin="0,3,10,0"
-                                                                                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type hc:SimplePanel}}, Converter={StaticResource Boolean2VisibilityConverter}}"
-                                                                                d:Visibility="Visible">
+                                                                <hc:SimplePanel VerticalAlignment="Top"
+                                                                    HorizontalAlignment="Right"
+                                                                    Margin="0,3,10,0"
+                                                                    Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type hc:SimplePanel}}, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                                    d:Visibility="Visible">
                                                                     <hc:SimplePanel.Resources>
-                                                                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
-                                                                            <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons"/>
-                                                                            <Setter Property="Padding" Value="0"/>
-                                                                            <Setter Property="Background" Value="Transparent"/>
-                                                                            <Setter Property="Height" Value="20"/>
-                                                                            <Setter Property="Width" Value="20"/>
-                                                                            <Setter Property="Margin" Value="2,0,0,0"/>
-                                                                            <Setter Property="BorderThickness" Value="0"/>
+                                                                        <Style TargetType="Button"
+                                                                               BasedOn="{StaticResource ButtonDefault}">
+                                                                            <Setter Property="FontFamily"
+                                                                                Value="./font/#Segoe Fluent Icons" />
+                                                                            <Setter Property="Padding" Value="0" />
+                                                                            <Setter Property="Background"
+                                                                                Value="Transparent" />
+                                                                            <Setter Property="Height" Value="20" />
+                                                                            <Setter Property="Width" Value="20" />
+                                                                            <Setter Property="Margin" Value="2,0,0,0" />
+                                                                            <Setter Property="BorderThickness"
+                                                                                Value="0" />
                                                                             <Style.Triggers>
-                                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter Property="BorderBrush" Value="Black"/>
-                                                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                                                <Trigger Property="IsMouseOver"
+                                                                                    Value="True">
+                                                                                    <Setter Property="BorderBrush"
+                                                                                        Value="Black" />
+                                                                                    <Setter Property="BorderThickness"
+                                                                                        Value="1" />
                                                                                 </Trigger>
                                                                             </Style.Triggers>
                                                                         </Style>
                                                                     </hc:SimplePanel.Resources>
                                                                     <StackPanel Orientation="Horizontal"
-                                                                                Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                                                                        <Button Content="&#xe8c8;" ToolTip="复制" Command="{Binding CopyMessageCommand}"/>
-                                                                        <Button Content="&#xe70f;" ToolTip="编辑" Command="{Binding EnterEditingModeCommand}"/>
-                                                                        <Button Content="&#xe74d;" ToolTip="删除" Command="{Binding TryDeleteMessageCommand}"/>
+                                                                        Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                                                                        <Button Content="&#xe8c8;" ToolTip="复制"
+                                                                            Command="{Binding CopyMessageCommand}" />
+                                                                        <Button Content="&#xe70f;" ToolTip="编辑"
+                                                                            Command="{Binding EnterEditingModeCommand}" />
+                                                                        <Button Content="&#xe74d;" ToolTip="删除"
+                                                                            Command="{Binding TryDeleteMessageCommand}" />
                                                                     </StackPanel>
                                                                     <StackPanel Orientation="Horizontal"
-                                                                                Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                                                        <Button Content="&#xe73d;" ToolTip="确认删除" Foreground="#F00000" Command="{Binding DataContext.RemoveMessageCommand, ElementName=LstMsg}" CommandParameter="{Binding}"/>
-                                                                        <Button Content="&#xe711;" ToolTip="取消删除" Command="{Binding CancelDeleteMessageCommand}"/>
+                                                                        Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                                        <Button Content="&#xe73d;" ToolTip="确认删除"
+                                                                            Foreground="#F00000"
+                                                                            Command="{Binding DataContext.RemoveMessageCommand, ElementName=LstMsg}"
+                                                                            CommandParameter="{Binding}" />
+                                                                        <Button Content="&#xe711;" ToolTip="取消删除"
+                                                                            Command="{Binding CancelDeleteMessageCommand}" />
                                                                     </StackPanel>
                                                                 </hc:SimplePanel>
                                                             </hc:SimplePanel>
@@ -631,8 +723,11 @@
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                                <hc:SimplePanel Background="#88ffffff" Visibility="{Binding IsLoading, Converter={StaticResource Boolean2VisibilityConverter}}" d:IsHidden="True">
-                                    <hc:LoadingCircle IsRunning="True" Width="64" Height="64" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <hc:SimplePanel Background="#88ffffff"
+                                                Visibility="{Binding IsLoading, Converter={StaticResource Boolean2VisibilityConverter}}"
+                                                d:IsHidden="True">
+                                    <hc:LoadingCircle IsRunning="True" Width="64" Height="64"
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center" />
                                 </hc:SimplePanel>
                             </hc:SimplePanel>
                         </Border>
@@ -641,24 +736,28 @@
             </TabControl>
         </Border>
         <StatusBar Grid.Row="4" Margin="0,5,0,0">
-            <StatusBarItem Content="状态："/>
-            <StatusBarItem Content="{Binding State.NetStatus.StatusText}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="150"/>
-            <Separator/>
-            <StatusBarItem Content="系统指纹："/>
-            <StatusBarItem Content="{Binding State.NetStatus.SystemFingerprint}" Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="100"/>
-            <Separator/>
-            <StatusBarItem Content="上下文统计："/>
+            <StatusBarItem Content="状态：" />
+            <StatusBarItem Content="{Binding State.NetStatus.StatusText}"
+                           Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="150" />
+            <Separator />
+            <StatusBarItem Content="系统指纹：" />
+            <StatusBarItem Content="{Binding State.NetStatus.SystemFingerprint}"
+                           Foreground="{Binding Path=State.NetStatus.StatusColor}" MinWidth="100" />
+            <Separator />
+            <StatusBarItem Content="上下文统计：" />
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="已处理 "/>
-                    <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
-                    <TextBlock Text=" Token(s)"/>
+                    <TextBlock Text="已处理 " />
+                    <TextBlock Text="{Binding SessionTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}"
+                               Foreground="{Binding Path=State.NetStatus.StatusColor}" />
+                    <TextBlock Text=" Token(s)" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="正在输入 "/>
-                    <TextBlock Text="{Binding TextInputTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}" Foreground="{Binding Path=State.NetStatus.StatusColor}"/>
+                    <TextBlock Text="正在输入 " />
+                    <TextBlock Text="{Binding TextInputTokenNum, FallbackValue=0, StringFormat='{}{0:#,0}'}"
+                               Foreground="{Binding Path=State.NetStatus.StatusColor}" />
                     <TextBlock Text=" Token(s)" />
                 </StackPanel>
             </StatusBarItem>

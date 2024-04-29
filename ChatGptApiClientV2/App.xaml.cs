@@ -33,11 +33,14 @@ public partial class App
         DispatcherUnhandledException += UiExceptionHandler;
         ConfigHelper.Instance.SetLang("zh-CN");
     }
-    private static void UiExceptionHandler(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+
+    private static void UiExceptionHandler(object sender,
+        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         HandyControl.Controls.MessageBox.Show(e.Exception.ToString(), "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
+
     private static void AppExceptionHandler(object sender, UnhandledExceptionEventArgs e)
     {
         // dump to crash.log

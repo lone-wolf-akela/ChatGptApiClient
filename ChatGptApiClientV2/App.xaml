@@ -37,34 +37,34 @@
                         </ResourceDictionary.MergedDictionaries>
                     </ResourceDictionary>
                 </hc:ThemeResources>
-                <hc:Theme/>
-                <ResourceDictionary Source="MarkdownTheme.xaml"/>
+                <hc:Theme />
+                <ResourceDictionary Source="MarkdownTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="Label" BasedOn="{StaticResource LabelBaseStyle}">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             </Style>
             <Style TargetType="StatusBar" BasedOn="{StaticResource StatusBarBaseStyle}">
-                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Background" Value="Transparent" />
             </Style>
             <Style x:Key="DropDownListStyle" TargetType="ListBox" BasedOn="{StaticResource ListBoxBaseStyle}">
-                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}" />
             </Style>
             <Style TargetType="ContextMenu" BasedOn="{StaticResource ContextMenuBaseStyle}">
-                <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource SolidSecondaryRegionBrush}" />
             </Style>
             <Style TargetType="ToolTip" BasedOn="{StaticResource ToolTipBaseStyle}">
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ToolTip">
-                            <Border Effect="{StaticResource EffectShadow2}" 
-                                    Margin="8" 
-                                    Background="{DynamicResource SolidRegionBrush}" 
-                                    Padding="{TemplateBinding Padding}" 
-                                    BorderThickness="1" 
-                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" 
+                            <Border Effect="{StaticResource EffectShadow2}"
+                                    Margin="8"
+                                    Background="{DynamicResource SolidRegionBrush}"
+                                    Padding="{TemplateBinding Padding}"
+                                    BorderThickness="1"
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
                                     BorderBrush="{DynamicResource BorderBrush}">
-                                <ContentPresenter Margin="10,0"/>
+                                <ContentPresenter Margin="10,0" />
                             </Border>
                         </ControlTemplate>
                     </Setter.Value>
@@ -86,43 +86,76 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-            <Style x:Key="ButtonGroupSolidDynamicColor" BasedOn="{StaticResource ButtonGroupBaseStyle}" TargetType="hc:ButtonGroup">
-                <Setter Property="hc:VisualElement.HighlightBorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                <Setter Property="hc:VisualElement.HighlightBackground" Value="{DynamicResource PrimaryBrush}"/>
-                <Setter Property="hc:VisualElement.HighlightForeground" Value="{DynamicResource TextIconBrush}"/>
+            <Style x:Key="ButtonGroupSolidDynamicColor" BasedOn="{StaticResource ButtonGroupBaseStyle}"
+                   TargetType="hc:ButtonGroup">
+                <Setter Property="hc:VisualElement.HighlightBorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                <Setter Property="hc:VisualElement.HighlightBackground" Value="{DynamicResource PrimaryBrush}" />
+                <Setter Property="hc:VisualElement.HighlightForeground" Value="{DynamicResource TextIconBrush}" />
             </Style>
             <ControlTemplate x:Key="SolidComboBoxTemplate" TargetType="ComboBox">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="border" Grid.ColumnSpan="2" CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" />
-                    <hc:ToggleBlock Grid.Column="1" Padding="1,0" Background="Transparent" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                    <Border x:Name="border" Grid.ColumnSpan="2"
+                            CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}" />
+                    <hc:ToggleBlock Grid.Column="1" Padding="1,0" Background="Transparent"
+                                    VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                         <hc:ToggleBlock.UnCheckedContent>
-                            <Path Data="{StaticResource DownGeometry}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="14" Stretch="Uniform" Fill="{TemplateBinding BorderBrush}" Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
+                            <Path Data="{StaticResource DownGeometry}" VerticalAlignment="Center"
+                                  HorizontalAlignment="Right" Width="14" Stretch="Uniform"
+                                  Fill="{TemplateBinding BorderBrush}"
+                                  Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
                         </hc:ToggleBlock.UnCheckedContent>
                         <hc:ToggleBlock.CheckedContent>
-                            <Path Data="{StaticResource UpGeometry}" VerticalAlignment="Center" HorizontalAlignment="Right" Width="14" Stretch="Uniform" Fill="{TemplateBinding BorderBrush}" Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
+                            <Path Data="{StaticResource UpGeometry}" VerticalAlignment="Center"
+                                  HorizontalAlignment="Right" Width="14" Stretch="Uniform"
+                                  Fill="{TemplateBinding BorderBrush}"
+                                  Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ThicknessSplitConverter}, ConverterParameter='0,0,1,0'}" />
                         </hc:ToggleBlock.CheckedContent>
                     </hc:ToggleBlock>
-                    <hc:ToggleBlock Grid.Column="0" Grid.ColumnSpan="2" Background="Transparent" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" ToggleGesture="LeftClick" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
-                    <ContentPresenter Grid.Column="0" Margin="{TemplateBinding Padding}" x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    <Popup Grid.Column="0" x:Name="PART_Popup" PlacementTarget="{Binding ElementName=border}" AllowsTransparency="true" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{StaticResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom">
+                    <hc:ToggleBlock Grid.Column="0" Grid.ColumnSpan="2" Background="Transparent"
+                                    VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                    ToggleGesture="LeftClick"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                    <ContentPresenter Grid.Column="0" Margin="{TemplateBinding Padding}" x:Name="contentPresenter"
+                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                      Content="{TemplateBinding SelectionBoxItem}"
+                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      IsHitTestVisible="false"
+                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    <Popup Grid.Column="0" x:Name="PART_Popup" PlacementTarget="{Binding ElementName=border}"
+                           AllowsTransparency="true"
+                           IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                           Margin="1"
+                           PopupAnimation="{StaticResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}"
+                           Placement="Bottom">
                         <Decorator Margin="8 0">
-                            <Border BorderThickness="0,1,0,0" 
-                                    Effect="{StaticResource EffectShadow2}" 
-                                    Margin="0,0,0,8" 
-                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" 
-                                    x:Name="dropDownBorder" 
-                                    MinWidth="{Binding ActualWidth, ElementName=border}" 
-                                    MaxHeight="{TemplateBinding MaxDropDownHeight}" 
+                            <Border BorderThickness="0,1,0,0"
+                                    Effect="{StaticResource EffectShadow2}"
+                                    Margin="0,0,0,8"
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
+                                    x:Name="dropDownBorder"
+                                    MinWidth="{Binding ActualWidth, ElementName=border}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     Background="{DynamicResource SolidRegionBrush}">
-                                <hc:ToggleBlock IsChecked="{Binding HasItems,RelativeSource={RelativeSource TemplatedParent},Mode=OneWay}" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                <hc:ToggleBlock
+                                    IsChecked="{Binding HasItems,RelativeSource={RelativeSource TemplatedParent},Mode=OneWay}"
+                                    VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch">
                                     <hc:ToggleBlock.CheckedContent>
                                         <ScrollViewer Margin="2">
-                                            <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                            <ItemsPresenter x:Name="ItemsPresenter"
+                                                            KeyboardNavigation.DirectionalNavigation="Contained"
+                                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                         </ScrollViewer>
                                     </hc:ToggleBlock.CheckedContent>
                                     <hc:ToggleBlock.UnCheckedContent>
@@ -135,43 +168,51 @@
                 </Grid>
                 <ControlTemplate.Triggers>
                     <Trigger Property="HasItems" Value="false">
-                        <Setter Property="Height" TargetName="dropDownBorder" Value="95"/>
+                        <Setter Property="Height" TargetName="dropDownBorder" Value="95" />
                     </Trigger>
                     <Trigger Property="hc:DropDownElement.ConsistentWidth" Value="True">
-                        <Setter Property="MaxWidth" TargetName="dropDownBorder" Value="{Binding ActualWidth, ElementName=border}"/>
-                        <Setter Property="MinWidth" TargetName="dropDownBorder" Value="{Binding ActualWidth, ElementName=border}"/>
+                        <Setter Property="MaxWidth" TargetName="dropDownBorder"
+                                Value="{Binding ActualWidth, ElementName=border}" />
+                        <Setter Property="MinWidth" TargetName="dropDownBorder"
+                                Value="{Binding ActualWidth, ElementName=border}" />
                     </Trigger>
                     <Trigger Property="hc:DropDownElement.AutoWidth" Value="True">
-                        <Setter Property="MaxWidth" TargetName="dropDownBorder" Value="{x:Static system:Double.MaxValue}" />
-                        <Setter Property="MinWidth" TargetName="dropDownBorder" Value="{Binding ActualHeight, ElementName=border}" />
+                        <Setter Property="MaxWidth" TargetName="dropDownBorder"
+                                Value="{x:Static system:Double.MaxValue}" />
+                        <Setter Property="MinWidth" TargetName="dropDownBorder"
+                                Value="{Binding ActualHeight, ElementName=border}" />
                     </Trigger>
                     <MultiTrigger>
                         <MultiTrigger.Conditions>
-                            <Condition Property="IsMouseOver" Value="true"/>
-                            <Condition Property="IsOpen" Value="false" SourceName="PART_Popup"/>
+                            <Condition Property="IsMouseOver" Value="true" />
+                            <Condition Property="IsOpen" Value="false" SourceName="PART_Popup" />
                         </MultiTrigger.Conditions>
-                        <Setter Property="BorderBrush" Value="{DynamicResource SecondaryBorderBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource SecondaryBorderBrush}" />
                     </MultiTrigger>
                     <Trigger Property="IsOpen" Value="True" SourceName="PART_Popup">
-                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                     </Trigger>
                     <Trigger Property="IsFocused" Value="True">
-                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="false">
-                        <Setter Property="Opacity" Value="0.4"/>
+                        <Setter Property="Opacity" Value="0.4" />
                     </Trigger>
                 </ControlTemplate.Triggers>
             </ControlTemplate>
-            <Style x:Key="SolidComboBoxItemStyle" BasedOn="{StaticResource ComboBoxItemBaseStyle}" TargetType="ComboBoxItem">
+            <Style x:Key="SolidComboBoxItemStyle" BasedOn="{StaticResource ComboBoxItemBaseStyle}"
+                   TargetType="ComboBoxItem">
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ComboBoxItem">
-                            <Border x:Name="Bd" 
-                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}" 
-                                    BorderBrush="{TemplateBinding BorderBrush}" 
-                                    BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <Border x:Name="Bd"
+                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                             </Border>
                             <ControlTemplate.Triggers>
                                 <MultiTrigger>
@@ -179,13 +220,15 @@
                                         <Condition Property="IsSelected" Value="False" />
                                         <Condition Property="IsMouseOver" Value="True" />
                                     </MultiTrigger.Conditions>
-                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource SolidSecondaryRegionBrush}" />
+                                    <Setter Property="Background" TargetName="Bd"
+                                            Value="{DynamicResource SolidSecondaryRegionBrush}" />
                                 </MultiTrigger>
                                 <MultiTrigger>
                                     <MultiTrigger.Conditions>
                                         <Condition Property="IsSelected" Value="True" />
                                     </MultiTrigger.Conditions>
-                                    <Setter Property="Background" TargetName="Bd" Value="{DynamicResource PrimaryBrush}" />
+                                    <Setter Property="Background" TargetName="Bd"
+                                            Value="{DynamicResource PrimaryBrush}" />
                                     <Setter Property="Foreground" Value="White" />
                                 </MultiTrigger>
                             </ControlTemplate.Triggers>
@@ -194,17 +237,17 @@
                 </Setter>
             </Style>
             <Style BasedOn="{StaticResource InputElementBaseStyle}" TargetType="ComboBox">
-                <Setter Property="ItemContainerStyle" Value="{StaticResource SolidComboBoxItemStyle}"/>
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
-                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-                <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
-                <Setter Property="ScrollViewer.PanningMode" Value="Both"/>
-                <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
-                <Setter Property="Template" Value="{StaticResource SolidComboBoxTemplate}"/>
+                <Setter Property="ItemContainerStyle" Value="{StaticResource SolidComboBoxItemStyle}" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ScrollViewer.CanContentScroll" Value="true" />
+                <Setter Property="ScrollViewer.PanningMode" Value="Both" />
+                <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+                <Setter Property="Template" Value="{StaticResource SolidComboBoxTemplate}" />
                 <Style.Triggers>
                     <Trigger Property="IsEditable" Value="true">
-                        <Setter Property="IsTabStop" Value="false"/>
-                        <Setter Property="Template" Value="{StaticResource ComboBoxEditableTemplate}"/>
+                        <Setter Property="IsTabStop" Value="false" />
+                        <Setter Property="Template" Value="{StaticResource ComboBoxEditableTemplate}" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -212,7 +255,8 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabControl">
-                            <Grid x:Name="templateRoot" Background="{TemplateBinding Background}" ClipToBounds="true" SnapsToDevicePixels="true">
+                            <Grid x:Name="templateRoot" Background="{TemplateBinding Background}" ClipToBounds="true"
+                                  SnapsToDevicePixels="true">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition x:Name="ColumnDefinition0" />
                                     <ColumnDefinition x:Name="ColumnDefinition1" Width="0" />
@@ -221,13 +265,14 @@
                                     <RowDefinition x:Name="RowDefinition0" Height="Auto" />
                                     <RowDefinition x:Name="RowDefinition1" Height="*" />
                                 </Grid.RowDefinitions>
-                                <DockPanel Grid.Column="0" Grid.Row="0" hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}">
-                                    <TabPanel x:Name="headerPanel" 
-                                              Background="Transparent" 
-                                              IsItemsHost="true" 
-                                              Margin="0,5,0,0" 
-                                              DockPanel.Dock="Left" 
-                                              hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}"/>
+                                <DockPanel Grid.Column="0" Grid.Row="0"
+                                           hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}">
+                                    <TabPanel x:Name="headerPanel"
+                                              Background="Transparent"
+                                              IsItemsHost="true"
+                                              Margin="0,5,0,0"
+                                              DockPanel.Dock="Left"
+                                              hc:PanelElement.FluidMoveBehavior="{StaticResource BehaviorXY200}" />
                                     <Button x:Name="AddBtn"
                                             DockPanel.Dock="Left"
                                             FontFamily="./font/#Segoe Fluent Icons"
@@ -238,11 +283,16 @@
                                             VerticalAlignment="Center"
                                             Margin="5,0,5,0"
                                             ToolTip="{Binding Path=(local:TabControlHelper.AddTabBtnTooltip), RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"
-                                            Command="{Binding Path=(local:TabControlHelper.AddTabCommand), RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}"/>
-                                    <hc:SimplePanel/>
+                                            Command="{Binding Path=(local:TabControlHelper.AddTabCommand), RelativeSource={RelativeSource AncestorType={x:Type TabControl}}}" />
+                                    <hc:SimplePanel />
                                 </DockPanel>
-                                <Border x:Name="contentPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{DynamicResource BorderBrush}" Background="{TemplateBinding Background}" Grid.Column="0" Grid.Row="1">
-                                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" Margin="0" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                <Border x:Name="contentPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        Background="{TemplateBinding Background}" Grid.Column="0" Grid.Row="1">
+                                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"
+                                                      Margin="0"
+                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                 </Border>
                             </Grid>
                             <ControlTemplate.Triggers>
@@ -278,35 +328,35 @@
                 </Setter>
             </Style>
             <Style x:Key="TopRoundTabItemStyle" TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}">
-                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="MinHeight" Value="0" />
-                <Setter Property="VerticalAlignment" Value="Bottom"/>
+                <Setter Property="VerticalAlignment" Value="Bottom" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <hc:SimplePanel x:Name="templateRoot" 
+                            <hc:SimplePanel x:Name="templateRoot"
                                             SnapsToDevicePixels="true"
                                             Margin="0">
-                                <Border x:Name="mainBorder" 
+                                <Border x:Name="mainBorder"
                                         BorderBrush="{DynamicResource BorderBrush}"
-                                        BorderThickness="1,1,1,0" 
+                                        BorderThickness="1,1,1,0"
                                         CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}"
-                                        Background="{TemplateBinding Background}" 
+                                        Background="{TemplateBinding Background}"
                                         Margin="0">
                                     <Border x:Name="bottomLine"
-                                            BorderBrush="{TemplateBinding BorderBrush}" 
-                                            Background="Transparent" 
-                                            Margin="0"/>
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Background="Transparent"
+                                            Margin="0" />
                                 </Border>
-                                <ContentPresenter x:Name="contentPresenter" 
-                                                  TextElement.Foreground="{DynamicResource PrimaryTextBrush}" 
-                                                  ContentSource="Header" 
+                                <ContentPresenter x:Name="contentPresenter"
+                                                  TextElement.Foreground="{DynamicResource PrimaryTextBrush}"
+                                                  ContentSource="Header"
                                                   Focusable="False"
                                                   HorizontalAlignment="Center"
-                                                  Margin="{TemplateBinding Padding}" 
-                                                  RecognizesAccessKey="True" 
-                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
-                                                  VerticalAlignment="Center"/>
+                                                  Margin="{TemplateBinding Padding}"
+                                                  RecognizesAccessKey="True"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                  VerticalAlignment="Center" />
                             </hc:SimplePanel>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsSelected" Value="False">
@@ -317,11 +367,12 @@
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="Panel.ZIndex" Value="1" />
-                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryBrush}" TargetName="contentPresenter" />
+                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryBrush}"
+                                            TargetName="contentPresenter" />
                                     <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,2" />
                                     <Setter Property="LayoutTransform">
                                         <Setter.Value>
-                                            <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                                            <ScaleTransform ScaleX="1.1" ScaleY="1.1" />
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>

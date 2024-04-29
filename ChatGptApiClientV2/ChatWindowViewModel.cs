@@ -39,6 +39,7 @@ using static ChatGptApiClientV2.ChatWindowMessage;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
+
 // ReSharper disable UnusedParameterInPartialMethod
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
@@ -88,42 +89,50 @@ public partial class FileAttachmentInfo : ObservableObject
     }
 
     private readonly ICollection<FileAttachmentInfo> ownerCollection;
+
     [RelayCommand]
     private void RemoveFile()
     {
         ownerCollection.Remove(this);
     }
+
     public string Path { get; }
     public ImageSource? Icon { get; private set; }
 }
+
 public partial class ChatWindowMessage : ObservableObject
 {
-    [ObservableProperty]
-    private bool isInEditingMode;
+    [ObservableProperty] private bool isInEditingMode;
+
     public partial class EditorModeContent(string srcText) : ObservableObject
     {
         [ObservableProperty]
         private string text = srcText; // must use constructor to init, because write to Text will make it dirty
+
         public bool IsEditable { get; init; }
+
         partial void OnTextChanged(string value)
         {
             IsDirty = true;
         }
+
         public bool IsDirty { get; private set; }
         public IRichMessage? SourceMessage { get; init; }
     }
+
     public ObservableCollection<EditorModeContent> EditorModeContents { get; } = [];
+
     [RelayCommand]
     private void EnterEditingMode()
     {
         EditorModeContents.Clear();
-        foreach(var msg in messageList)
+        foreach (var msg in messageList)
         {
             EditorModeContent content;
             if (msg is TextMessage txtMsg)
             {
                 content = new EditorModeContent(txtMsg.Text)
-                { 
+                {
                     IsEditable = true,
                     SourceMessage = msg
                 };
@@ -156,48 +165,61 @@ public partial class ChatWindowMessage : ObservableObject
             {
                 throw new InvalidOperationException();
             }
+
             EditorModeContents.Add(content);
         }
+
         IsInEditingMode = true;
     }
+
     [RelayCommand]
     private void ConfirmEditingMode()
     {
-        foreach(var content in EditorModeContents)
+        foreach (var content in EditorModeContents)
         {
-            if (!content.IsDirty) { continue; }
+            if (!content.IsDirty)
+            {
+                continue;
+            }
+
             if (!content.IsEditable || content.SourceMessage is not TextMessage txtMsg)
             {
                 throw new InvalidOperationException();
             }
+
             txtMsg.Text = content.Text;
             if (txtMsg.SourceContent is not null)
             {
                 txtMsg.SourceContent.Text = content.Text;
             }
         }
+
         OnPropertyChanged(nameof(RenderedMessage));
         IsInEditingMode = false;
     }
+
     [RelayCommand]
     private void CancelEditingMode()
     {
         IsInEditingMode = false;
     }
+
     public IMessage? SourceMessage { get; init; }
     public bool IsStreaming { get; init; }
-    [ObservableProperty]
-    private bool isWaitingDeleteConfirm;
+    [ObservableProperty] private bool isWaitingDeleteConfirm;
+
     [RelayCommand]
     private void TryDeleteMessage()
     {
         IsWaitingDeleteConfirm = true;
     }
+
     [RelayCommand]
     private void CancelDeleteMessage()
     {
         IsWaitingDeleteConfirm = false;
     }
+
     [RelayCommand]
     private void CopyMessage()
     {
@@ -246,6 +268,7 @@ public partial class ChatWindowMessage : ObservableObject
         ChatGPT,
         Claude
     }
+
     public AssistantType Assistant { get; init; }
 
     private readonly BlockUIContainer loadingBar;
@@ -274,18 +297,21 @@ public partial class ChatWindowMessage : ObservableObject
         public IEnumerable<Block> Rendered { get; }
     }
 
-    private partial class TextMessage(string srcStr, bool enableMarkdown, TextContent? sourceContent) : ObservableObject, IRichMessage
+    private partial class TextMessage(string srcStr, bool enableMarkdown, TextContent? sourceContent)
+        : ObservableObject, IRichMessage
     {
         public TextContent? SourceContent { get; } = sourceContent;
-        [ObservableProperty]
-        private string text = srcStr;
+        [ObservableProperty] private string text = srcStr;
+
         partial void OnTextChanged(string value)
         {
             cachedRenderResult = null;
         }
+
         private bool EnableMarkdown { get; } = enableMarkdown;
 
         private List<Block>? cachedRenderResult;
+
         private List<Block> RenderMarkdownText()
         {
             try
@@ -308,6 +334,7 @@ public partial class ChatWindowMessage : ObservableObject
                 return [new Paragraph(new Run(Text))];
             }
         }
+
         public IEnumerable<Block> Rendered
         {
             get
@@ -316,6 +343,7 @@ public partial class ChatWindowMessage : ObservableObject
                 {
                     return cachedRenderResult;
                 }
+
                 cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
                 return cachedRenderResult;
             }
@@ -329,6 +357,7 @@ public partial class ChatWindowMessage : ObservableObject
         private string ImageTooltip { get; } = tooltip ?? "";
 
         private List<Block>? cachedRenderResult;
+
         private List<Block> RenderImage()
         {
             var imageGrid = new Controls.ImageDisplayer
@@ -340,6 +369,7 @@ public partial class ChatWindowMessage : ObservableObject
 
             return [new BlockUIContainer(imageGrid)];
         }
+
         public IEnumerable<Block> Rendered
         {
             get
@@ -348,6 +378,7 @@ public partial class ChatWindowMessage : ObservableObject
                 {
                     return cachedRenderResult;
                 }
+
                 cachedRenderResult = RenderImage();
                 return cachedRenderResult;
             }
@@ -359,6 +390,7 @@ public partial class ChatWindowMessage : ObservableObject
         private IEnumerable<Block> Blocks { get; } = blocks;
 
         private List<Block>? cachedRenderResult;
+
         public IEnumerable<Block> Rendered
         {
             get
@@ -367,6 +399,7 @@ public partial class ChatWindowMessage : ObservableObject
                 {
                     return cachedRenderResult;
                 }
+
                 cachedRenderResult = Blocks.ToList();
                 return cachedRenderResult;
             }
@@ -379,6 +412,7 @@ public partial class ChatWindowMessage : ObservableObject
         private string FileContent { get; } = content;
 
         private List<Block>? cachedRenderResult;
+
         private List<Block> RenderTextFile()
         {
             var textGrid = new Controls.TextFileDisplayer
@@ -388,6 +422,7 @@ public partial class ChatWindowMessage : ObservableObject
             };
             return [new BlockUIContainer(textGrid)];
         }
+
         public IEnumerable<Block> Rendered
         {
             get
@@ -396,6 +431,7 @@ public partial class ChatWindowMessage : ObservableObject
                 {
                     return cachedRenderResult;
                 }
+
                 cachedRenderResult = RenderTextFile();
                 return cachedRenderResult;
             }
@@ -404,44 +440,36 @@ public partial class ChatWindowMessage : ObservableObject
 
     public async Task AddText(TextContent text, bool enableMarkdown)
     {
-        await Task.Run(() =>
-        {
-            messageList.Add(new TextMessage(text.Text, enableMarkdown, text));
-        });
+        await Task.Run(() => { messageList.Add(new TextMessage(text.Text, enableMarkdown, text)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
     public async Task AddTextFile(string fileName, string content)
     {
-        await Task.Run(() =>
-        {
-            messageList.Add(new TextFileMessage(content, fileName));
-        });
+        await Task.Run(() => { messageList.Add(new TextFileMessage(content, fileName)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
+
     private async Task AddImage(BitmapImage image, string? filename, string? tooltip)
     {
-        await Task.Run(() =>
-        {
-            messageList.Add(new ImageMessage(image, filename, tooltip));
-        });
+        await Task.Run(() => { messageList.Add(new ImageMessage(image, filename, tooltip)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
+
     public async Task AddImage(string base64Url, string? filename, string? tooltip)
     {
         var bitmap = Utils.Base64ToBitmapImage(base64Url);
         await AddImage(bitmap, filename, tooltip);
     }
+
     public async Task AddBlocks(IEnumerable<Block> blocks)
     {
-        await Task.Run(() =>
-        {
-            messageList.Add(new BlocksMessage(blocks));
-        });
+        await Task.Run(() => { messageList.Add(new BlocksMessage(blocks)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
     private readonly List<IRichMessage> messageList = [];
+
     /**** stream (temp) data ****/
     public StringBuilder? StreamMessage { get; private set; }
 
@@ -451,14 +479,17 @@ public partial class ChatWindowMessage : ObservableObject
         StreamMessage.Append(text);
         OnPropertyChanged(nameof(RenderedMessage));
     }
+
     private double? streamProgress;
     private string? streamProgressText;
+
     public void SetStreamProgress(double progress, string text)
     {
         streamProgress = progress;
         streamProgressText = text;
         OnPropertyChanged(nameof(RenderedMessage));
     }
+
     /*** end of stream (temp) data ***/
     public FlowDocument RenderedMessage
     {
@@ -470,10 +501,12 @@ public partial class ChatWindowMessage : ObservableObject
             {
                 doc.Blocks.AddRange(msg.Rendered);
             }
+
             if (StreamMessage is not null)
             {
                 doc.Blocks.Add(new Paragraph(new Run(StreamMessage.ToString())));
             }
+
             if (streamProgress is not null)
             {
                 var progress = new HandyControl.Controls.CircleProgressBar
@@ -497,26 +530,31 @@ public partial class ChatWindowMessage : ObservableObject
                 };
                 doc.Blocks.Add(new BlockUIContainer(stackpanel));
             }
+
             if (IsStreaming)
             {
                 doc.Blocks.Add(loadingBar);
             }
+
             doc.Foreground = ForegroundColor;
             return doc;
         }
     }
+
     public RoleType Role { get; set; }
     public static string UserAvatarSource => Environment.UserName;
 
     private const string ChatGPTIcon = "pack://application:,,,/images/chatgpt-icon.svg";
     private const string ClaudeIcon = "pack://application:,,,/images/claude-ai-icon.svg";
     private const string ToolIcon = "pack://application:,,,/images/set-up-svgrepo-com.svg";
+
     public Uri Avatar => Role switch
     {
         RoleType.Assistant => Assistant == AssistantType.ChatGPT ? new Uri(ChatGPTIcon) : new Uri(ClaudeIcon),
         RoleType.Tool => new Uri(ToolIcon),
         _ => new Uri(ChatGPTIcon)
     };
+
     public Brush ForegroundColor => Role switch
     {
         RoleType.User => Brushes.Black,
@@ -525,6 +563,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Tool => Brushes.White,
         _ => throw new InvalidOperationException()
     };
+
     public Brush BackgroundColor => Role switch
     {
         RoleType.User => new SolidColorBrush(Color.FromRgb(60, 209, 125)),
@@ -533,6 +572,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Tool => new SolidColorBrush(Color.FromRgb(255, 173, 61)),
         _ => throw new InvalidOperationException()
     };
+
     public bool ShowLeftAvatar => Role switch
     {
         RoleType.User => false,
@@ -541,6 +581,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Tool => true,
         _ => throw new InvalidOperationException()
     };
+
     public bool ShowRightAvatar => Role switch
     {
         RoleType.User => true,
@@ -573,19 +614,22 @@ public partial class ChatWindowMessageTab : ObservableObject
     private static int totalTabIndexCount;
     private readonly int assignedTabIndex = ++totalTabIndexCount;
     private string? title;
+
     public string? Title
     {
         get => title ?? $"对话 {assignedTabIndex}";
         set => SetProperty(ref title, value);
     }
+
     public bool UserHasGivenTitle => title is not null;
-    [ObservableProperty]
-    private bool isEditingTitle;
+    [ObservableProperty] private bool isEditingTitle;
+
     [RelayCommand]
     private void EnterEditingTitleMode()
     {
         IsEditingTitle = true;
     }
+
     [RelayCommand]
     private void ConfirmEditingTitleMode()
     {
@@ -595,9 +639,10 @@ public partial class ChatWindowMessageTab : ObservableObject
             syncedSession.Title = Title;
         }
     }
-    [ObservableProperty]
-    private bool isLoading;
+
+    [ObservableProperty] private bool isLoading;
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
+
     [RelayCommand]
     private void RemoveMessage(ChatWindowMessage msg)
     {
@@ -607,23 +652,28 @@ public partial class ChatWindowMessageTab : ObservableObject
             syncedSession?.Messages.Remove(msg.SourceMessage);
         }
     }
+
     public void AddStreamText(string text)
     {
         Messages.Last().AddStreamText(text);
     }
+
     public int GetCurrentStreamTokenNum()
     {
         if (Messages.Count == 0)
         {
             return 0;
         }
+
         var lastMsg = Messages.Last();
         if (lastMsg.StreamMessage is null)
         {
             return 0;
         }
-        return Utils.GetStringTokenNum(lastMsg.StreamMessage.ToString());
+
+        return Utils.GetStringTokenCount(lastMsg.StreamMessage.ToString());
     }
+
     public void AddMessage(RoleType role, AssistantType assistantType)
     {
         Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true, Assistant = assistantType });
@@ -633,8 +683,11 @@ public partial class ChatWindowMessageTab : ObservableObject
     {
         Messages.Last().SetStreamProgress(progress, text);
     }
+
     private ChatCompletionRequest? syncedSession;
-    public async Task SyncChatSession(ChatCompletionRequest session, int tabIndex, SystemState state, bool enableMarkdown)
+
+    public async Task SyncChatSession(ChatCompletionRequest session, int tabIndex, SystemState state,
+        bool enableMarkdown)
     {
         Messages.Clear();
         syncedSession = session;
@@ -646,6 +699,7 @@ public partial class ChatWindowMessageTab : ObservableObject
         {
             Title = session.Title;
         }
+
         foreach (var msg in session.Messages)
         {
             if (msg.Hidden)
@@ -672,6 +726,7 @@ public partial class ChatWindowMessageTab : ObservableObject
                     await chatMsg.AddImage(imgContent.ImageUrl.Url, null, null);
                 }
             }
+
             if (msg is UserMessage userMsg)
             {
                 foreach (var file in userMsg.Attachments)
@@ -705,6 +760,7 @@ public partial class ChatWindowMessageTab : ObservableObject
                 }
 #pragma warning restore CS0618 // 类型或成员已过时
             }
+
             Messages.Add(chatMsg);
         }
     }
@@ -760,12 +816,14 @@ public partial class ChatWindowMessageTab : ObservableObject
                 block.Background = msg.BackgroundColor;
                 block.Margin = new Thickness(0);
             }
+
             blocks.Last().Margin = new Thickness(0, 0, 0, sectionMargin);
             doc.Blocks.AddRange(blocks);
         }
 
         return doc;
     }
+
     public void Reset()
     {
         syncedSession = null;
@@ -781,15 +839,13 @@ public partial class ChatWindowMessageTab : ObservableObject
 /// </summary>
 public partial class ChatWindowViewModel : ObservableObject
 {
-    [ObservableProperty]
-    private SystemState state;
+    [ObservableProperty] private SystemState state;
+
     private void SetIsLoading(bool loading, int tabIndex)
     {
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            ChatWindowMessageTabs[tabIndex].IsLoading = loading;
-        });
+        Application.Current.Dispatcher.Invoke(() => { ChatWindowMessageTabs[tabIndex].IsLoading = loading; });
     }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedMessageTab))]
     [NotifyPropertyChangedFor(nameof(SessionTokenNum))]
@@ -797,13 +853,16 @@ public partial class ChatWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsSelectedTabValid))]
     private int selectedTabIndex;
-    public bool IsSelectedTabValid => SelectedTabIndex >= 0 && SelectedTabIndex < ChatWindowMessageTabs.Count; 
+
+    public bool IsSelectedTabValid => SelectedTabIndex >= 0 && SelectedTabIndex < ChatWindowMessageTabs.Count;
+
     [RelayCommand]
     private void CreateTab()
     {
         ChatWindowMessageTabs.Add(new ChatWindowMessageTab());
         SelectedTabIndex = ChatWindowMessageTabs.Count - 1;
     }
+
     [RelayCommand]
     private void CloseTab(ChatWindowMessageTab tabToClose)
     {
@@ -812,11 +871,13 @@ public partial class ChatWindowViewModel : ObservableObject
         {
             ChatWindowMessageTabs.Add(new ChatWindowMessageTab());
         }
+
         if (!IsSelectedTabValid)
         {
             SelectedTabIndex = ChatWindowMessageTabs.Count - 1;
         }
     }
+
     [RelayCommand]
     private void CloseCurrentTab()
     {
@@ -825,22 +886,26 @@ public partial class ChatWindowViewModel : ObservableObject
             CloseTab(SelectedMessageTab!);
         }
     }
+
     [RelayCommand]
     private void SelectedTabEnterEditTitleMode()
     {
         SelectedMessageTab?.EnterEditingTitleModeCommand.Execute(null);
     }
+
     public ObservableCollection<ChatWindowMessageTab> ChatWindowMessageTabs { get; } = [new ChatWindowMessageTab()];
+
     public ChatWindowMessageTab? SelectedMessageTab =>
         IsSelectedTabValid
-        ? ChatWindowMessageTabs[SelectedTabIndex]
-        : null;
+            ? ChatWindowMessageTabs[SelectedTabIndex]
+            : null;
 
     public ObservableCollection<FileAttachmentInfo> FileAttachments { get; } = [];
     public bool IsFileAttachmentsEmpty => FileAttachments.Count == 0;
 
     public bool HasImageFileAttachment => FileAttachments.Select(file => MimeTypes.GetMimeType(file.Path))
-                                                         .Any(mime => mime.StartsWith("image/"));
+        .Any(mime => mime.StartsWith("image/"));
+
     public ChatWindowViewModel()
     {
         State = new SystemState();
@@ -861,6 +926,7 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     public delegate void ScrollToEndHandler(int tabIndex);
+
     public event ScrollToEndHandler? ScrollToEndEvent;
 
     private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown, int tabIndex)
@@ -873,7 +939,8 @@ public partial class ChatWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(SessionTokenNum));
     }
 
-    public int SessionTokenNum => State.GetSessionTokens(SelectedTabIndex) + (SelectedMessageTab?.GetCurrentStreamTokenNum() ?? 0);
+    public int SessionTokenNum =>
+        State.GetSessionTokens(SelectedTabIndex) + (SelectedMessageTab?.GetCurrentStreamTokenNum() ?? 0);
 
     private void AddStreamText(string text, int tabIndex)
     {
@@ -881,13 +948,14 @@ public partial class ChatWindowViewModel : ObservableObject
         ScrollToEndEvent?.Invoke(tabIndex);
         OnPropertyChanged(nameof(SessionTokenNum));
     }
+
     private void AddMessage(RoleType role, int tabIndex)
     {
         ChatWindowMessageTabs[tabIndex].AddMessage(
-            role, 
-            State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic 
-            ? AssistantType.Claude 
-            : AssistantType.ChatGPT);
+            role,
+            State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
+                ? AssistantType.Claude
+                : AssistantType.ChatGPT);
         ScrollToEndEvent?.Invoke(tabIndex);
     }
 
@@ -897,11 +965,10 @@ public partial class ChatWindowViewModel : ObservableObject
         ScrollToEndEvent?.Invoke(tabIndex);
     }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
     private string textInput = "";
 
-    public int TextInputTokenNum => Utils.GetStringTokenNum(TextInput);
+    public int TextInputTokenNum => Utils.GetStringTokenCount(TextInput);
 
 
     [RelayCommand(IncludeCancelCommand = true)]
@@ -929,7 +996,8 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     private bool SessionNotNull =>
-        IsSelectedTabValid && SelectedTabIndex < State.SessionList.Count && State.SessionList[SelectedTabIndex] is not null;
+        IsSelectedTabValid && SelectedTabIndex < State.SessionList.Count &&
+        State.SessionList[SelectedTabIndex] is not null;
 
     [RelayCommand(CanExecute = nameof(SessionNotNull))]
     private async Task PrintAsync()
@@ -941,7 +1009,8 @@ public partial class ChatWindowViewModel : ObservableObject
         }
 
         ChatWindowMessageTab tempMessages = new();
-        await tempMessages.SyncChatSession(State.SessionList[SelectedTabIndex]!, SelectedTabIndex, State, State.Config.EnableMarkdown);
+        await tempMessages.SyncChatSession(State.SessionList[SelectedTabIndex]!, SelectedTabIndex, State,
+            State.Config.EnableMarkdown);
         var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
         /*
@@ -971,6 +1040,7 @@ public partial class ChatWindowViewModel : ObservableObject
             CreateTab();
             newTabCreated = true;
         }
+
         var loadSuccess = await State.LoadSession(SelectedTabIndex);
         if (!loadSuccess && newTabCreated)
         {
@@ -979,6 +1049,7 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     private const string OpenFileAttachmentDialogGuid = "B8F42507-693B-4713-8671-A76F02ED5ADB";
+
     public async Task AddSingleFileAttachment(string file)
     {
         if (!await SystemState.FileCanReadAsAttachment(file))
@@ -988,13 +1059,14 @@ public partial class ChatWindowViewModel : ObservableObject
                 "错误",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error
-                );
+            );
         }
         else
         {
             FileAttachments.Add(new FileAttachmentInfo(file, FileAttachments));
         }
     }
+
     [RelayCommand]
     private async Task AddFileAsync()
     {

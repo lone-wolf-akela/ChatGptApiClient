@@ -1,19 +1,19 @@
 ﻿/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
-	Copyright (C) 2024 Lone Wolf Akela
+    Copyright (C) 2024 Lone Wolf Akela
 
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
@@ -25,6 +25,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NJsonSchema;
+
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable UnusedMember.Global
@@ -37,30 +38,26 @@ namespace ChatGptApiClientV2.Claude;
 [JsonConverter(typeof(StringEnumConverter))]
 public enum Role
 {
-    [EnumMember(Value = "user")]
-    User,
-    [EnumMember(Value = "assistant")]
-    Assistant
+    [EnumMember(Value = "user")] User,
+    [EnumMember(Value = "assistant")] Assistant
 }
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum ContentCategory
 {
-    [EnumMember(Value = "text")]
-    Text,
-    [EnumMember(Value = "image")]
-    Image,
-    [EnumMember(Value = "tool_use")]
-    ToolUse,
-    [EnumMember(Value = "tool_result")]
-    ToolResult
+    [EnumMember(Value = "text")] Text,
+    [EnumMember(Value = "image")] Image,
+    [EnumMember(Value = "tool_use")] ToolUse,
+    [EnumMember(Value = "tool_result")] ToolResult
 }
+
 public class ContentConverter : JsonConverter<IContent>
 {
     private bool canWrite = true;
     private bool canRead = true;
     public override bool CanWrite => canWrite;
     public override bool CanRead => canRead;
+
     public override void WriteJson(JsonWriter writer, IContent? value, JsonSerializer serializer)
     {
         canWrite = false;
@@ -88,10 +85,12 @@ public class ContentConverter : JsonConverter<IContent>
                     throw new JsonSerializationException();
             }
         }
+
         canWrite = true;
     }
 
-    public override IContent ReadJson(JsonReader reader, Type objectType, IContent? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override IContent ReadJson(JsonReader reader, Type objectType, IContent? existingValue,
+        bool hasExistingValue, JsonSerializer serializer)
     {
         canRead = false;
         var jobj = JObject.Load(reader);
@@ -100,14 +99,17 @@ public class ContentConverter : JsonConverter<IContent>
         {
             ContentCategory.Text => jobj.ToObject<TextContent>(serializer) ?? throw new JsonSerializationException(),
             ContentCategory.Image => jobj.ToObject<ImageContent>(serializer) ?? throw new JsonSerializationException(),
-            ContentCategory.ToolUse => jobj.ToObject<ToolUseContent>(serializer) ?? throw new JsonSerializationException(),
-            ContentCategory.ToolResult => jobj.ToObject<ToolResultContent>(serializer) ?? throw new JsonSerializationException(),
+            ContentCategory.ToolUse => jobj.ToObject<ToolUseContent>(serializer) ??
+                                       throw new JsonSerializationException(),
+            ContentCategory.ToolResult => jobj.ToObject<ToolResultContent>(serializer) ??
+                                          throw new JsonSerializationException(),
             _ => throw new JsonSerializationException(),
         };
         canRead = true;
         return result;
     }
 }
+
 [JsonConverter(typeof(ContentConverter))]
 public interface IContent
 {
@@ -138,15 +140,12 @@ public class ToolResultContent : IContent
 [JsonConverter(typeof(StringEnumConverter))]
 public enum MediaType
 {
-    [EnumMember(Value = "image/jpeg")]
-    Jpeg,
-    [EnumMember(Value = "image/png")]
-    Png,
-    [EnumMember(Value = "image/gif")]
-    Gif,
-    [EnumMember(Value = "image/webp")]
-    Webp
+    [EnumMember(Value = "image/jpeg")] Jpeg,
+    [EnumMember(Value = "image/png")] Png,
+    [EnumMember(Value = "image/gif")] Gif,
+    [EnumMember(Value = "image/webp")] Webp
 }
+
 public class ImageContent : IContent
 {
     public class SourceType
@@ -154,6 +153,7 @@ public class ImageContent : IContent
         public string Type => "base64";
         public MediaType MediaType { get; set; }
         public string Data { get; set; } = "";
+
         public void SetMediaType(string mime)
         {
             MediaType = mime switch
@@ -166,6 +166,7 @@ public class ImageContent : IContent
             };
         }
     }
+
     public ContentCategory Type => ContentCategory.Image;
     public SourceType Source { get; set; } = new();
 }
@@ -175,6 +176,7 @@ public class Message
     public Role Role { get; set; }
     public IEnumerable<IContent> Content { get; set; } = [];
 }
+
 public class Tool
 {
     public string Name { get; set; } = "";
@@ -199,6 +201,7 @@ public class CreateMessage
     /// - claude-3-haiku-20240307 <br/>
     /// </summary>
     public string Model { get; set; } = "";
+
     /// <summary>
     /// <para> Input messages. </para>
     /// <para> Our models are trained to operate on alternating user and assistant conversational turns. 
@@ -206,21 +209,26 @@ public class CreateMessage
     /// and the model then generates the next Message in the conversation. </para>
     /// </summary>
     public IEnumerable<Message> Messages { get; set; } = [];
+
     /// <summary>
     /// <para> The maximum number of tokens to generate before stopping. </para>
     /// Different models may have different maximum values for this parameter: <br/>
     /// - Currently all models are 4096 tokens max <br/>
     /// </summary>
     public int MaxTokens { get; set; } = 4096;
+
     /// <summary>
     /// Whether to incrementally stream the response using server-sent events.
     /// </summary>
     public bool? Stream { get; set; }
+
     /// <summary>
     /// System prompt.
     /// </summary>
     public string? System { get; set; }
+
     private float? temperature;
+
     /// <summary>
     /// <para> Amount of randomness injected into the response. </para>
     /// <para> Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 
@@ -232,10 +240,12 @@ public class CreateMessage
         get => temperature;
         set => temperature = value.HasValue ? Math.Clamp(value.Value, 0.0f, 1.0f) : null;
     }
+
     /// <summary>
     /// [beta] Definitions of tools that the model may use
     /// </summary>
     public IEnumerable<Tool>? Tools { get; set; }
+
     /// <summary>
     /// Use nucleus sampling.
     /// </summary>
@@ -265,23 +275,22 @@ public enum StopReason
     /// <summary>
     /// the model reached a natural stopping point
     /// </summary>
-    [EnumMember(Value = "end_turn")]
-    EndTurn,
+    [EnumMember(Value = "end_turn")] EndTurn,
+
     /// <summary>
     /// we exceeded the requested max_tokens or the model's maximum
     /// </summary>
-    [EnumMember(Value = "max_tokens")]
-    MaxTokens,
+    [EnumMember(Value = "max_tokens")] MaxTokens,
+
     /// <summary>
     /// one of your provided custom stop_sequences was generated
     /// </summary>
-    [EnumMember(Value = "stop_sequence")]
-    StopSequence,
+    [EnumMember(Value = "stop_sequence")] StopSequence,
+
     /// <summary>
     /// (no description from official document)
     /// </summary>
-    [EnumMember(Value = "tool_use")]
-    ToolUse,
+    [EnumMember(Value = "tool_use")] ToolUse,
 }
 
 public class CreateMessageResponse
@@ -290,33 +299,40 @@ public class CreateMessageResponse
     /// Unique object identifier.
     /// </summary>
     public string Id { get; set; } = "";
+
     /// <summary>
     /// <para> Object type. </para>
     /// <para> For Messages, this is always "message". </para>
     /// </summary>
     public string Type { get; set; } = "";
+
     /// <summary>
     /// <para> Conversational role of the generated message. </para>
     /// <para> This will always be "assistant". </para>
     /// </summary>
     public Role Role { get; set; }
+
     /// <summary>
     /// <para> Content generated by the model. </para>
     /// <para> "text" or "tool_use" </para>
     /// </summary>
     public IEnumerable<IContent> Content { get; set; } = [];
+
     /// <summary>
     /// The model that handled the request.
     /// </summary>
     public string Model { get; set; } = "";
+
     /// <summary>
     /// The reason that we stopped.
     /// </summary>
     public StopReason? StopReason { get; set; }
+
     /// <summary>
     /// Which custom stop sequence was generated, if any.
     /// </summary>
     public string? StopSequence { get; set; }
+
     /// <summary>
     /// Billing and rate-limit usage.
     /// </summary>
@@ -329,6 +345,7 @@ public class Usage
     /// The number of input tokens which were used.
     /// </summary>
     public int InputTokens { get; set; }
+
     /// <summary>
     /// The number of output tokens which were used.
     /// </summary>
@@ -342,6 +359,7 @@ public class ErrorResponse
         public string Type { get; set; } = "";
         public string Message { get; set; } = "";
     }
+
     public string Type { get; set; } = "";
     public ErrorType Error { get; set; } = new();
 }

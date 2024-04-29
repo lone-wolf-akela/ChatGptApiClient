@@ -38,16 +38,19 @@ public static class AllToolCollections
         new PythonTool()
     ];
 }
+
 public interface IToolCollection
 {
     public List<IToolFunction> Funcs { get; }
     public string DisplayName { get; }
 }
+
 public interface IToolFunction
 {
     public string? Description { get; }
     public string Name { get; }
     public Type ArgsType { get; }
+
     public JsonSchema Parameters
     {
         get
@@ -60,13 +63,18 @@ public interface IToolFunction
             return schema;
         }
     }
+
     public class ToolResult(ToolMessage msg, bool responeRequired)
     {
         public ToolMessage Message { get; set; } = msg;
         public bool ResponeRequired { get; set; } = responeRequired;
     }
-    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default);
+
+    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default);
+
     IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId);
+
     public ChatCompletionRequest.ToolType GetToolRequest() => new()
     {
         Function = new ChatCompletionRequest.ToolType.FunctionType

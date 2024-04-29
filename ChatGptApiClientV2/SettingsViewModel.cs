@@ -28,6 +28,7 @@ namespace ChatGptApiClientV2;
 public partial class SettingsViewModel : ObservableObject
 {
     private static bool IsDeignMode => DesignerProperties.GetIsInDesignMode(new DependencyObject());
+
     private void ConfigServiceProviderPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(Config.ServiceProvider))
@@ -35,6 +36,7 @@ public partial class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(IsAzure));
         }
     }
+
     public SettingsViewModel()
     {
         Debug.Assert(IsDeignMode);
@@ -43,21 +45,21 @@ public partial class SettingsViewModel : ObservableObject
             ServiceProvider = Config.ServiceProviderType.Azure
         };
     }
+
     public SettingsViewModel(Config conf)
     {
         Config = conf;
         Config.PropertyChanged += ConfigServiceProviderPropertyChanged;
     }
 
-    [ObservableProperty]
-    private Config config;
+    [ObservableProperty] private Config config;
     public bool IsAzure => Config.ServiceProvider == Config.ServiceProviderType.Azure;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(BtnAddAzureDeploymentIdCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnAddAzureDeploymentIdCommand))]
     private string textAddAzureDeploymentId = "";
 
     private bool TextAddAzureDeploymentIdNotEmpty => !string.IsNullOrEmpty(TextAddAzureDeploymentId);
+
     [RelayCommand(CanExecute = nameof(TextAddAzureDeploymentIdNotEmpty))]
     private void BtnAddAzureDeploymentId()
     {
@@ -65,15 +67,16 @@ public partial class SettingsViewModel : ObservableObject
         {
             return;
         }
+
         Config.AzureDeploymentList.Add(TextAddAzureDeploymentId);
         TextAddAzureDeploymentId = "";
     }
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(BtnDelAzureDeploymentIdCommand))]
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnDelAzureDeploymentIdCommand))]
     private int selectedAzureDeploymentIdIndex = -1;
 
     private bool SelectedAzureDeploymentIdIndexValid => SelectedAzureDeploymentIdIndex >= 0;
+
     [RelayCommand(CanExecute = nameof(SelectedAzureDeploymentIdIndexValid))]
     private void BtnDelAzureDeploymentId()
     {

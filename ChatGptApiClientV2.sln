@@ -7,6 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatGptApiClientV2", "ChatG
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "poppler-wrapper", "poppler-wrapper\poppler-wrapper.vcxproj", "{49AD4EA7-CA04-4F56-9B32-0DA0A67D81B4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{C0ACAFD2-2644-467C-82E8-5033F426F2DB}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

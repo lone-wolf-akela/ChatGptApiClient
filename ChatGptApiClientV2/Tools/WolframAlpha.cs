@@ -28,6 +28,7 @@ using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -39,24 +40,30 @@ public class WolframAlpha : IToolCollection
     [
         new WolframAlphaFunc()
     ];
+
     public string DisplayName => "Wolfram|Alpha";
 }
+
 public class WolframAlphaFunc : IToolFunction
 {
     public class Args
     {
-        [Description("Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
+        [Description(
+            "Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
         public string Query { get; set; } = "";
     }
+
     public string Description =>
         """
         Let WolframAlpha answer your questions. It can provide solutions on math, science, history, language, and many other fields.
         It can only answer one question at a time. If you have a complex question, think it step by step, making it several simpler quetions and ask them one by one.
         """;
+
     public string Name => "wolfram_alpha";
     public Type ArgsType => typeof(Args);
 
     private static readonly HttpClient HttpClient;
+
     static WolframAlphaFunc()
     {
         var httpClientHandler = new HttpClientHandler
@@ -65,7 +72,9 @@ public class WolframAlphaFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -86,6 +95,7 @@ public class WolframAlphaFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for WolframAlpha. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -97,10 +107,10 @@ public class WolframAlphaFunc : IToolFunction
 
         var parameters = new Dictionary<string, string?>
         {
-            {"input",   args.Query },
-            {"format",  "plaintext"},
-            {"output",  "JSON"},
-            {"appid",   state.Config.WolframAlphaAppid}
+            { "input", args.Query },
+            { "format", "plaintext" },
+            { "output", "JSON" },
+            { "appid", state.Config.WolframAlphaAppid }
         };
 
         const string serviceUrl = "https://api.wolframalpha.com/v2/query";
@@ -143,6 +153,7 @@ public class WolframAlphaFunc : IToolFunction
             msgContents[0].Text += $"Error: {responseStr}\n\n";
             return result;
         }
+
         var pods = queryresult?["pods"];
         if (pods is null)
         {
@@ -168,6 +179,7 @@ public class WolframAlphaFunc : IToolFunction
             {
                 return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)
@@ -175,7 +187,8 @@ public class WolframAlphaFunc : IToolFunction
             return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
         }
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "艾尔海森-动动脑.png",
             "本-疯狂计算.png",
             "丹恒 思考.png",

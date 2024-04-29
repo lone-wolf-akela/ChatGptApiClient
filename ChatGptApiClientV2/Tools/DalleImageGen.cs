@@ -32,6 +32,7 @@ using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
 using System.Threading;
+
 // ReSharper disable UnusedMember.Local
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 // ReSharper disable UnusedMember.Global
@@ -46,20 +47,20 @@ public class DalleImageGen : IToolCollection
     [
         new DalleImageGenFunc()
     ];
+
     public string DisplayName => "DALL-E 图像生成";
 }
+
 public class DalleImageGenFunc : IToolFunction
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum ImageSize
     {
-        [EnumMember(Value = "1024x1024")]
-        Sqaure,
-        [EnumMember(Value = "1792x1024")]
-        Wide,
-        [EnumMember(Value = "1024x1792")]
-        Tall
+        [EnumMember(Value = "1024x1024")] Sqaure,
+        [EnumMember(Value = "1792x1024")] Wide,
+        [EnumMember(Value = "1024x1792")] Tall
     }
+
     public class Args
     {
         [Description(
@@ -72,15 +73,20 @@ public class DalleImageGenFunc : IToolFunction
             5. If the user requested modifications to previous images, the prompt should not simply be longer, but rather it should be refactored to integrate the suggestions into the prompt.
             """)]
         public string Prompts { get; set; } = "";
-        [Description("The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits. Always include this parameter in the request.")]
+
+        [Description(
+            "The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits. Always include this parameter in the request.")]
         public ImageSize Size { get; set; } = ImageSize.Sqaure;
     }
 
-    public string Description => "Call the DALL-E AI service to generate images according to the requirement given by the user.";
+    public string Description =>
+        "Call the DALL-E AI service to generate images according to the requirement given by the user.";
+
     public string Name => "dall_e_image_generation";
     public Type ArgsType => typeof(Args);
 
     private static readonly HttpClient HttpClient;
+
     static DalleImageGenFunc()
     {
         var httpClientHandler = new HttpClientHandler
@@ -89,6 +95,7 @@ public class DalleImageGenFunc : IToolFunction
         };
         HttpClient = new HttpClient(httpClientHandler);
     }
+
     private class Request
     {
         public string Prompt { get; init; } = "";
@@ -115,7 +122,9 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
     }
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -136,6 +145,7 @@ public class DalleImageGenFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for image generation. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -156,7 +166,8 @@ public class DalleImageGenFunc : IToolFunction
 
         var requestbody = new Request
         {
-            Prompt = $"Use my prompt as “Revised prompt” without changes; DO NOT add any detail, just use it AS-IS.\r\n\r\nPrompt: {args.Prompts}",
+            Prompt =
+                $"Use my prompt as “Revised prompt” without changes; DO NOT add any detail, just use it AS-IS.\r\n\r\nPrompt: {args.Prompts}",
             Size = args.Size
         };
         var requestStr = requestbody.GeneratePostRequest();
@@ -171,6 +182,7 @@ public class DalleImageGenFunc : IToolFunction
         {
             request.Headers.Add("api-key", state.Config.AzureAPIKey);
         }
+
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
         var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
@@ -189,6 +201,7 @@ public class DalleImageGenFunc : IToolFunction
             {
                 msgContents[0].Text += $"Error: {errorResponse}\n\n";
             }
+
             return result;
         }
 
@@ -240,13 +253,15 @@ public class DalleImageGenFunc : IToolFunction
         {
             isFailed = true;
         }
+
         if (isFailed)
         {
             yield return new Paragraph(new Run("使用 DALL-E 生成图像..."));
             yield break;
         }
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "格蕾修_在做了.png",
             "胡桃-交给我吧.png",
             "卡维-开工.png",
@@ -263,9 +278,17 @@ public class DalleImageGenFunc : IToolFunction
 
         yield return paragraph;
 
-        var foundData = state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata", out var imagedata);
-        var foundDesc = state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedesc", out var imagedesc);
-        if (!foundData) { yield break; }
+        var foundData =
+            state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata",
+                out var imagedata);
+        var foundDesc =
+            state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedesc",
+                out var imagedesc);
+        if (!foundData)
+        {
+            yield break;
+        }
+
         var image = new ImageDisplayer
         {
             Image = Utils.Base64ToBitmapImage(imagedata![0]),

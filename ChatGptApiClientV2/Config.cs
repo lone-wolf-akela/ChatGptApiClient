@@ -37,35 +37,34 @@ namespace ChatGptApiClientV2;
 
 public partial class Config : ObservableValidator
 {
-    [JsonIgnore]
-    private static string ConfigPath => "config.json";
+    [JsonIgnore] private static string ConfigPath => "config.json";
 
-    [ObservableProperty]
-    private double uiScale;
+    [ObservableProperty] private double uiScale;
+
     partial void OnUiScaleChanged(double value)
     {
         UiScale = Math.Clamp(value, 0.5, 2.0);
         SaveConfig();
     }
 
-    [ObservableProperty]
-    private ThemeType theme;
+    [ObservableProperty] private ThemeType theme;
+
     partial void OnThemeChanged(ThemeType value)
     {
         RefreshTheme();
         SaveConfig();
     }
 
-    [ObservableProperty]
-    private bool enableCustomThemeColor;
+    [ObservableProperty] private bool enableCustomThemeColor;
+
     partial void OnEnableCustomThemeColorChanged(bool value)
     {
         RefreshTheme();
         SaveConfig();
     }
 
-    [ObservableProperty]
-    private SolidColorBrush customThemeColor;
+    [ObservableProperty] private SolidColorBrush customThemeColor;
+
     partial void OnCustomThemeColorChanged(SolidColorBrush value)
     {
         RefreshTheme();
@@ -77,25 +76,24 @@ public partial class Config : ObservableValidator
     [StringLength(maximumLength: 64, MinimumLength = 0, ErrorMessage = "昵称长度必须在 0 到 64 之间")]
     [RegularExpression("^[a-zA-Z0-9_-]*$", ErrorMessage = "用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）")]
     private string userNickName;
+
     partial void OnUserNickNameChanged(string value) => SaveConfig();
 
     public enum ServiceProviderType
     {
-        [Description("Artonelico OpenAI 代理")]
-        ArtonelicoOpenAIProxy,
-        [Description("OpenAI 官方接口（需科学上网）")]
-        OpenAI,
-        [Description("Microsoft Azure")]
-        Azure,
-        [Description("其他")]
-        Others
+        [Description("Artonelico OpenAI 代理")] ArtonelicoOpenAIProxy,
+        [Description("OpenAI 官方接口（需科学上网）")] OpenAI,
+        [Description("Microsoft Azure")] Azure,
+        [Description("其他")] Others
     }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ServiceURL))]
     [NotifyPropertyChangedFor(nameof(ServiceURLEditable))]
     [NotifyPropertyChangedFor(nameof(ModelOptions))]
     [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
     private ServiceProviderType serviceProvider;
+
     partial void OnServiceProviderChanged(ServiceProviderType value)
     {
         ValidateProperty(ServiceURL, nameof(ServiceURL));
@@ -130,17 +128,17 @@ public partial class Config : ObservableValidator
     {
         [Description("Artonelico Anthropic 代理")]
         ArtonelicAnthropicProxy,
-        [Description("Anthropic 官方接口（需科学上网）")]
-        Anthropic,
-        [Description("其他")]
-        Others
+        [Description("Anthropic 官方接口（需科学上网）")] Anthropic,
+        [Description("其他")] Others
     }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AnthropicServiceURL))]
     [NotifyPropertyChangedFor(nameof(AnthropicServiceURLEditable))]
     [NotifyPropertyChangedFor(nameof(ModelOptions))]
     [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
     private AnthropicServiceProviderType anthropicServiceProvider;
+
     partial void OnAnthropicServiceProviderChanged(AnthropicServiceProviderType value)
     {
         ValidateProperty(AnthropicServiceURL, nameof(AnthropicServiceURL));
@@ -169,17 +167,17 @@ public partial class Config : ObservableValidator
         }
     }
 
-    [ObservableProperty]
-    [NotifyDataErrorInfo]
-    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+    [ObservableProperty] [NotifyDataErrorInfo] [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     private string azureEndpoint;
 
     [JsonIgnore]
     public string DalleImageGenServiceURL => ServiceProvider switch
     {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint, $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2024-02-01"),
+        ServiceProviderType.Azure => Url.Combine(AzureEndpoint,
+            $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2024-02-01"),
         _ => Url.Combine(ServiceURL, "images/generations")
     };
+
     [JsonIgnore]
     public bool ServiceURLEditable => ServiceProvider switch
     {
@@ -202,18 +200,18 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     // ReSharper disable once InconsistentNaming
     private string _API_KEY;
+
     partial void OnAPI_KEYChanged(string value) => SaveConfig();
 
-    [ObservableProperty]
-    private string azureAPIKey;
+    [ObservableProperty] private string azureAPIKey;
     partial void OnAzureAPIKeyChanged(string value) => SaveConfig();
     public ObservableCollection<string> AzureDeploymentList { get; } = [];
 
-    [ObservableProperty]
-    private string anthropicAPIKey;
+    [ObservableProperty] private string anthropicAPIKey;
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
 
-    private void AzureDeploymentListCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    private void AzureDeploymentListCollectionChanged(object? sender,
+        System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
         if (ServiceProvider == ServiceProviderType.Azure)
         {
@@ -221,70 +219,62 @@ public partial class Config : ObservableValidator
         }
     }
 
-    [ObservableProperty]
-    private string azureDalleDeploymentId;
+    [ObservableProperty] private string azureDalleDeploymentId;
     partial void OnAzureDalleDeploymentIdChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
-    [ObservableProperty]
-    private string googleSearchEngineID;
+    [ObservableProperty] private string googleSearchEngineID;
     partial void OnGoogleSearchEngineIDChanged(string value) => SaveConfig();
-    [ObservableProperty]
-    private string googleSearchAPIKey;
+    [ObservableProperty] private string googleSearchAPIKey;
+
     partial void OnGoogleSearchAPIKeyChanged(string value) => SaveConfig();
+
     /*******************************/
     /* Bing Search Plugin Config */
-    [ObservableProperty]
-    private string bingSearchAPIKey;
+    [ObservableProperty] private string bingSearchAPIKey;
+
     partial void OnBingSearchAPIKeyChanged(string value) => SaveConfig();
+
     /*****************************/
     /* Wolfram Alpha Plugin Config*/
-    [ObservableProperty]
-    private string wolframAlphaAppid;
+    [ObservableProperty] private string wolframAlphaAppid;
     partial void OnWolframAlphaAppidChanged(string value) => SaveConfig();
     /******************************/
 
 
-    [ObservableProperty]
-    private float temperature;
+    [ObservableProperty] private float temperature;
     partial void OnTemperatureChanged(float value) => SaveConfig();
 
-    [ObservableProperty]
-    private float topP;
+    [ObservableProperty] private float topP;
     partial void OnTopPChanged(float value) => SaveConfig();
 
-    [ObservableProperty]
-    private float presencePenalty;
+    [ObservableProperty] private float presencePenalty;
     partial void OnPresencePenaltyChanged(float value) => SaveConfig();
 
-    [ObservableProperty]
-    private int maxTokens;
+    [ObservableProperty] private int maxTokens;
     partial void OnMaxTokensChanged(int value) => SaveConfig();
 
-    [ObservableProperty]
-    private int seed;
+    [ObservableProperty] private int seed;
     partial void OnSeedChanged(int value) => SaveConfig();
 
-    [ObservableProperty]
-    private bool useRandomSeed;
+    [ObservableProperty] private bool useRandomSeed;
     partial void OnUseRandomSeedChanged(bool value) => SaveConfig();
 
-    [ObservableProperty]
-    private bool enableMarkdown;
+    [ObservableProperty] private bool enableMarkdown;
     partial void OnEnableMarkdownChanged(bool value) => SaveConfig();
 
-    [ObservableProperty]
-    private bool uploadHiresImage;
+    [ObservableProperty] private bool uploadHiresImage;
     partial void OnUploadHiresImageChanged(bool value) => SaveConfig();
 
-    [JsonIgnore]
-    public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
+    [JsonIgnore] public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
+
     private void UpdateModelOptionList()
     {
         ModelOptions.Clear();
         if (ServiceProvider == ServiceProviderType.Azure)
         {
-            ModelOptions.Add(new ModelInfo { Name = "azure", Description = "Azure OpenAI Service", DisplayPriority = -100 });
+            ModelOptions.Add(new ModelInfo
+                { Name = "azure", Description = "Azure OpenAI Service", DisplayPriority = -100 });
         }
         else
         {
@@ -296,6 +286,7 @@ public partial class Config : ObservableValidator
                 }
             }
         }
+
         foreach (var model in ModelInfo.ModelList)
         {
             if (model.Provider == ModelInfo.ProviderEnum.Anthropic)
@@ -303,18 +294,19 @@ public partial class Config : ObservableValidator
                 ModelOptions.Add(model);
             }
         }
+
         ModelOptions.SortStable((a, b) => a.DisplayPriority.CompareTo(b.DisplayPriority));
         SelectedModelIndex = 0;
     }
 
-    [JsonIgnore]
-    public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
+    [JsonIgnore] public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedModelType))]
     [NotifyPropertyChangedFor(nameof(SelectedModel))]
     [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
     private int selectedModelIndex;
+
     partial void OnSelectedModelIndexChanged(int value)
     {
         if (ModelOptions.Count == 0)
@@ -329,6 +321,7 @@ public partial class Config : ObservableValidator
         SaveConfig();
         UpdateModelVersionList();
     }
+
     private void UpdateModelVersionList()
     {
         ModelVersionOptions.Clear();
@@ -369,13 +362,14 @@ public partial class Config : ObservableValidator
         else
         {
             var models = from model in ModelVersionInfo.VersionList
-                         where model.ModelType == SelectedModelType.Name
-                         select model;
+                where model.ModelType == SelectedModelType.Name
+                select model;
             foreach (var model in models)
             {
                 ModelVersionOptions.Add(model);
             }
         }
+
         SelectedModelVersionIndex = 0;
     }
 
@@ -383,6 +377,7 @@ public partial class Config : ObservableValidator
     [NotifyPropertyChangedFor(nameof(SelectedModel))]
     [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
     private int selectedModelVersionIndex;
+
     partial void OnSelectedModelVersionIndexChanged(int value)
     {
         if (ModelVersionOptions.Count == 0)
@@ -393,27 +388,28 @@ public partial class Config : ObservableValidator
         {
             SelectedModelVersionIndex = 0;
         }
+
         SaveConfig();
     }
+
     [JsonIgnore]
     public ModelInfo? SelectedModelType =>
         SelectedModelIndex >= 0 && SelectedModelIndex < ModelOptions.Count
             ? ModelOptions[SelectedModelIndex]
             : null;
+
     [JsonIgnore]
     public ModelVersionInfo? SelectedModel =>
         SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count
             ? ModelVersionOptions[SelectedModelVersionIndex]
             : null;
-    [JsonIgnore]
-    public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
 
-    [ObservableProperty]
-    private string pythonDllPath;
+    [JsonIgnore] public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
+
+    [ObservableProperty] private string pythonDllPath;
     partial void OnPythonDllPathChanged(string value) => SaveConfig();
 
-    [ObservableProperty]
-    private Utils.PythonEnv? pythonEnv;
+    [ObservableProperty] private Utils.PythonEnv? pythonEnv;
     partial void OnPythonEnvChanged(Utils.PythonEnv? value) => SaveConfig();
 
     public Config()
@@ -457,10 +453,12 @@ public partial class Config : ObservableValidator
         UpdateModelOptionList();
         UpdateModelVersionList();
     }
+
     public void RefreshTheme()
     {
         ThemeUpdater.UpdateTheme(Theme, EnableCustomThemeColor ? CustomThemeColor : null);
     }
+
     private void SystemThemeChanged(object? sender, HandyControl.Data.FunctionEventArgs<ThemeManager.SystemTheme> e)
     {
         RefreshTheme();
@@ -483,6 +481,7 @@ public partial class Config : ObservableValidator
         var result = JsonConvert.SerializeObject(this, settings);
         File.WriteAllText(ConfigPath, result);
     }
+
     public static Config LoadConfig()
     {
         if (!File.Exists(ConfigPath))

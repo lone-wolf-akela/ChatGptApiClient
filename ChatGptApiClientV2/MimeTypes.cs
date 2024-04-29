@@ -4,6 +4,7 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable UnusedMember.Global
 // ReSharper disable MemberCanBePrivate.Global
+
 namespace ChatGptApiClientV2;
 
 using System;

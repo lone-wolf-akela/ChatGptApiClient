@@ -1,0 +1,16 @@
+root = true
+
+[*.{c,cpp,cc,cxx,h,hpp,ixx}]
+charset = utf-8
+indent_style = space
+indent_size = 4
+
+[*.cs]
+charset = utf-8
+indent_style = space
+indent_size = 4
+
+[*.xaml]
+charset = utf-8
+indent_style = space
+indent_size = 4

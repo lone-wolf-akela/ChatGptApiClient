@@ -33,7 +33,6 @@ namespace ChatGptApiClientV2;
 /// <summary>
 /// ChatWindow.xaml 的交互逻辑
 /// </summary>
-
 public partial class ChatWindow
 {
     private void ScrollToParentProcecssor(object? sender, MouseWheelEventArgs e)
@@ -75,10 +74,12 @@ public partial class ChatWindow
         {
             parent = VisualTreeHelper.GetParent(parent);
         }
+
         // 确认找到 ScrollViewer 控件并触发事件
         var parentUi = parent as UIElement;
         parentUi?.RaiseEvent(eventArg);
     }
+
     public ChatWindow()
     {
         DataContext = new ChatWindowViewModel();
@@ -93,6 +94,7 @@ public partial class ChatWindow
         {
             return s;
         }
+
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(o); i++)
         {
             var child = VisualTreeHelper.GetChild(o, i);
@@ -102,12 +104,16 @@ public partial class ChatWindow
                 return result;
             }
         }
+
         return null;
     }
 
     private static T? FindChild<T>(DependencyObject? parent, string childName) where T : DependencyObject
     {
-        if (parent == null) { return null; }
+        if (parent == null)
+        {
+            return null;
+        }
 
         T? foundChild = null;
         var childrenCount = VisualTreeHelper.GetChildrenCount(parent);
@@ -120,8 +126,12 @@ public partial class ChatWindow
                 foundChild = childType;
                 break;
             }
+
             foundChild = FindChild<T>(child, childName);
-            if (foundChild != null) { break; }
+            if (foundChild != null)
+            {
+                break;
+            }
         }
 
         return foundChild;
@@ -129,9 +139,17 @@ public partial class ChatWindow
 
     private void ScrollToEnd(int tabIndex)
     {
-        if (tabIndex != TabMsg.SelectedIndex) { return; }
+        if (tabIndex != TabMsg.SelectedIndex)
+        {
+            return;
+        }
+
         var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
-        if (lstBox is null) { return; }
+        if (lstBox is null)
+        {
+            return;
+        }
+
         var scrollViewer = GetScrollViewer(lstBox);
         scrollViewer?.UpdateLayout();
         scrollViewer?.ScrollToEnd();
@@ -151,6 +169,7 @@ public partial class ChatWindow
         public readonly RenderTargetBitmap Bitmap = bitmap;
         public readonly int OffsetY = offsetY;
     }
+
     private static RenderScrollViewerResult RenderScrollViewer(ScrollViewer viewer, double dpiScaleX, double dpiScaleY)
     {
         // rounding to integer pixels to make sure sharp font rendering
@@ -170,6 +189,7 @@ public partial class ChatWindow
     }
 
     private const string SaveScreenshotDialogGuid = "49CEC7E0-C84B-4B69-8238-B6EFB608D7DC";
+
     private async void BtnScreenshot_Click(object sender, RoutedEventArgs e)
     {
         var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
@@ -177,8 +197,12 @@ public partial class ChatWindow
         {
             return;
         }
+
         var scrollViewer = GetScrollViewer(lstBox);
-        if (scrollViewer is null) { return; }
+        if (scrollViewer is null)
+        {
+            return;
+        }
 
         var dpi = VisualTreeHelper.GetDpi(this);
 
@@ -189,7 +213,10 @@ public partial class ChatWindow
             Filter = "PNG images|*.png",
             ClientGuid = new Guid(SaveScreenshotDialogGuid)
         };
-        if (dlg.ShowDialog() != true) { return; }
+        if (dlg.ShowDialog() != true)
+        {
+            return;
+        }
 
         var oldScrollOffset = scrollViewer.VerticalOffset;
 
@@ -212,6 +239,7 @@ public partial class ChatWindow
                 // we have reached the end and cannot scroll further down
                 break;
             }
+
             bitmaps.Add(newScreenShot);
             lastOffsetY = newScreenShot.OffsetY;
         }
@@ -233,10 +261,11 @@ public partial class ChatWindow
             {
                 drawingContext.DrawImage(renderResult.Bitmap,
                     new Rect(0, renderResult.OffsetY / dpi.DpiScaleY,
-                    renderResult.Bitmap.Width, renderResult.Bitmap.Height)
+                        renderResult.Bitmap.Width, renderResult.Bitmap.Height)
                 );
             }
         }
+
         fullBitmap.Render(drawingVisual);
         // save as png
         PngBitmapEncoder png = new();
@@ -274,7 +303,7 @@ public partial class ChatWindow
 
     private void TabTitleEditorTextBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if(e.NewValue is true)
+        if (e.NewValue is true)
         {
             var textBox = (TextBox)sender;
             textBox.Focus();
@@ -289,17 +318,20 @@ public partial class ChatWindow
             PanelDropFiles.Visibility = Visibility.Visible;
             e.Handled = true;
         }
+
         e.Effects = DragDropEffects.None;
     }
+
     private static bool IsMouseOverElement(UIElement element)
     {
         var mousePos = Mouse.GetPosition(element);
         return mousePos.X >= 0 && mousePos.X <= element.RenderSize.Width &&
                mousePos.Y >= 0 && mousePos.Y <= element.RenderSize.Height;
     }
+
     private void Window_DragLeave(object sender, DragEventArgs e)
     {
-        if(!IsMouseOverElement(PanelDropFiles))
+        if (!IsMouseOverElement(PanelDropFiles))
         {
             PanelDropFiles.Visibility = Visibility.Collapsed;
         }
@@ -309,9 +341,10 @@ public partial class ChatWindow
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
-            PanelDropFiles.Visibility = Visibility.Visible; 
+            PanelDropFiles.Visibility = Visibility.Visible;
             e.Handled = true;
         }
+
         e.Effects = DragDropEffects.None;
     }
 
@@ -326,13 +359,20 @@ public partial class ChatWindow
 
     private async void PanelDropFiles_Drop(object sender, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) { return; }
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            return;
+        }
 
         PanelDropFiles.Visibility = Visibility.Collapsed;
         e.Handled = true;
 
-        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) { return; }
-        foreach(var file in files)
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files)
+        {
+            return;
+        }
+
+        foreach (var file in files)
         {
             await ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(file);
         }

@@ -32,6 +32,7 @@ using System.Diagnostics;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
 using System.Threading;
+
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
@@ -52,10 +53,10 @@ public class PythonFunc : IToolFunction
 {
     public string Description =>
         """
-        You can execute a python script. 
+        You can execute a python script.
         - The script must contains a `main()` function. Python will respond with the returned value from that `main()` function, or time out after 60.0 seconds.
         - The python standard library is available. Apart from that, you can only import the third-party libraries listed below:
-          1. sympy 
+          1. sympy
           2. numpy
           3. matplotlib
           4. pandas
@@ -66,6 +67,7 @@ public class PythonFunc : IToolFunction
         """;
 
     public string Name => "execute_python_code";
+
     public class Args
     {
         [Description("Python code to be executed. It must contains a `main()` function.")]
@@ -80,20 +82,25 @@ public class PythonFunc : IToolFunction
         {
             throw new Exception($"Python DLL not found: {pythonDll}");
         }
+
         if (!PythonEngine.IsInitialized)
         {
             Runtime.PythonDLL = pythonDll;
             PythonEngine.Initialize();
             PythonEngine.BeginAllowThreads();
         }
+
         Directory.CreateDirectory("sandbox");
     }
-    private static async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "", CancellationToken cancellationToken = default)
+
+    private static async Task InstallPackage(Utils.PythonEnv pythonEnv, string package, string version = "",
+        CancellationToken cancellationToken = default)
     {
         if (version != "")
         {
             version = $"=={version}";
         }
+
         ProcessStartInfo startInfo = new()
         {
             FileName = pythonEnv.ExecutablePath,
@@ -110,9 +117,11 @@ public class PythonFunc : IToolFunction
             await task;
         }
     }
+
     private static async Task PreparePackage(Utils.PythonEnv pythonEnv, string code)
     {
-        string[] packages = [
+        string[] packages =
+        [
             "sympy",
             "numpy",
             "matplotlib",
@@ -126,7 +135,9 @@ public class PythonFunc : IToolFunction
             }
         }
     }
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
 
@@ -147,6 +158,7 @@ public class PythonFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Python Execution. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -179,12 +191,12 @@ public class PythonFunc : IToolFunction
                     // ReSharper disable once SpecifyACultureInStringConversionExplicitly
                     return r.ToString();
                 }
-
             }, cancellationToken);
             if (await Task.WhenAny(task, Task.Delay(60000, cancellationToken)) != task)
             {
                 throw new Exception("execution timed out.");
             }
+
             var executeResult = await task;
             msgContents[0].Text += $"Python execution result: {executeResult}\n\n";
             return result;
@@ -209,6 +221,7 @@ public class PythonFunc : IToolFunction
             {
                 return [new Paragraph(new Run("运行 Python 代码..."))];
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException)
@@ -216,7 +229,8 @@ public class PythonFunc : IToolFunction
             return [new Paragraph(new Run("运行 Python 代码..."))];
         }
 
-        List<string> stickers = [
+        List<string> stickers =
+        [
             "艾尔海森-动动脑.png",
             "本-疯狂计算.png",
             "丹恒 思考.png",
@@ -239,10 +253,10 @@ public class PythonFunc : IToolFunction
 
         var codeText =
             $"""
-            ```python
-            {args.Code}
-            ```
-            """;
+             ```python
+             {args.Code}
+             ```
+             """;
 
         if (state.Config.EnableMarkdown)
         {
@@ -267,6 +281,7 @@ public class PythonFunc : IToolFunction
             paragraph2.Inlines.Add(new LineBreak());
             blocks.Add(paragraph2);
         }
+
         return blocks;
     }
 }
@@ -278,14 +293,20 @@ public class ShowImageFunc : IToolFunction
                                  The image must be in the local "sandbox" directory.
                                  The image file must be a PNG or JPEG file.
                                  """;
+
     public string Name => "show_image";
+
     public class Args
     {
-        [Description("The name of the image file that is in the \"sandbox\" directory. You should only provide the filename here, do not include the path.")]
+        [Description(
+            "The name of the image file that is in the \"sandbox\" directory. You should only provide the filename here, do not include the path.")]
         public string FileName { get; set; } = "";
     }
+
     public Type ArgsType => typeof(Args);
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr, CancellationToken cancellationToken = default)
+
+    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+        CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
         var msg = new ToolMessage { Content = msgContents };
@@ -304,6 +325,7 @@ public class ShowImageFunc : IToolFunction
                 msgContents[0].Text += $"Failed to parse arguments for Image Displayer. The args are: {argstr}\n\n";
                 return result;
             }
+
             args = parsedArgs;
         }
         catch (JsonSerializationException e)
@@ -325,11 +347,13 @@ public class ShowImageFunc : IToolFunction
             msgContents[0].Text += $"Error: File not found: {filePath}\n\n";
             return result;
         }
+
         if (!filePath.EndsWith(".png") && !filePath.EndsWith(".jpg") && !filePath.EndsWith(".jpeg"))
         {
             msgContents[0].Text += $"Error: File must be a PNG or JPEG file: {filePath}\n\n";
             return result;
         }
+
         msgContents[0].Text += "Image successfully displayed.";
         var imageUrl = await Utils.ImageFileToBase64(filePath, cancellationToken);
         state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
@@ -360,6 +384,7 @@ public class ShowImageFunc : IToolFunction
         {
             // do nothing, the toolcall may have failed
         }
+
         if (imageBlock is not null)
         {
             yield return imageBlock;
