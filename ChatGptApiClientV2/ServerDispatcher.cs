@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -60,6 +60,7 @@ public class ServerEndpointOptions
     public float? Temperature { get; set; }
     public float? TopP { get; set; }
     public IEnumerable<ToolType>? Tools { get; set; }
+    public string? UserId { get; set; }
 }
 
 public interface IServerEndpoint
@@ -274,7 +275,8 @@ public class OpenAIEndpoint : IServerEndpoint
                 PresencePenalty = options.PresencePenalty,
                 Seed = options.Seed,
                 Temperature = options.Temperature,
-                NucleusSamplingFactor = options.TopP
+                NucleusSamplingFactor = options.TopP,
+                User = options.UserId
             };
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             chatCompletionsOptions.Messages.AddRange(GetChatRequestMessages(session.Messages));
@@ -608,7 +610,8 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 Temperature = options.Temperature,
                 Tools = tools.Count != 0 ? tools : null,
                 TopP = options.TopP,
-                Stream = isStreaming
+                Stream = isStreaming,
+                Metadata = options.UserId is null ? null : new Claude.Metadata { UserId = options.UserId }
             };
 
             var postStr = createMsg.ToJson();

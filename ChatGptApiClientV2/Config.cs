@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -37,6 +37,15 @@ namespace ChatGptApiClientV2;
 
 public partial class Config : ObservableValidator
 {
+    [JsonIgnore]
+    public static string UserAdvertisingId
+    {
+        get
+        {
+            var id = Windows.System.UserProfile.AdvertisingManager.AdvertisingId;
+            return string.IsNullOrEmpty(id) ? "Anonymous" : id;
+        }
+    }
     [JsonIgnore] private static string ConfigPath => "config.json";
 
     [ObservableProperty] private double uiScale;

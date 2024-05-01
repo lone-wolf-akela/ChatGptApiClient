@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -184,6 +184,17 @@ public class Tool
     public JsonSchema InputSchema { get; set; } = new();
 }
 
+public class Metadata
+{
+    /// <summary>
+    /// <para> An external identifier for the user who is associated with the request. </para>
+    /// <para> This should be a uuid, hash value, or other opaque identifier. Anthropic may
+    /// use this id to help detect abuse. Do not include any identifying information such as
+    /// name, email address, or phone number. </para>
+    /// </summary>
+    public string UserId { get; set; } = "";
+}
+
 /// <summary>
 /// <para> Create a Message. </para>
 /// <para> Send a structured list of input messages with text and/or image content, and 
@@ -216,6 +227,8 @@ public class CreateMessage
     /// - Currently all models are 4096 tokens max <br/>
     /// </summary>
     public int MaxTokens { get; set; } = 4096;
+
+    public Metadata? Metadata { get; set; }
 
     /// <summary>
     /// Whether to incrementally stream the response using server-sent events.
