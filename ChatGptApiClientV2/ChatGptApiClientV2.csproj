@@ -15,106 +15,106 @@
              Remove it when we update to dotnet-8.0.200
          -->
         <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
-        <Platforms>x64</Platforms>
+        <Platforms>x64;ARM64</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Remove="font\CascadiaMono.ttf"/>
-        <None Remove="font\Segoe Fluent Icons.ttf"/>
-        <None Remove="font\SourceHanSansCN-Regular.otf"/>
-        <None Remove="images\chatgpt-icon.png"/>
-        <None Remove="images\chatgpt-icon.svg"/>
-        <None Remove="images\claude-ai-icon.svg"/>
-        <None Remove="images\set-up-svgrepo-com.svg"/>
-        <None Remove="images\system-settings-svgrepo-com.svg"/>
-        <None Remove="images\丹恒 思考.png"/>
-        <None Remove="images\优菈-让我看看.png"/>
-        <None Remove="images\刻晴-疑问.png"/>
-        <None Remove="images\卡维-开工.png"/>
-        <None Remove="images\卡维-挠头.png"/>
-        <None Remove="images\夏洛蒂-您继续.png"/>
-        <None Remove="images\姬子 计算.png"/>
-        <None Remove="images\布洛妮娅 加班.png"/>
-        <None Remove="images\帕姆_好奇.png"/>
-        <None Remove="images\帕姆_疑惑.png"/>
-        <None Remove="images\本-疯狂计算.png"/>
-        <None Remove="images\柯莱-学习时间.png"/>
-        <None Remove="images\格蕾修_在做了.png"/>
-        <None Remove="images\烟绯-疑惑.png"/>
-        <None Remove="images\珐露珊-看我的.png"/>
-        <None Remove="images\瑶瑶-急急急.png"/>
-        <None Remove="images\申鹤-疑惑.png"/>
-        <None Remove="images\砂糖-疑问.png"/>
-        <None Remove="images\紬_急急急.png"/>
-        <None Remove="images\胡桃-交给我吧.png"/>
-        <None Remove="images\艾尔海森-动动脑.png"/>
-        <None Remove="images\菲米尼-爱好.png"/>
-        <None Remove="images\菲谢尔-这是什么？.png"/>
-        <None Remove="images\赛诺-艺术！.png"/>
-        <None Remove="images\达达利亚-冲浪.png"/>
-        <None Remove="images\雷电将军-纳闷.png"/>
-        <None Remove="images\非常疑惑.png"/>
+        <None Remove="font\CascadiaMono.ttf" />
+        <None Remove="font\Segoe Fluent Icons.ttf" />
+        <None Remove="font\SourceHanSansCN-Regular.otf" />
+        <None Remove="images\chatgpt-icon.png" />
+        <None Remove="images\chatgpt-icon.svg" />
+        <None Remove="images\claude-ai-icon.svg" />
+        <None Remove="images\set-up-svgrepo-com.svg" />
+        <None Remove="images\system-settings-svgrepo-com.svg" />
+        <None Remove="images\丹恒 思考.png" />
+        <None Remove="images\优菈-让我看看.png" />
+        <None Remove="images\刻晴-疑问.png" />
+        <None Remove="images\卡维-开工.png" />
+        <None Remove="images\卡维-挠头.png" />
+        <None Remove="images\夏洛蒂-您继续.png" />
+        <None Remove="images\姬子 计算.png" />
+        <None Remove="images\布洛妮娅 加班.png" />
+        <None Remove="images\帕姆_好奇.png" />
+        <None Remove="images\帕姆_疑惑.png" />
+        <None Remove="images\本-疯狂计算.png" />
+        <None Remove="images\柯莱-学习时间.png" />
+        <None Remove="images\格蕾修_在做了.png" />
+        <None Remove="images\烟绯-疑惑.png" />
+        <None Remove="images\珐露珊-看我的.png" />
+        <None Remove="images\瑶瑶-急急急.png" />
+        <None Remove="images\申鹤-疑惑.png" />
+        <None Remove="images\砂糖-疑问.png" />
+        <None Remove="images\紬_急急急.png" />
+        <None Remove="images\胡桃-交给我吧.png" />
+        <None Remove="images\艾尔海森-动动脑.png" />
+        <None Remove="images\菲米尼-爱好.png" />
+        <None Remove="images\菲谢尔-这是什么？.png" />
+        <None Remove="images\赛诺-艺术！.png" />
+        <None Remove="images\达达利亚-冲浪.png" />
+        <None Remove="images\雷电将军-纳闷.png" />
+        <None Remove="images\非常疑惑.png" />
     </ItemGroup>
 
     <ItemGroup>
-        <Resource Include="chatgpt-icon.ico"/>
-        <Resource Include="font\CascadiaMono.ttf"/>
-        <Resource Include="font\Segoe Fluent Icons.ttf"/>
-        <Resource Include="images\chatgpt-icon.svg"/>
-        <Resource Include="images\claude-ai-icon.svg"/>
-        <Resource Include="images\set-up-svgrepo-com.svg"/>
-        <Resource Include="images\丹恒 思考.png"/>
-        <Resource Include="images\优菈-让我看看.png"/>
-        <Resource Include="images\刻晴-疑问.png"/>
-        <Resource Include="images\卡维-开工.png"/>
-        <Resource Include="images\卡维-挠头.png"/>
-        <Resource Include="images\夏洛蒂-您继续.png"/>
-        <Resource Include="images\姬子 计算.png"/>
-        <Resource Include="images\布洛妮娅 加班.png"/>
-        <Resource Include="images\帕姆_好奇.png"/>
-        <Resource Include="images\帕姆_疑惑.png"/>
-        <Resource Include="images\本-疯狂计算.png"/>
-        <Resource Include="images\柯莱-学习时间.png"/>
-        <Resource Include="images\格蕾修_在做了.png"/>
-        <Resource Include="images\烟绯-疑惑.png"/>
-        <Resource Include="images\珐露珊-看我的.png"/>
-        <Resource Include="images\瑶瑶-急急急.png"/>
-        <Resource Include="images\申鹤-疑惑.png"/>
-        <Resource Include="images\砂糖-疑问.png"/>
-        <Resource Include="images\紬_急急急.png"/>
-        <Resource Include="images\胡桃-交给我吧.png"/>
-        <Resource Include="images\艾尔海森-动动脑.png"/>
-        <Resource Include="images\菲米尼-爱好.png"/>
-        <Resource Include="images\菲谢尔-这是什么？.png"/>
-        <Resource Include="images\赛诺-艺术！.png"/>
-        <Resource Include="images\达达利亚-冲浪.png"/>
-        <Resource Include="images\雷电将军-纳闷.png"/>
-        <Resource Include="images\非常疑惑.png"/>
+        <Resource Include="chatgpt-icon.ico" />
+        <Resource Include="font\CascadiaMono.ttf" />
+        <Resource Include="font\Segoe Fluent Icons.ttf" />
+        <Resource Include="images\chatgpt-icon.svg" />
+        <Resource Include="images\claude-ai-icon.svg" />
+        <Resource Include="images\set-up-svgrepo-com.svg" />
+        <Resource Include="images\丹恒 思考.png" />
+        <Resource Include="images\优菈-让我看看.png" />
+        <Resource Include="images\刻晴-疑问.png" />
+        <Resource Include="images\卡维-开工.png" />
+        <Resource Include="images\卡维-挠头.png" />
+        <Resource Include="images\夏洛蒂-您继续.png" />
+        <Resource Include="images\姬子 计算.png" />
+        <Resource Include="images\布洛妮娅 加班.png" />
+        <Resource Include="images\帕姆_好奇.png" />
+        <Resource Include="images\帕姆_疑惑.png" />
+        <Resource Include="images\本-疯狂计算.png" />
+        <Resource Include="images\柯莱-学习时间.png" />
+        <Resource Include="images\格蕾修_在做了.png" />
+        <Resource Include="images\烟绯-疑惑.png" />
+        <Resource Include="images\珐露珊-看我的.png" />
+        <Resource Include="images\瑶瑶-急急急.png" />
+        <Resource Include="images\申鹤-疑惑.png" />
+        <Resource Include="images\砂糖-疑问.png" />
+        <Resource Include="images\紬_急急急.png" />
+        <Resource Include="images\胡桃-交给我吧.png" />
+        <Resource Include="images\艾尔海森-动动脑.png" />
+        <Resource Include="images\菲米尼-爱好.png" />
+        <Resource Include="images\菲谢尔-这是什么？.png" />
+        <Resource Include="images\赛诺-艺术！.png" />
+        <Resource Include="images\达达利亚-冲浪.png" />
+        <Resource Include="images\雷电将军-纳闷.png" />
+        <Resource Include="images\非常疑惑.png" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.16"/>
-        <PackageReference Include="Coltr.Markdig.Wpf.ColorCode" Version="1.0.0"/>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2"/>
-        <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.2"/>
-        <PackageReference Include="Flurl" Version="4.0.0"/>
-        <PackageReference Include="HandyControls" Version="3.5.2"/>
-        <PackageReference Include="HandyControls.Lang.zh-CN" Version="3.5.2"/>
-        <PackageReference Include="Markdig" Version="0.37.0"/>
-        <PackageReference Include="Markdig.Wpf" Version="0.5.0.1"/>
-        <PackageReference Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24179.1"/>
-        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="NJsonSchema" Version="11.0.0"/>
-        <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0"/>
-        <PackageReference Include="PuppeteerSharp" Version="17.0.0"/>
-        <PackageReference Include="pythonnet" Version="3.0.3"/>
-        <PackageReference Include="SharpVectors" Version="1.8.4"/>
-        <PackageReference Include="WindowsAPICodePack" Version="7.0.4"/>
+        <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.16" />
+        <PackageReference Include="Coltr.Markdig.Wpf.ColorCode" Version="1.0.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+        <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.2" />
+        <PackageReference Include="Flurl" Version="4.0.0" />
+        <PackageReference Include="HandyControls" Version="3.5.2" />
+        <PackageReference Include="HandyControls.Lang.zh-CN" Version="3.5.2" />
+        <PackageReference Include="Markdig" Version="0.37.0" />
+        <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
+        <PackageReference Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24179.1" />
+        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="NJsonSchema" Version="11.0.0" />
+        <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0" />
+        <PackageReference Include="PuppeteerSharp" Version="17.0.0" />
+        <PackageReference Include="pythonnet" Version="3.0.3" />
+        <PackageReference Include="SharpVectors" Version="1.8.4" />
+        <PackageReference Include="WindowsAPICodePack" Version="7.0.4" />
     </ItemGroup>
 
     <ItemGroup>
-        <RuntimeHostConfigurationOption Include="Switch.System.Windows.Media.EnableHardwareAccelerationInRdp" Value="true"/>
+        <RuntimeHostConfigurationOption Include="Switch.System.Windows.Media.EnableHardwareAccelerationInRdp" Value="true" />
     </ItemGroup>
 
     <ItemGroup>
@@ -126,7 +126,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\poppler-wrapper\poppler-wrapper.vcxproj"/>
+        <ProjectReference Include="..\poppler-wrapper\poppler-wrapper.vcxproj" />
     </ItemGroup>
 
     <ItemGroup>
