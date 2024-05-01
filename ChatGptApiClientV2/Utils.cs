@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -31,16 +31,14 @@ using System.Windows;
 using System.Windows.Documents;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using Newtonsoft.Json;
-using System.Windows.Interop;
 using System.Threading;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.ML.Tokenizers;
-
 // ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
 
 namespace ChatGptApiClientV2;
 
@@ -429,7 +427,7 @@ public static partial class Utils
         }, cancellationToken);
     }
 
-    public static async Task<string> RtfFileToText(string filename, CancellationToken cancellationToken = default)
+    public static async Task<string> RtfFileToText(string filename, CancellationToken _ = default)
     {
         var doc = new FlowDocument();
         await using var fs = new FileStream(filename, FileMode.Open, FileAccess.Read);
@@ -452,316 +450,6 @@ public static partial class Utils
         }
 
         return true;
-    }
-
-    // ReSharper disable InconsistentNaming
-    // ReSharper disable UnusedMember.Local
-    // ReSharper disable UnusedMember.Global
-#pragma warning disable IDE0051 // 删除未使用的私有成员
-    private const string IID_IImageList = "46EB5926-582E-4017-9FDF-E8998DAA0950";
-    private const string IID_IImageList2 = "192B9D83-50FC-457B-90A0-2B82A8B5DAE1";
-
-    private static partial class Shell32
-    {
-        public const int SHIL_LARGE = 0x0;
-        public const int SHIL_SMALL = 0x1;
-        public const int SHIL_EXTRALARGE = 0x2;
-        public const int SHIL_SYSSMALL = 0x3;
-        public const int SHIL_JUMBO = 0x4;
-        public const int SHIL_LAST = 0x4;
-
-        public const int ILD_TRANSPARENT = 0x00000001;
-        public const int ILD_IMAGE = 0x00000020;
-
-        [LibraryImport("shell32.dll")]
-        public static partial int SHGetImageList(int iImageList, ref Guid riid, ref IImageList? ppv);
-
-        [LibraryImport("user32.dll", SetLastError = true)]
-        public static partial void DestroyIcon(IntPtr hIcon);
-
-        [DllImport("Shell32.dll", CharSet = CharSet.Unicode)]
-#pragma warning disable SYSLIB1054 // use LibraryImport instead of DllImport -> does not work for SHFILEINFO
-        public static extern IntPtr SHGetFileInfo(
-            string pszPath,
-            uint dwFileAttributes,
-            ref SHFILEINFO psfi,
-            uint cbFileInfo,
-            uint uFlags
-        );
-#pragma warning restore SYSLIB1054
-    }
-
-    [Flags]
-    private enum SHGFI : uint
-    {
-        /// <summary>get icon</summary>
-        Icon = 0x000000100,
-
-        /// <summary>get display name</summary>
-        DisplayName = 0x000000200,
-
-        /// <summary>get type name</summary>
-        TypeName = 0x000000400,
-
-        /// <summary>get attributes</summary>
-        Attributes = 0x000000800,
-
-        /// <summary>get icon location</summary>
-        IconLocation = 0x000001000,
-
-        /// <summary>return exe type</summary>
-        ExeType = 0x000002000,
-
-        /// <summary>get system icon index</summary>
-        SysIconIndex = 0x000004000,
-
-        /// <summary>put a link overlay on icon</summary>
-        LinkOverlay = 0x000008000,
-
-        /// <summary>show icon in selected state</summary>
-        Selected = 0x000010000,
-
-        /// <summary>get only specified attributes</summary>
-        Attr_Specified = 0x000020000,
-
-        /// <summary>get large icon</summary>
-        LargeIcon = 0x000000000,
-
-        /// <summary>get small icon</summary>
-        SmallIcon = 0x000000001,
-
-        /// <summary>get open icon</summary>
-        OpenIcon = 0x000000002,
-
-        /// <summary>get shell size icon</summary>
-        ShellIconSize = 0x000000004,
-
-        /// <summary>pszPath is a pidl</summary>
-        PIDL = 0x000000008,
-
-        /// <summary>use passed dwFileAttribute</summary>
-        UseFileAttributes = 0x000000010,
-
-        /// <summary>apply the appropriate overlays</summary>
-        AddOverlays = 0x000000020,
-
-        /// <summary>Get the index of the overlay in the upper 8 bits of the iIcon</summary>
-        OverlayIndex = 0x000000040
-    }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct SHFILEINFO
-    {
-        public IntPtr hIcon;
-        public int iIcon;
-        public uint dwAttributes;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-        public string szDisplayName;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
-        public string szTypeName;
-    }
-
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct RECT
-    {
-        public int left, top, right, bottom;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct POINT
-    {
-        public int x;
-        public int y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct IMAGELISTDRAWPARAMS
-    {
-        public int cbSize;
-        public IntPtr himl;
-        public int i;
-        public IntPtr hdcDst;
-        public int x;
-        public int y;
-        public int cx;
-        public int cy;
-        public int xBitmap; // x offset from the upper-left of bitmap
-        public int yBitmap; // y offset from the upper-left of bitmap
-        public int rgbBk;
-        public int rgbFg;
-        public int fStyle;
-        public int dwRop;
-        public int fState;
-        public int Frame;
-        public int crEffect;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct IMAGEINFO
-    {
-        public IntPtr hbmImage;
-        public IntPtr hbmMask;
-        public int Unused1;
-        public int Unused2;
-        public RECT rcImage;
-    }
-
-    [GeneratedComInterface]
-    [Guid("46EB5926-582E-4017-9FDF-E8998DAA0950")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    internal partial interface IImageList
-    {
-        [PreserveSig]
-        int Add(IntPtr hbmImage, IntPtr hbmMask, ref int pi);
-
-        [PreserveSig]
-        int ReplaceIcon(int i, IntPtr hicon, ref int pi);
-
-        [PreserveSig]
-        int SetOverlayImage(int iImage, int iOverlay);
-
-        [PreserveSig]
-        int Replace(int i, IntPtr hbmImage, IntPtr hbmMask);
-
-        [PreserveSig]
-        int AddMasked(IntPtr hbmImage, int crMask, ref int pi);
-
-        [PreserveSig]
-        int Draw(ref IMAGELISTDRAWPARAMS pimldp);
-
-        [PreserveSig]
-        int Remove(int i);
-
-        [PreserveSig]
-        int GetIcon(int i, int flags, ref IntPtr picon);
-
-        [PreserveSig]
-        int GetImageInfo(int i, ref IMAGEINFO pImageInfo);
-
-        [PreserveSig]
-        int Copy(int iDst, IImageList punkSrc, int iSrc, int uFlags);
-
-        [PreserveSig]
-        int Merge(int i1, IImageList punk2, int i2, int dx, int dy, ref Guid riid, ref IntPtr ppv);
-
-        [PreserveSig]
-        int Clone(ref Guid riid, ref IntPtr ppv);
-
-        [PreserveSig]
-        int GetImageRect(int i, ref RECT prc);
-
-        [PreserveSig]
-        int GetIconSize(ref int cx, ref int cy);
-
-        [PreserveSig]
-        int SetIconSize(int cx, int cy);
-
-        [PreserveSig]
-        int GetImageCount(ref int pi);
-
-        [PreserveSig]
-        int SetImageCount(int uNewCount);
-
-        [PreserveSig]
-        int SetBkColor(int clrBk, ref int pclr);
-
-        [PreserveSig]
-        int GetBkColor(ref int pclr);
-
-        [PreserveSig]
-        int BeginDrag(int iTrack, int dxHotspot, int dyHotspot);
-
-        [PreserveSig]
-        int EndDrag();
-
-        [PreserveSig]
-        int DragEnter(IntPtr hwndLock, int x, int y);
-
-        [PreserveSig]
-        int DragLeave(IntPtr hwndLock);
-
-        [PreserveSig]
-        int DragMove(int x, int y);
-
-        [PreserveSig]
-        int SetDragCursorImage(ref IImageList punk, int iDrag, int dxHotspot, int dyHotspot);
-
-        [PreserveSig]
-        int DragShowNolock(int fShow);
-
-        [PreserveSig]
-        int GetDragImage(ref POINT ppt, ref POINT pptHotspot, ref Guid riid, ref IntPtr ppv);
-
-        [PreserveSig]
-        int GetItemFlags(int i, ref int dwFlags);
-
-        [PreserveSig]
-        int GetOverlayImage(int iOverlay, ref int piIndex);
-    }
-#pragma warning restore IDE0051 // 删除未使用的私有成员
-    // ReSharper restore UnusedMember.Global
-    // ReSharper restore UnusedMember.Local
-    // ReSharper restore InconsistentNaming
-
-    internal class ShellFileInfo(string displayName, string typeName, int iconIndex)
-    {
-        public string DisplayName { get; } = displayName;
-        public string TypeName { get; } = typeName;
-        public int IconIndex { get; } = iconIndex;
-    }
-
-    private static ShellFileInfo GetShellFileInfo(string pszFile)
-    {
-        SHFILEINFO sfi = new();
-        Shell32.SHGetFileInfo(
-            pszFile,
-            0,
-            ref sfi,
-            (uint)Marshal.SizeOf(sfi),
-            (uint)(SHGFI.SysIconIndex | SHGFI.LargeIcon | SHGFI.UseFileAttributes | SHGFI.DisplayName | SHGFI.TypeName)
-        );
-        return new ShellFileInfo(sfi.szDisplayName, sfi.szTypeName, sfi.iIcon);
-    }
-
-    private static IntPtr? GetJumboIcon(int iImage)
-    {
-        IImageList? spiml = null;
-        Guid guil = new(IID_IImageList2); //or IID_IImageList
-        var result = Shell32.SHGetImageList(Shell32.SHIL_JUMBO, ref guil, ref spiml);
-        if (result != 0)
-        {
-            return null;
-        }
-
-        var hIcon = IntPtr.Zero;
-        spiml?.GetIcon(iImage, Shell32.ILD_TRANSPARENT | Shell32.ILD_IMAGE, ref hIcon);
-        return hIcon;
-    }
-
-    // from https://stackoverflow.com/questions/28525925/get-icon-128128-file-type-c-sharp
-    public static BitmapSource? Get256FileIcon(string path)
-    {
-        var fileInfo = GetShellFileInfo(path);
-        var hIcon = GetJumboIcon(fileInfo.IconIndex);
-        if (hIcon is null)
-        {
-            return null;
-        }
-
-        // 使用WPF的Imaging类来创建BitmapSource
-        var iconSrc = Imaging.CreateBitmapSourceFromHIcon(
-            hIcon.Value,
-            Int32Rect.Empty,
-            BitmapSizeOptions.FromEmptyOptions()
-        );
-        iconSrc.Freeze(); // 重要：冻结图像，使其可以跨线程使用
-
-        Shell32.DestroyIcon(hIcon.Value); // 清理非托管资源
-
-        return iconSrc;
     }
 
     private static IEnumerable<string> FindFolderContains(string fileName, IEnumerable<string> folders)

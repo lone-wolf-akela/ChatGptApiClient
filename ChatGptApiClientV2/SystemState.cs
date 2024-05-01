@@ -458,7 +458,13 @@ public partial class SystemState : ObservableObject
         public Task<bool> CanReadFile(string file, CancellationToken cancellationToken = default)
         {
             var mime = MimeTypes.GetMimeType(file);
-            return Task.FromResult(mime.StartsWith("text/"));
+            var isText = mime.StartsWith("text/") ||
+                mime is "application/json" ||
+                mime is "application/json5" ||
+                mime is "application/xml" ||
+                mime is "application/xaml+xml" ||
+                mime is "application/toml";
+            return Task.FromResult(isText);
         }
 
         public async Task<IAttachmentInfo> OpenFileAsAttachment(SystemState state, string file,

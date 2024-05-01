@@ -34,11 +34,11 @@ using Microsoft.Win32;
 using CommunityToolkit.Mvvm.Input;
 using SharpVectors.Converters;
 using System.Threading.Tasks;
-using Microsoft.WindowsAPICodePack.Shell;
 using static ChatGptApiClientV2.ChatWindowMessage;
 using System.ComponentModel;
 using System.IO;
 using System.Threading;
+using Windows.Storage;
 
 // ReSharper disable UnusedParameterInPartialMethod
 // ReSharper disable MemberCanBePrivate.Global
@@ -49,43 +49,71 @@ namespace ChatGptApiClientV2;
 
 public partial class FileAttachmentInfo : ObservableObject
 {
-    public FileAttachmentInfo(string path, ICollection<FileAttachmentInfo> owner)
+    private FileAttachmentInfo(string path, ICollection<FileAttachmentInfo> owner, ImageSource? icon) 
     {
         Path = path;
-        Icon = null;
+        Icon = icon;
         ownerCollection = owner;
-
-        // we should not extract icon on UI thread, which may cause the UI to stop responding.
-        Task.Run(() =>
+    }
+    private static async Task<BitmapImage?> ConvertThumbnailToImageSource(Windows.Storage.FileProperties.StorageItemThumbnail? thumbnail)
+    {
+        if(thumbnail is null || thumbnail.Size == 0)
         {
-            // this is fast but cannot show file preview
-            var icon = Utils.Get256FileIcon(Path);
-            if (icon is not null)
+            return null;
+        }
+
+        BitmapImage bitmapImage = new();
+        bitmapImage.BeginInit();
+
+        MemoryStream memoryStream = new();
+        await thumbnail.AsStreamForRead().CopyToAsync(memoryStream);
+        memoryStream.Seek(0, SeekOrigin.Begin);
+
+        bitmapImage.StreamSource = memoryStream;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+
+        return bitmapImage;
+    }
+    public static async Task<FileAttachmentInfo> Create(string path, ICollection<FileAttachmentInfo> owner)
+    {
+        // we should not extract icon on UI thread, which may cause the UI to stop responding.
+
+        var file = await StorageFile.GetFileFromPathAsync(path);
+        var iconSource = await file.GetThumbnailAsync(
+            Windows.Storage.FileProperties.ThumbnailMode.SingleItem,
+            256, Windows.Storage.FileProperties.ThumbnailOptions.ReturnOnlyIfCached
+        );
+        var icon = await ConvertThumbnailToImageSource(iconSource);
+
+        var fileInfo = new FileAttachmentInfo(path, owner, icon);
+
+        // for remote files, we only use cached icon, or it may take a long time to generate a new one
+        // for any other files, since we only asked for cached icon at above, we may just get a simple icon
+        // when in fact we can generate a more detailed one according to file content,
+        // but it may take some time, so we fire the generation in background
+        var needGenerateNewIcon = !Utils.IsPathRemote(path) &&
+            (iconSource is null || iconSource.Type == Windows.Storage.FileProperties.ThumbnailType.Icon);
+
+        if (needGenerateNewIcon)
+        {
+            // fire and forget
+            _ = Task.Run(async () =>
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                try
                 {
-                    Icon = icon;
-                    OnPropertyChanged(nameof(Icon));
-                });
-            }
-
-            // shellFile Thumbnail can be slow for large file, but can show file preview
-            if (Utils.IsPathRemote(path))
-            {
-                // do not extract thumbnail for remote file
-                // as it can be very slow
-                return;
-            }
-
-            var shellFile = ShellFile.FromFilePath(path);
-            var thumbnail = shellFile.Thumbnail?.ExtraLargeBitmapSource;
-            thumbnail?.Freeze();
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Icon = thumbnail ?? Icon;
-                OnPropertyChanged(nameof(Icon));
+                    var newIconSource = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.SingleItem);
+                    var newIcon = await ConvertThumbnailToImageSource(newIconSource);
+                    fileInfo.Icon = newIcon;
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
             });
-        }).ConfigureAwait(false);
+        }
+
+        return fileInfo;
     }
 
     private readonly ICollection<FileAttachmentInfo> ownerCollection;
@@ -96,8 +124,10 @@ public partial class FileAttachmentInfo : ObservableObject
         ownerCollection.Remove(this);
     }
 
-    public string Path { get; }
-    public ImageSource? Icon { get; private set; }
+    [ObservableProperty]
+    private string path;
+    [ObservableProperty]
+    private ImageSource? icon;
 }
 
 public partial class ChatWindowMessage : ObservableObject
@@ -1101,7 +1131,7 @@ public partial class ChatWindowViewModel : ObservableObject
         }
         else
         {
-            FileAttachments.Add(new FileAttachmentInfo(file, FileAttachments));
+            FileAttachments.Add(await FileAttachmentInfo.Create(file, FileAttachments));
         }
     }
 
