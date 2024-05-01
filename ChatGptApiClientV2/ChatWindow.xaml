@@ -486,7 +486,6 @@
                             </Border.Clip>
                             <hc:SimplePanel>
                                 <ListBox x:Name="LstMsg"
-                                         Style="{StaticResource SmoothScrollListBox}"
                                          Background="Transparent"
                                          BorderThickness="0"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -494,7 +493,8 @@
                                          KeyboardNavigation.TabNavigation="None"
                                          KeyboardNavigation.ControlTabNavigation="None"
                                          KeyboardNavigation.DirectionalNavigation="None"
-                                         ScrollViewer.CanContentScroll="False">
+                                         VirtualizingPanel.ScrollUnit="Pixel"
+                                         VirtualizingPanel.VirtualizationMode="Recycling">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
                                             <Setter Property="Background" Value="Transparent" />

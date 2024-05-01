@@ -70,22 +70,6 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-            <Style x:Key="SmoothScrollListBox" TargetType="ListBox" BasedOn="{StaticResource ListBoxBaseStyle}">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ListBox">
-                            <Border BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    Background="{TemplateBinding Background}"
-                                    CornerRadius="{Binding Path=(hc:BorderElement.CornerRadius),RelativeSource={RelativeSource TemplatedParent}}">
-                                <hc:ScrollViewer IsInertiaEnabled="True">
-                                    <ItemsPresenter />
-                                </hc:ScrollViewer>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
             <Style x:Key="ButtonGroupSolidDynamicColor" BasedOn="{StaticResource ButtonGroupBaseStyle}"
                    TargetType="hc:ButtonGroup">
                 <Setter Property="hc:VisualElement.HighlightBorderBrush" Value="{DynamicResource PrimaryBrush}" />
