@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -77,7 +77,7 @@ public class GoogleSearchFunc : IToolFunction
         HttpClient = new HttpClient(httpClientHandler);
     }
 
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+    public async Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
@@ -132,8 +132,8 @@ public class GoogleSearchFunc : IToolFunction
             where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-        state.NewMessage(RoleType.Tool, sessionIndex);
-        state.StreamText($"Google Searching: {args.Query}\n\n", sessionIndex);
+        state.NewMessage(RoleType.Tool, sessionId);
+        state.StreamText($"Google Searching: {args.Query}\n\n", sessionId);
 
         var request = new HttpRequestMessage
         {
@@ -162,7 +162,7 @@ public class GoogleSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -228,7 +228,7 @@ public class WebsiteAccessFunc : IToolFunction
     public string Name => "website_access";
     public Type ArgsType => typeof(Args);
 
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+    public async Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
@@ -260,8 +260,8 @@ public class WebsiteAccessFunc : IToolFunction
             return result;
         }
 
-        state.NewMessage(RoleType.Tool, sessionIndex);
-        state.StreamText($"Accessing: {args.Url}\n\n", sessionIndex);
+        state.NewMessage(RoleType.Tool, sessionId);
+        state.StreamText($"Accessing: {args.Url}\n\n", sessionId);
         state.NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
         try
@@ -310,7 +310,7 @@ public class WebsiteAccessFunc : IToolFunction
             if (content.Length > ContentPageLimit)
             {
                 var contentRemained = content[ContentPageLimit..];
-                state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
+                state.SessionDict[sessionId]!.PluginData[$"WebsiteRemained_{args.Url}"] = [contentRemained];
                 content = content[..ContentPageLimit];
                 content +=
                     $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
@@ -329,7 +329,7 @@ public class WebsiteAccessFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -396,7 +396,7 @@ public class WebsiteNextPageFunc : IToolFunction
 
     public Type ArgsType => typeof(Args);
 
-    public Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+    public Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default)
     {
         var msgContents = new List<IMessage.TextContent>();
@@ -426,13 +426,13 @@ public class WebsiteNextPageFunc : IToolFunction
             return Task.FromResult(result);
         }
 
-        state.NewMessage(RoleType.Tool, sessionIndex);
-        state.StreamText("Accessing the next page...\n\n", sessionIndex);
+        state.NewMessage(RoleType.Tool, sessionId);
+        state.StreamText("Accessing the next page...\n\n", sessionId);
 
         string? content;
         try
         {
-            content = state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0];
+            content = state.SessionDict[sessionId]!.PluginData[$"WebsiteRemained_{args.Url}"][0];
         }
         catch (KeyNotFoundException)
         {
@@ -450,14 +450,14 @@ public class WebsiteNextPageFunc : IToolFunction
         if (content.Length > ContentPageLimit)
         {
             var contentRemained = content[ContentPageLimit..];
-            state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
+            state.SessionDict[sessionId]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = contentRemained;
             content = content[..ContentPageLimit];
             content +=
                 $"\n\n[Content truncated due to length limit; {contentRemained.Length} characters remained. Call website_nextpage if you need the remaining content.]";
         }
         else
         {
-            state.SessionList[sessionIndex]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
+            state.SessionDict[sessionId]!.PluginData[$"WebsiteRemained_{args.Url}"][0] = "";
         }
 
         msgContents[0].Text += $"Content: {content}";
@@ -465,7 +465,7 @@ public class WebsiteNextPageFunc : IToolFunction
         return Task.FromResult(result);
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         List<string> stickers =
         [

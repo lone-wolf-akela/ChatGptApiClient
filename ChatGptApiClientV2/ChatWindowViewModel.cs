@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -606,6 +606,7 @@ public partial class ChatWindowMessage : ObservableObject
 
 public partial class ChatWindowMessageTab : ObservableObject
 {
+    public Guid TabId { get; } = Guid.NewGuid();
     public static bool IsEmptyTab(ChatWindowMessageTab? tab)
     {
         return tab is null || (tab.Messages.Count == 0 && !tab.UserHasGivenTitle);
@@ -686,7 +687,7 @@ public partial class ChatWindowMessageTab : ObservableObject
 
     private ChatCompletionRequest? syncedSession;
 
-    public async Task SyncChatSession(ChatCompletionRequest session, int tabIndex, SystemState state,
+    public async Task SyncChatSession(ChatCompletionRequest session, Guid tabId, SystemState state,
         bool enableMarkdown)
     {
         Messages.Clear();
@@ -748,7 +749,7 @@ public partial class ChatWindowMessageTab : ObservableObject
             {
                 foreach (var toolcall in assistantMsg.ToolCalls ?? [])
                 {
-                    await chatMsg.AddBlocks(state.GetToolcallDescription(toolcall, tabIndex));
+                    await chatMsg.AddBlocks(state.GetToolcallDescription(toolcall, tabId));
                 }
             }
             else if (msg is ToolMessage toolMsg)
@@ -841,9 +842,9 @@ public partial class ChatWindowViewModel : ObservableObject
 {
     [ObservableProperty] private SystemState state;
 
-    private void SetIsLoading(bool loading, int tabIndex)
+    private void SetIsLoading(bool loading, Guid tabId)
     {
-        Application.Current.Dispatcher.Invoke(() => { ChatWindowMessageTabs[tabIndex].IsLoading = loading; });
+        Application.Current.Dispatcher.Invoke(() => { GetTabById(tabId).IsLoading = loading; });
     }
 
     [ObservableProperty]
@@ -855,7 +856,12 @@ public partial class ChatWindowViewModel : ObservableObject
     private int selectedTabIndex;
 
     public bool IsSelectedTabValid => SelectedTabIndex >= 0 && SelectedTabIndex < ChatWindowMessageTabs.Count;
-
+    public void SelectTab(Guid tabId)
+    {
+        var tab = ChatWindowMessageTabs.First(pair => pair.TabId == tabId);
+        var index = ChatWindowMessageTabs.IndexOf(tab);
+        SelectedTabIndex = index;
+    }
     [RelayCommand]
     private void CreateTab()
     {
@@ -864,9 +870,10 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CloseTab(ChatWindowMessageTab tabToClose)
+    private void CloseTab(Guid tabId)
     {
-        ChatWindowMessageTabs.Remove(tabToClose);
+        ChatWindowMessageTabs.Remove(ChatWindowMessageTabs.First(pair => pair.TabId == tabId));
+        State.SessionDict.Remove(tabId);
         if (ChatWindowMessageTabs.Count == 0)
         {
             ChatWindowMessageTabs.Add(new ChatWindowMessageTab());
@@ -883,7 +890,7 @@ public partial class ChatWindowViewModel : ObservableObject
     {
         if (IsSelectedTabValid)
         {
-            CloseTab(SelectedMessageTab!);
+            CloseTab(SelectedMessageTab!.TabId);
         }
     }
 
@@ -894,6 +901,16 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     public ObservableCollection<ChatWindowMessageTab> ChatWindowMessageTabs { get; } = [new ChatWindowMessageTab()];
+    private ChatWindowMessageTab GetTabById(Guid tabId)
+    {
+        return ChatWindowMessageTabs.First(pair => pair.TabId == tabId);
+    }
+    public void MoveTabToIndex(Guid tabId, int targetIdx)
+    {
+        var tab = GetTabById(tabId);
+        ChatWindowMessageTabs.Remove(tab);
+        ChatWindowMessageTabs.Insert(targetIdx, tab);
+    }
 
     public ChatWindowMessageTab? SelectedMessageTab =>
         IsSelectedTabValid
@@ -909,9 +926,9 @@ public partial class ChatWindowViewModel : ObservableObject
     public ChatWindowViewModel()
     {
         State = new SystemState();
-        State.ChatSessionChangedEvent += async (session, tabIndex) =>
+        State.ChatSessionChangedEvent += async (session, tabId) =>
         {
-            await SyncChatSession(session, State.Config.EnableMarkdown, tabIndex);
+            await SyncChatSession(session, State.Config.EnableMarkdown, tabId);
         };
         State.NewMessageEvent += AddMessage;
         State.StreamTextEvent += AddStreamText;
@@ -925,14 +942,14 @@ public partial class ChatWindowViewModel : ObservableObject
         };
     }
 
-    public delegate void ScrollToEndHandler(int tabIndex);
+    public delegate void ScrollToEndHandler(Guid tabId);
 
     public event ScrollToEndHandler? ScrollToEndEvent;
 
-    private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown, int tabIndex)
+    private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown, Guid tabId)
     {
-        await ChatWindowMessageTabs[tabIndex].SyncChatSession(session, tabIndex, State, enableMarkdown);
-        ScrollToEndEvent?.Invoke(tabIndex);
+        await GetTabById(tabId).SyncChatSession(session, tabId, State, enableMarkdown);
+        ScrollToEndEvent?.Invoke(tabId);
 
         PrintCommand.NotifyCanExecuteChanged();
         SaveCommand.NotifyCanExecuteChanged();
@@ -940,29 +957,30 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     public int SessionTokenNum =>
-        State.GetSessionTokens(SelectedTabIndex) + (SelectedMessageTab?.GetCurrentStreamTokenNum() ?? 0);
+        SelectedMessageTab is null ? 0 :
+        State.GetSessionTokens(SelectedMessageTab.TabId) + SelectedMessageTab.GetCurrentStreamTokenNum();
 
-    private void AddStreamText(string text, int tabIndex)
+    private void AddStreamText(string text, Guid tabId)
     {
-        ChatWindowMessageTabs[tabIndex].AddStreamText(text);
-        ScrollToEndEvent?.Invoke(tabIndex);
+        GetTabById(tabId).AddStreamText(text);
+        ScrollToEndEvent?.Invoke(tabId);
         OnPropertyChanged(nameof(SessionTokenNum));
     }
 
-    private void AddMessage(RoleType role, int tabIndex)
+    private void AddMessage(RoleType role, Guid tabId)
     {
-        ChatWindowMessageTabs[tabIndex].AddMessage(
+        GetTabById(tabId).AddMessage(
             role,
             State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
                 ? AssistantType.Claude
                 : AssistantType.ChatGPT);
-        ScrollToEndEvent?.Invoke(tabIndex);
+        ScrollToEndEvent?.Invoke(tabId);
     }
 
-    private void SetStreamProgress(double progress, string text, int tabIndex)
+    private void SetStreamProgress(double progress, string text, Guid tabId)
     {
-        ChatWindowMessageTabs[tabIndex].SetStreamProgress(progress, text);
-        ScrollToEndEvent?.Invoke(tabIndex);
+        GetTabById(tabId).SetStreamProgress(progress, text);
+        ScrollToEndEvent?.Invoke(tabId);
     }
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
@@ -976,11 +994,15 @@ public partial class ChatWindowViewModel : ObservableObject
     {
         try
         {
+            if(SelectedMessageTab is null)
+            {
+                return;
+            }
             var input = TextInput;
             var files = (from fileinfo in FileAttachments select fileinfo.Path).ToList();
             TextInput = "";
             FileAttachments.Clear();
-            await State.UserSendText(input, files, SelectedTabIndex, cancellationToken);
+            await State.UserSendText(input, files, SelectedMessageTab.TabId, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -991,13 +1013,29 @@ public partial class ChatWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task ResetAsync()
     {
-        SelectedMessageTab?.Reset();
-        await State.ClearSession(SelectedTabIndex);
+        if (SelectedMessageTab is null)
+        {
+            return;
+        }
+        SelectedMessageTab.Reset();
+        await State.ClearSession(SelectedMessageTab.TabId);
     }
 
-    private bool SessionNotNull =>
-        IsSelectedTabValid && SelectedTabIndex < State.SessionList.Count &&
-        State.SessionList[SelectedTabIndex] is not null;
+    private bool SessionNotNull
+    {
+        get
+        {
+            if (SelectedMessageTab is null)
+            {
+                return false;
+            }
+            if(!State.SessionDict.TryGetValue(SelectedMessageTab.TabId, out var session))
+            {
+                return false;
+            }
+            return session is not null;
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(SessionNotNull))]
     private async Task PrintAsync()
@@ -1009,7 +1047,7 @@ public partial class ChatWindowViewModel : ObservableObject
         }
 
         ChatWindowMessageTab tempMessages = new();
-        await tempMessages.SyncChatSession(State.SessionList[SelectedTabIndex]!, SelectedTabIndex, State,
+        await tempMessages.SyncChatSession(State.SessionDict[SelectedMessageTab!.TabId]!, SelectedMessageTab!.TabId, State,
             State.Config.EnableMarkdown);
         var doc = tempMessages.GeneratePrintableDocument();
         // default is 2 columns, uncomment below to use only one column
@@ -1028,7 +1066,7 @@ public partial class ChatWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(SessionNotNull))]
     private async Task SaveAsync()
     {
-        await State.SaveSession(SelectedTabIndex);
+        await State.SaveSession(SelectedMessageTab!.TabId);
     }
 
     [RelayCommand]
@@ -1041,10 +1079,10 @@ public partial class ChatWindowViewModel : ObservableObject
             newTabCreated = true;
         }
 
-        var loadSuccess = await State.LoadSession(SelectedTabIndex);
+        var loadSuccess = await State.LoadSession(SelectedMessageTab!.TabId);
         if (!loadSuccess && newTabCreated)
         {
-            CloseTab(ChatWindowMessageTabs.Last());
+            CloseTab(ChatWindowMessageTabs.Last().TabId);
         }
     }
 
@@ -1086,7 +1124,7 @@ public partial class ChatWindowViewModel : ObservableObject
     {
         if (SessionNotNull)
         {
-            await State.RefreshSession(SelectedTabIndex);
+            await State.RefreshSession(SelectedMessageTab!.TabId);
         }
     }
 }

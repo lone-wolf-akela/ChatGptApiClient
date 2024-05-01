@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -137,9 +137,28 @@ public partial class ChatWindow
         return foundChild;
     }
 
-    private void ScrollToEnd(int tabIndex)
+    private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
     {
-        if (tabIndex != TabMsg.SelectedIndex)
+        while (true)
+        {
+            var parentObject = VisualTreeHelper.GetParent(child);
+            switch (parentObject)
+            {
+                case null:
+                    return null;
+                case T parent:
+                    return parent;
+                default:
+                    child = parentObject;
+                    break;
+            }
+        }
+    }
+
+    private void ScrollToEnd(Guid tabId)
+    {
+        var selectedTab = ((ChatWindowViewModel)DataContext).SelectedMessageTab;
+        if (selectedTab is null || tabId != selectedTab.TabId)
         {
             return;
         }
@@ -393,6 +412,100 @@ public partial class ChatWindow
         {
             PanelDropFiles.Visibility = Visibility.Visible;
             e.Handled = true;
+        }
+    }
+
+    private bool tabMsgTabItemIsDragging;
+    private Point tabMsgTabItemDragInitialMousePosition;
+    private TabItem? tabMsgTabItemDragSource;
+    private TranslateTransform? tabMsgTabItemTranslateTransform;
+    private void TabMsg_TabItem_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.Source is not TabItem tabItem)
+        {
+            return;
+        }
+
+        if (!tabMsgTabItemIsDragging && Mouse.PrimaryDevice.LeftButton == MouseButtonState.Pressed)
+        {
+            tabMsgTabItemDragInitialMousePosition = e.GetPosition(null);
+            tabMsgTabItemDragSource = tabItem;
+            tabMsgTabItemIsDragging = true;
+            tabItem.CaptureMouse();
+        }
+
+        if (!tabMsgTabItemIsDragging)
+        {
+            return;
+        }
+        if (Mouse.PrimaryDevice.LeftButton != MouseButtonState.Pressed)
+        {
+            // stop following mouse
+            tabMsgTabItemDragSource!.ReleaseMouseCapture();
+            if (tabMsgTabItemDragSource.RenderTransform is TransformGroup tGroup)
+            {
+                tGroup.Children.Remove(tabMsgTabItemTranslateTransform);
+                tabMsgTabItemTranslateTransform = null;
+            }
+
+            tabMsgTabItemIsDragging = false;
+
+            // find drag target
+            var tabControl = FindParent<TabControl>(tabMsgTabItemDragSource);
+            if (tabControl is null)
+            {
+                return;
+            }
+            for (var targetTabItemIndex = 0; targetTabItemIndex < tabControl.Items.Count; targetTabItemIndex++)
+            {
+                if (tabControl.ItemContainerGenerator.ContainerFromIndex(targetTabItemIndex) is not TabItem targetTabItem
+                    || targetTabItem == tabMsgTabItemDragSource)
+                {
+                    continue;
+                }
+                if (!IsMouseOverElement(targetTabItem))
+                {
+                    continue;
+                }
+                var viewModel = (ChatWindowViewModel)DataContext;
+                var movedTab = (ChatWindowMessageTab)tabMsgTabItemDragSource.DataContext;
+                viewModel.MoveTabToIndex(movedTab.TabId, targetTabItemIndex);
+                viewModel.SelectTab(movedTab.TabId);
+                return;
+            }
+        }
+        else
+        {
+            var transformIsNotRegistered = tabMsgTabItemTranslateTransform is null
+                                           || tabMsgTabItemDragSource!.RenderTransform is not TransformGroup;
+
+            tabMsgTabItemTranslateTransform ??= new TranslateTransform();
+            var currentMousePosition = e.GetPosition(null);
+            tabMsgTabItemTranslateTransform.X = currentMousePosition.X - tabMsgTabItemDragInitialMousePosition.X;
+            tabMsgTabItemTranslateTransform.Y = currentMousePosition.Y - tabMsgTabItemDragInitialMousePosition.Y;
+
+            if (!transformIsNotRegistered)
+            {
+                return;
+            }
+            if (tabMsgTabItemDragSource!.RenderTransform is null)
+            {
+                tabMsgTabItemDragSource.RenderTransform = new TransformGroup
+                {
+                    Children = { tabMsgTabItemTranslateTransform }
+                };
+            }
+            else if (tabMsgTabItemDragSource.RenderTransform is not TransformGroup tGroup)
+            {
+                tabMsgTabItemDragSource.RenderTransform = new TransformGroup
+                {
+                    Children = { tabMsgTabItemDragSource.RenderTransform, tabMsgTabItemTranslateTransform }
+                };
+            }
+            else
+            {
+                tGroup.Children.Add(tabMsgTabItemTranslateTransform);
+            }
         }
     }
 }

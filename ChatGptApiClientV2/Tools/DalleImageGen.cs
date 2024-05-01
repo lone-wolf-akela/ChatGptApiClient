@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -123,7 +123,7 @@ public class DalleImageGenFunc : IToolFunction
         }
     }
 
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+    public async Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
@@ -161,8 +161,8 @@ public class DalleImageGenFunc : IToolFunction
             _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY)
         };
 
-        state.NewMessage(RoleType.Tool, sessionIndex);
-        state.StreamText("生成中...\n\n", sessionIndex);
+        state.NewMessage(RoleType.Tool, sessionId);
+        state.StreamText("生成中...\n\n", sessionId);
 
         var requestbody = new Request
         {
@@ -227,15 +227,15 @@ public class DalleImageGenFunc : IToolFunction
 
              Revised Prompts: {responseData?["revised_prompt"]}
              """;
-        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
-        state.SessionList[sessionIndex]!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
+        state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
+        state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
         msg.Hidden = true; // Hide success results from user
         result.ResponeRequired = false;
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -279,10 +279,10 @@ public class DalleImageGenFunc : IToolFunction
         yield return paragraph;
 
         var foundData =
-            state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata",
+            state.SessionDict[sessionId]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata",
                 out var imagedata);
         var foundDesc =
-            state.SessionList[sessionIndex]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedesc",
+            state.SessionDict[sessionId]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedesc",
                 out var imagedesc);
         if (!foundData)
         {

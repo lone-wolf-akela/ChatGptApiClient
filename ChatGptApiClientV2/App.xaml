@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 	ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
 	Copyright (C) 2024 Lone Wolf Akela
 
@@ -344,7 +344,7 @@
                                         Background="{TemplateBinding Background}"
                                         Margin="0">
                                     <Border x:Name="bottomLine"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderBrush="{DynamicResource PrimaryBrush}"
                                             Background="Transparent"
                                             Margin="0" />
                                 </Border>
@@ -370,11 +370,7 @@
                                     <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryBrush}"
                                             TargetName="contentPresenter" />
                                     <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,2" />
-                                    <Setter Property="LayoutTransform">
-                                        <Setter.Value>
-                                            <ScaleTransform ScaleX="1.1" ScaleY="1.1" />
-                                        </Setter.Value>
-                                    </Setter>
+                                    <Setter Property="Effect" Value="{StaticResource EffectShadow5}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

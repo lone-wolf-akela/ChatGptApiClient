@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -74,7 +74,7 @@ public class BingSearchFunc : IToolFunction
         HttpClient = new HttpClient(httpClientHandler);
     }
 
-    public async Task<ToolResult> Action(SystemState state, int sessionIndex, string toolcallId, string argstr,
+    public async Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default)
     {
         using var guard = new Utils.ScopeGuard(() => state.NetStatus.Status = NetStatus.StatusEnum.Idle);
@@ -127,8 +127,8 @@ public class BingSearchFunc : IToolFunction
             where p.Value is not null
             select $"{p.Key}={System.Net.WebUtility.UrlEncode(p.Value)}");
 
-        state.NewMessage(RoleType.Tool, sessionIndex);
-        state.StreamText($"Bing Searching: {args.Query}\n\n", sessionIndex);
+        state.NewMessage(RoleType.Tool, sessionId);
+        state.StreamText($"Bing Searching: {args.Query}\n\n", sessionId);
 
         var request = new HttpRequestMessage
         {
@@ -184,7 +184,7 @@ public class BingSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, int sessionIndex, string argstr, string toolcallId)
+    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);

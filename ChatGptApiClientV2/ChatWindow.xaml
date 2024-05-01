@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 	ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
 	Copyright (C) 2024 Lone Wolf Akela
 
@@ -25,6 +25,7 @@
            xmlns:local="clr-namespace:ChatGptApiClientV2"
            xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
            xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+           xmlns:generic="clr-namespace:System.Collections.Generic;assembly=System.Runtime"
            mc:Ignorable="d" Icon="/chatgpt-icon.ico"
            Title="ChatWindow" Height="600" Width="1000"
            AllowDrop="True"
@@ -390,6 +391,8 @@
                 <TabControl.ItemContainerStyle>
                     <Style TargetType="TabItem" BasedOn="{StaticResource TopRoundTabItemStyle}">
                         <Setter Property="hc:BorderElement.CornerRadius" Value="5,5,0,0" />
+                        <Setter Property="AllowDrop" Value="True"/>
+                        <EventSetter Event="PreviewMouseMove" Handler="TabMsg_TabItem_PreviewMouseMove"/>
                     </Style>
                 </TabControl.ItemContainerStyle>
                 <TabControl.ItemTemplate>
@@ -403,7 +406,7 @@
                             <Border.InputBindings>
                                 <MouseBinding Gesture="MiddleClick"
                                               Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
-                                              CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}" />
+                                              CommandParameter="{Binding TabId}" />
                             </Border.InputBindings>
                             <Border.ContextMenu>
                                 <ContextMenu
@@ -419,7 +422,7 @@
                                     <MenuItem Header="关闭标签页"
                                               InputGestureText="Ctrl + W"
                                               Command="{Binding  DataContext.CloseTabCommand, Source={x:Reference TabMsg}}"
-                                              CommandParameter="{Binding DataContext}">
+                                              CommandParameter="{Binding DataContext.TabId}">
                                         <MenuItem.Icon>
                                             <TextBlock FontFamily="./font/#Segoe Fluent Icons" Text="&#xe711;"
                                                        VerticalAlignment="Center" HorizontalAlignment="Center" />
@@ -451,7 +454,7 @@
                                             hc:BackgroundSwitchElement.MouseHoverBackground="Gray"
                                             hc:BorderElement.CornerRadius="5"
                                             Command="{Binding  DataContext.CloseTabCommand, ElementName=TabMsg}"
-                                            CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type TabItem}}}" />
+                                            CommandParameter="{Binding TabId}" />
                                 </StackPanel>
                                 <TextBox Text="{Binding Title}"
                                          Visibility="{Binding IsEditingTitle, Converter={StaticResource Boolean2VisibilityConverter}}"
