@@ -392,7 +392,7 @@
                     <Style TargetType="TabItem" BasedOn="{StaticResource TopRoundTabItemStyle}">
                         <Setter Property="hc:BorderElement.CornerRadius" Value="5,5,0,0" />
                         <Setter Property="AllowDrop" Value="True"/>
-                        <EventSetter Event="PreviewMouseMove" Handler="TabMsg_TabItem_PreviewMouseMove"/>
+                        <EventSetter Event="MouseMove" Handler="TabMsg_TabItem_MouseMove"/>
                     </Style>
                 </TabControl.ItemContainerStyle>
                 <TabControl.ItemTemplate>
@@ -726,6 +726,30 @@
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
+                                <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" 
+                                            Margin="0,0,10,10" Background="Transparent">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Opacity" Value="0.5" />
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Opacity" Value="1" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <StackPanel.Resources>
+                                        <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                                            <Setter Property="FontFamily" Value="./font/#Segoe Fluent Icons" />
+                                            <Setter Property="hc:BorderElement.CornerRadius" Value="20" />
+                                            <Setter Property="Height" Value="30" />
+                                            <Setter Property="Width" Value="30" />
+                                            <Setter Property="Padding" Value="0" />
+                                        </Style>
+                                    </StackPanel.Resources>
+                                    <Button ToolTip="滚动到顶部" Content="&#xeddb;" Click="Button_ScrollToHome_Click" Margin="0,0,0,5" />
+                                    <Button ToolTip="滚动到底部" Content="&#xeddc;" Click="Button_ScrollToEnd_Click" />
+                                </StackPanel>
                                 <hc:SimplePanel Background="#88ffffff"
                                                 Visibility="{Binding IsLoading, Converter={StaticResource Boolean2VisibilityConverter}}"
                                                 d:IsHidden="True">

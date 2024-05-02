@@ -174,6 +174,25 @@ public partial class ChatWindow
         scrollViewer?.ScrollToEnd();
     }
 
+    private void ScrollToHome(Guid tabId)
+    {
+        var selectedTab = ((ChatWindowViewModel)DataContext).SelectedMessageTab;
+        if (selectedTab is null || tabId != selectedTab.TabId)
+        {
+            return;
+        }
+
+        var lstBox = FindChild<ListBox>(TabMsg, "LstMsg");
+        if (lstBox is null)
+        {
+            return;
+        }
+
+        var scrollViewer = GetScrollViewer(lstBox);
+        scrollViewer?.UpdateLayout();
+        scrollViewer?.ScrollToHome();
+    }
+
     private void OpenHyperlink(object sender, ExecutedRoutedEventArgs e)
     {
         var link = e.Parameter.ToString();
@@ -419,7 +438,7 @@ public partial class ChatWindow
     private Point tabMsgTabItemDragInitialMousePosition;
     private TabItem? tabMsgTabItemDragSource;
     private TranslateTransform? tabMsgTabItemTranslateTransform;
-    private void TabMsg_TabItem_PreviewMouseMove(object sender, MouseEventArgs e)
+    private void TabMsg_TabItem_MouseMove(object sender, MouseEventArgs e)
     {
         if (e.Source is not TabItem tabItem)
         {
@@ -507,5 +526,31 @@ public partial class ChatWindow
                 tGroup.Children.Add(tabMsgTabItemTranslateTransform);
             }
         }
+    }
+
+    private void Button_ScrollToHome_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button)
+        {
+            return;
+        }
+        if (button.DataContext is not ChatWindowMessageTab tab)
+        {
+            return;
+        }
+        ScrollToHome(tab.TabId);
+    }
+
+    private void Button_ScrollToEnd_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button)
+        {
+            return;
+        }
+        if (button.DataContext is not ChatWindowMessageTab tab)
+        {
+            return;
+        }
+        ScrollToEnd(tab.TabId);
     }
 }
