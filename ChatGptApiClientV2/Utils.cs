@@ -147,6 +147,31 @@ public class Int2BoolConverter : MarkupExtension, IValueConverter
     public override object ProvideValue(IServiceProvider serviceProvider) => this;
 }
 
+public class Log2DoubleConverter : MarkupExtension, IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is double d)
+        {
+            return Math.Log2(d);
+        }
+
+        return 0.0;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is double d)
+        {
+            return Math.Pow(2, d);
+        }
+
+        return 0.0;
+    }
+
+    public override object ProvideValue(IServiceProvider serviceProvider) => this;
+}
+
 // from https://stackoverflow.com/questions/397556/how-to-bind-radiobuttons-to-an-enum
 public class ComparisonConverter : MarkupExtension, IValueConverter
 {

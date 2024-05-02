@@ -96,10 +96,10 @@
                     <Label Grid.Column="8" Content="UI 缩放" HorizontalAlignment="Left" />
                     <DockPanel Grid.Column="9">
                         <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtUiScale"
-                                 Text="{Binding ElementName=SlidUiScale,Path=Value,StringFormat=N2}"
+                                 Text="{Binding Path=Config.UiScale,StringFormat=N2}"
                                  InputScope="Number" VerticalAlignment="Center" />
-                        <Slider x:Name="SlidUiScale" Minimum="0.5" Maximum="2" LargeChange="0.1"
-                                Value="{Binding Path=Config.UiScale, Mode=TwoWay}" Margin="0,0,5,0"
+                        <Slider x:Name="SlidUiScale" Minimum="-1" Maximum="1" LargeChange="0.1"
+                                Value="{Binding Path=Config.UiScale, Mode=TwoWay, Converter={local:Log2DoubleConverter}}" Margin="0,0,5,0"
                                 VerticalAlignment="Center" />
                     </DockPanel>
                 </Grid>
