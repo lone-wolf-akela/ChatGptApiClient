@@ -355,7 +355,7 @@ public class ShowImageFunc : IToolFunction
         }
 
         msgContents[0].Text += "Image successfully displayed.";
-        var imageUrl = await Utils.ImageFileToBase64(filePath, cancellationToken);
+        var imageUrl = (await ImageData.CreateFromFile(filePath, cancellationToken)).ToUri();
         state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
         state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
         result.ResponeRequired = false;
@@ -376,7 +376,7 @@ public class ShowImageFunc : IToolFunction
             var image = new ImageDisplayer
             {
                 FileName = imageFileName,
-                Image = Utils.Base64ToBitmapImage(imageUrl)
+                Image = ImageData.CreateFromUri(imageUrl).ToBitmapImage()
             };
             imageBlock = new BlockUIContainer(image);
         }

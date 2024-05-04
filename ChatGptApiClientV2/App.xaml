@@ -354,7 +354,8 @@
                                     <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryBrush}"
                                             TargetName="contentPresenter" />
                                     <Setter Property="BorderThickness" TargetName="bottomLine" Value="0,0,0,2" />
-                                    <Setter Property="Effect" Value="{StaticResource EffectShadow5}" />
+                                    <Setter Property="Effect" Value="{StaticResource EffectShadow1}" />
+                                    <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

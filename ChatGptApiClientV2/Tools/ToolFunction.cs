@@ -66,7 +66,7 @@ public interface IToolFunction
 
     public class ToolResult(ToolMessage msg, bool responeRequired)
     {
-        public ToolMessage Message { get; set; } = msg;
+        public ToolMessage Message { get; } = msg;
         public bool ResponeRequired { get; set; } = responeRequired;
     }
 

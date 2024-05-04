@@ -33,6 +33,7 @@ namespace ChatGptApiClientV2;
 /// <summary>
 /// ChatWindow.xaml 的交互逻辑
 /// </summary>
+// ReSharper disable once UnusedType.Global
 public partial class ChatWindow
 {
     private void ScrollToParentProcecssor(object? sender, MouseWheelEventArgs e)

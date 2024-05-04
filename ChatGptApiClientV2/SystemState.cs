@@ -159,6 +159,7 @@ public partial class SystemState : ObservableObject
     public Config Config { get; } = Config.LoadConfig();
 
     public NetStatus NetStatus { get; } = new();
+    // ReSharper disable once MemberCanBePrivate.Global
     public ObservableCollection<PluginInfo> Plugins { get; } = [];
     private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
 
@@ -276,7 +277,7 @@ public partial class SystemState : ObservableObject
     {
         StreamTextEvent?.Invoke(text, sessionId);
     }
-
+    // ReSharper disable once UnusedMember.Global
     public void SetStreamProgress(double progress, string text, Guid sessionId)
     {
         SetStreamProgressEvent?.Invoke(progress, text, sessionId);
@@ -328,7 +329,8 @@ public partial class SystemState : ObservableObject
             PresencePenalty = Config.PresencePenalty,
             Seed = Config.Seed,
             Temperature = temperature,
-            TopP = Config.TopP
+            TopP = Config.TopP,
+            UserId = Config.UserAdvertisingId
         };
 
         if (serverOptions.MaxTokens is null && selectedModel.Name.Contains("vision"))
@@ -595,15 +597,11 @@ public partial class SystemState : ObservableObject
                 throw new InvalidOperationException($"File is not a supproted image file: {file}");
             }
 
-            var base64 = await Utils.ImageFileToBase64(file, cancellationToken);
-            var image = Utils.Base64ToBitmapImage(base64);
-            Size imageSize = new(image.PixelWidth, image.PixelHeight);
             return new ImageAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
-                ImageBase64Url = base64,
+                ImageBase64Url = await ImageData.CreateFromFile(file, cancellationToken),
                 HighResMode = state.Config.UploadHiresImage,
-                ImageSize = imageSize
             };
         }
     }
@@ -612,7 +610,7 @@ public partial class SystemState : ObservableObject
     {
         private string? filePathCache;
         private DateTime? fileModifiedTimeCache;
-        private string? base64PngCache;
+        private ImageData? pngCache;
 
         private static DateTime GetFileModifiedTime(string file)
         {
@@ -630,15 +628,15 @@ public partial class SystemState : ObservableObject
 
             if (filePathCache == file
                 && fileModifiedTimeCache == GetFileModifiedTime(file)
-                && base64PngCache is not null)
+                && pngCache is not null)
             {
                 return true;
             }
 
             try
             {
-                var base64Original = await Utils.ImageFileToBase64(file, cancellationToken);
-                base64PngCache = Utils.ConvertToBase64Png(base64Original);
+                var imageDataOriginal = await ImageData.CreateFromFile(file, cancellationToken);
+                pngCache = imageDataOriginal.ReSaveAsPng();
                 filePathCache = file;
                 fileModifiedTimeCache = GetFileModifiedTime(file);
                 return true;
@@ -657,14 +655,11 @@ public partial class SystemState : ObservableObject
                 throw new InvalidOperationException($"File is not a image file convertible to png: {file}");
             }
 
-            var image = Utils.Base64ToBitmapImage(base64PngCache!);
-            Size imageSize = new(image.PixelWidth, image.PixelHeight);
             return new ImageAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
-                ImageBase64Url = base64PngCache!,
+                ImageBase64Url = pngCache,
                 HighResMode = state.Config.UploadHiresImage,
-                ImageSize = imageSize
             };
         }
     }

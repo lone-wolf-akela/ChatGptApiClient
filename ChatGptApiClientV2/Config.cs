@@ -308,6 +308,7 @@ public partial class Config : ObservableValidator
         SelectedModelIndex = 0;
     }
 
+    // ReSharper disable once MemberCanBePrivate.Global
     [JsonIgnore] public ObservableCollection<ModelVersionInfo> ModelVersionOptions { get; } = [];
 
     [ObservableProperty]

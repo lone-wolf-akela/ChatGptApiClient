@@ -119,68 +119,6 @@ public class OpenAIEndpoint : IServerEndpoint
         return lst;
     }
 
-    private static Uri ImageBase64StrToUri(string base64Uri)
-    {
-        if (!base64Uri.StartsWith("data:"))
-        {
-            throw new ArgumentException("Invalid base64 image uri");
-        }
-
-        var uri = new Uri("data:image/png;base64,example");
-
-        // WARNING: VERY HACKY!
-        // System.Uri does not want us to encode more than 65520 bytes in the URI
-        // When we want to encode the whole image in the URI, it throws:
-        // Invalid URI: The Uri string is too long.
-        // we have to manually modify the internal fields of the Uri object to make it work
-
-        // use reflection to force modify the fields below from uri:
-        // _string
-        // _info.String
-        // _info._moreInfo.AbsoluteUri
-        // _info._moreInfo.Path # this one need to remove the `data:` prefix
-
-        // need this to make sure _info and other fields is not null
-        Console.WriteLine(uri.ToString());
-        Console.WriteLine(uri.AbsolutePath);
-
-        var uriField = uri.GetType().GetField("_string",
-                           System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                       ?? throw new InvalidOperationException("Could not find _string field");
-        uriField.SetValue(uri, base64Uri);
-
-        var uriInfoField = uri.GetType().GetField("_info",
-                               System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                           ?? throw new InvalidOperationException("Could not find _info field");
-
-        var uriInfo = uriInfoField.GetValue(uri);
-        var uriInfoStringField = uriInfo?.GetType().GetField("String",
-                                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
-                                 ?? throw new InvalidOperationException("Could not find String field in _info");
-        uriInfoStringField.SetValue(uriInfo, base64Uri);
-
-        var uriInfoMoreInfoField = uriInfo.GetType().GetField("_moreInfo",
-                                       System.Reflection.BindingFlags.NonPublic |
-                                       System.Reflection.BindingFlags.Instance)
-                                   ?? throw new InvalidOperationException("Could not find _moreInfo field in _info");
-        var uriInfoMoreInfo = uriInfoMoreInfoField.GetValue(uriInfo);
-
-        var uriInfoMoreInfoAbsoluteUriField = uriInfoMoreInfo?.GetType().GetField("AbsoluteUri",
-                                                  System.Reflection.BindingFlags.Public |
-                                                  System.Reflection.BindingFlags.Instance)
-                                              ?? throw new InvalidOperationException(
-                                                  "Could not find AbsoluteUri field in MoreInfo");
-        uriInfoMoreInfoAbsoluteUriField.SetValue(uriInfoMoreInfo, base64Uri);
-
-        var uriInfoMoreInfoPathField = uriInfoMoreInfo.GetType().GetField("Path",
-                                           System.Reflection.BindingFlags.Public |
-                                           System.Reflection.BindingFlags.Instance)
-                                       ?? throw new InvalidOperationException("Could not find Path field in MoreInfo");
-        uriInfoMoreInfoPathField.SetValue(uriInfoMoreInfo, base64Uri["data:".Length..]);
-
-        return uri;
-    }
-
     private static ChatRequestMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
@@ -200,8 +138,8 @@ public class OpenAIEndpoint : IServerEndpoint
                         imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
                             ? ChatMessageImageDetailLevel.Low
                             : ChatMessageImageDetailLevel.High;
-                    var uri = ImageBase64StrToUri(imageContent.ImageUrl.Url);
-                    contentLst.Add(new ChatMessageImageContentItem(uri, detailLevel));
+                    var imageData = imageContent.ImageUrl.Url;
+                    contentLst.Add(new ChatMessageImageContentItem(imageData?.Data, imageData?.MimeType, detailLevel));
                 }
                 else
                 {
@@ -452,9 +390,9 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
         {
             AutomaticDecompression = System.Net.DecompressionMethods.All
         };
-        httpClient = new HttpClient(httpClientHandler);
-        httpClient.DefaultRequestHeaders.Add("x-api-key", options.Key);
-        httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
+        HttpClient = new HttpClient(httpClientHandler);
+        HttpClient.DefaultRequestHeaders.Add("x-api-key", options.Key);
+        HttpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
     }
 
     private IEnumerable<Claude.Tool> GetToolDefinitions()
@@ -499,10 +437,14 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
             }
             else if (content is IMessage.ImageContent imageContent)
             {
-                var url = imageContent.ImageUrl.Url;
-                var mime = Utils.ExtractMimeFromUrl(url);
-                var data = Utils.ExtractBase64FromUrl(url);
+                var imageData = imageContent.ImageUrl.Url;
+                var mime = imageData?.MimeType;
+                var data = imageData?.ToBase64();
                 var claudeImageContent = new Claude.ImageContent();
+                if (mime is null || data is null)
+                {
+                    throw new ArgumentException("Invalid image content");
+                }
                 claudeImageContent.Source.SetMediaType(mime);
                 claudeImageContent.Source.Data = data;
                 claudeContentList.Add(claudeImageContent);
@@ -622,13 +564,13 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
                 RequestUri = new Uri(Url.Combine(options.Endpoint, "messages")),
                 Content = postContent
             };
-            httpResponse =
-                await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            errorMessage = null;
+            HttpResponse =
+                await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            ErrorMessage = null;
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            ErrorMessage = e.Message;
         }
     }
 
@@ -699,9 +641,9 @@ public abstract partial class ClaudeEndpointBase : IServerEndpoint
     public abstract AssistantMessage ResponseMessage { get; }
     public abstract IEnumerable<ToolCallType> ToolCalls { get; }
 
-    protected readonly HttpClient httpClient;
-    protected string? errorMessage;
-    protected HttpResponseMessage? httpResponse;
+    protected readonly HttpClient HttpClient;
+    protected string? ErrorMessage;
+    protected HttpResponseMessage? HttpResponse;
     private readonly ServerEndpointOptions options;
 }
 
@@ -713,7 +655,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
     {
         if (!string.IsNullOrWhiteSpace(ApiBeta))
         {
-            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
+            HttpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
 
@@ -728,12 +670,12 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
     public override async IAsyncEnumerable<string> Streaming(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (errorMessage is not null)
+        if (ErrorMessage is not null)
         {
             yield break;
         }
 
-        if (httpResponse is null)
+        if (HttpResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
@@ -748,18 +690,18 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
         };
 
         await using var responseStream =
-            await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await HttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(responseStream);
         var responseStr = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
         string? combinedTextResponse;
         try
         {
-            if (!httpResponse.IsSuccessStatusCode)
+            if (!HttpResponse.IsSuccessStatusCode)
             {
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                             ?? throw new JsonSerializationException(responseStr);
-                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                ErrorMessage = $"{error.Error.Type}: {error.Error.Message}";
                 yield break;
             }
 
@@ -787,7 +729,7 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            ErrorMessage = e.Message;
             yield break;
         }
 
@@ -802,9 +744,9 @@ public class ClaudeEndpointNonStreaming : ClaudeEndpointBase
         get
         {
             var assistantTextContent = new List<IMessage.TextContent>();
-            if (errorMessage is not null)
+            if (ErrorMessage is not null)
             {
-                assistantTextContent.Add(new IMessage.TextContent { Text = errorMessage });
+                assistantTextContent.Add(new IMessage.TextContent { Text = ErrorMessage });
             }
             else
             {
@@ -856,7 +798,7 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
     {
         if (!string.IsNullOrWhiteSpace(ApiBeta))
         {
-            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
+            HttpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
 
@@ -873,12 +815,12 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
     public override async IAsyncEnumerable<string> Streaming(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (errorMessage is not null)
+        if (ErrorMessage is not null)
         {
             yield break;
         }
 
-        if (httpResponse is null)
+        if (HttpResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
@@ -893,8 +835,8 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         };
 
         await using var responseStream =
-            await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        if (!httpResponse.IsSuccessStatusCode)
+            await HttpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        if (!HttpResponse.IsSuccessStatusCode)
         {
             try
             {
@@ -902,11 +844,11 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
                 var responseStr = await errorReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                             ?? throw new JsonSerializationException(responseStr);
-                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                ErrorMessage = $"{error.Error.Type}: {error.Error.Message}";
             }
             catch (Exception e)
             {
-                errorMessage = e.Message;
+                ErrorMessage = e.Message;
             }
 
             yield break;
@@ -959,7 +901,7 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             }
             catch (JsonSerializationException exception)
             {
-                errorMessage = $"Error: Invalid chat response: {exception.Message}";
+                ErrorMessage = $"Error: Invalid chat response: {exception.Message}";
                 yield break;
             }
 
@@ -1009,12 +951,12 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
             }
             else if (responseChunk is Claude.StreamingError error)
             {
-                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                ErrorMessage = $"{error.Error.Type}: {error.Error.Message}";
                 yield break;
             }
             else
             {
-                errorMessage = $"Error: Invalid chat response: {chatResponse}";
+                ErrorMessage = $"Error: Invalid chat response: {chatResponse}";
                 yield break;
             }
         }
@@ -1025,9 +967,9 @@ public class ClaudeEndpointStreaming : ClaudeEndpointBase
         get
         {
             var assistantTextContent = new List<IMessage.TextContent>();
-            if (errorMessage is not null)
+            if (ErrorMessage is not null)
             {
-                assistantTextContent.Add(new IMessage.TextContent { Text = errorMessage });
+                assistantTextContent.Add(new IMessage.TextContent { Text = ErrorMessage });
             }
             else
             {

@@ -1,8 +1,11 @@
-﻿using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 using System.Runtime.Serialization;
 using Newtonsoft.Json.Linq;
 using System;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable UnusedMember.Global
 
 namespace ChatGptApiClientV2.Claude;
 

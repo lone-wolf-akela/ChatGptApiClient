@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 using System.Globalization;
 using System.Windows.Data;
@@ -312,87 +311,6 @@ public static partial class Utils
         gpt4Tokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
         var tokenCount = gpt4Tokenizer.CountTokens(str);
         return tokenCount;
-    }
-
-    public static async Task<string> ImageFileToBase64(string filename, CancellationToken cancellationToken = default)
-    {
-        var mime = MimeTypes.GetMimeType(filename);
-        if (!mime.StartsWith("image/"))
-        {
-            throw new ArgumentException("The file is not an image.");
-        }
-
-        var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(filename, cancellationToken));
-        return $"data:{mime};base64,{base64}";
-    }
-
-    [GeneratedRegex(@"^data:(?<mime>[a-z\-\+\.]+\/[a-z\-\+\.]+);base64,(?<data>.+)$")]
-    private static partial Regex Base64UrlExtract();
-
-    public static string ExtractBase64FromUrl(string urlOrData)
-    {
-        var r = Base64UrlExtract();
-        var match = r.Match(urlOrData);
-        if (!match.Success)
-        {
-            return urlOrData;
-        }
-
-        var data = match.Groups["data"].Value;
-        return data;
-    }
-
-    public static string ExtractMimeFromUrl(string url)
-    {
-        var r = Base64UrlExtract();
-        var match = r.Match(url);
-        if (!match.Success)
-        {
-            throw new ArgumentException("The input is not a base64 data URL.");
-        }
-
-        var mime = match.Groups["mime"].Value;
-        return mime;
-    }
-
-    public static BitmapImage Base64ToBitmapImage(string base64)
-    {
-        var data = ExtractBase64FromUrl(base64);
-        var bytes = Convert.FromBase64String(data);
-        using var ms = new MemoryStream(bytes);
-        var bitmapImage = new BitmapImage();
-        bitmapImage.BeginInit();
-        bitmapImage.StreamSource = ms;
-        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-        bitmapImage.EndInit();
-        bitmapImage.Freeze();
-        return bitmapImage;
-    }
-
-    public static string ConvertToBase64Png(string base64)
-    {
-        var data = ExtractBase64FromUrl(base64);
-        var bytes = Convert.FromBase64String(data);
-
-        using var ms = new MemoryStream(bytes);
-        var imageSource = BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(imageSource));
-
-        using var msOutput = new MemoryStream();
-        encoder.Save(msOutput);
-        var outBase64 = Convert.ToBase64String(msOutput.ToArray());
-
-        return $"data:image/png;base64,{outBase64}";
-    }
-
-    public static string OptimizeBase64Png(string base64)
-    {
-        // optimize the input data
-        // used for dall-e generated image, as they are almost not compressed
-        // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
-        return ConvertToBase64Png(base64);
     }
 
     private static T RandomSelectByStringHash<T>(string hashSrc, IList<T> list)

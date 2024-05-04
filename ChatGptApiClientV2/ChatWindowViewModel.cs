@@ -486,10 +486,9 @@ public partial class ChatWindowMessage : ObservableObject
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
-    public async Task AddImage(string base64Url, string? filename, string? tooltip)
+    public async Task AddImage(ImageData imageData, string? filename, string? tooltip)
     {
-        var bitmap = Utils.Base64ToBitmapImage(base64Url);
-        await AddImage(bitmap, filename, tooltip);
+        await AddImage(imageData.ToBitmapImage(), filename, tooltip);
     }
 
     public async Task AddBlocks(IEnumerable<Block> blocks)
@@ -754,7 +753,11 @@ public partial class ChatWindowMessageTab : ObservableObject
                 }
                 else if (content is ImageContent imgContent)
                 {
-                    await chatMsg.AddImage(imgContent.ImageUrl.Url, null, null);
+                    var imageData = imgContent.ImageUrl.Url;
+                    if (imageData is not null)
+                    {
+                        await chatMsg.AddImage(imageData, null, null);
+                    }
                 }
             }
 
@@ -768,7 +771,13 @@ public partial class ChatWindowMessageTab : ObservableObject
                             await chatMsg.AddTextFile(textFile.FileName, textFile.Content);
                             break;
                         case UserMessage.ImageAttachmentInfo imageFile:
-                            await chatMsg.AddImage(imageFile.ImageBase64Url, imageFile.FileName, null);
+                            {
+                                var imageData = imageFile.ImageBase64Url;
+                                if (imageData is not null)
+                                {
+                                    await chatMsg.AddImage(imageData, imageFile.FileName, null);
+                                }
+                            }
                             break;
                         default:
                             throw new InvalidOperationException();
@@ -787,7 +796,11 @@ public partial class ChatWindowMessageTab : ObservableObject
 #pragma warning disable CS0618 // 类型或成员已过时
                 foreach (var img in toolMsg.GeneratedImages)
                 {
-                    await chatMsg.AddImage(img.ImageBase64Url, null, img.Description);
+                    var imageData = img.ImageBase64Url;
+                    if (imageData is not null)
+                    {
+                        await chatMsg.AddImage(imageData, null, img.Description);
+                    }
                 }
 #pragma warning restore CS0618 // 类型或成员已过时
             }
@@ -1075,7 +1088,7 @@ public partial class ChatWindowViewModel : ObservableObject
         {
             return;
         }
-
+        
         ChatWindowMessageTab tempMessages = new();
         await tempMessages.SyncChatSession(State.SessionDict[SelectedMessageTab!.TabId]!, SelectedMessageTab!.TabId, State,
             State.Config.EnableMarkdown);
@@ -1086,7 +1099,6 @@ public partial class ChatWindowViewModel : ObservableObject
         doc.ColumnGap = 0;
         doc.ColumnWidth = printDialog.PrintableAreaWidth;
         */
-
         var dps = (IDocumentPaginatorSource)doc;
         var dp = dps.DocumentPaginator;
         printDialog.PrintDocument(dp, "打印聊天记录");

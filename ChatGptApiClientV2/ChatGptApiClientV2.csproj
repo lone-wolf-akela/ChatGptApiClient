@@ -17,9 +17,6 @@
         <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
         <Platforms>x64;ARM64</Platforms>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
-        <UseRidGraph>true</UseRidGraph>
-        <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-        <WindowsPackageType>None</WindowsPackageType>
     </PropertyGroup>
 
     <ItemGroup>
@@ -97,7 +94,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.16" />
+        <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.17" />
         <PackageReference Include="Coltr.Markdig.Wpf.ColorCode" Version="1.0.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
         <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.2" />
@@ -107,7 +104,6 @@
         <PackageReference Include="Markdig" Version="0.37.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
         <PackageReference Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24179.1" />
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240404000" />
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NJsonSchema" Version="11.0.0" />

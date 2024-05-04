@@ -218,8 +218,9 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
 
+        // resave as png to reduce size
         // see https://community.openai.com/t/dall-e-3-output-image-file-linked-in-response-url-is-uncompressed/522087/5
-        imageBase64Data = Utils.OptimizeBase64Png(imageBase64Data);
+        var imageData = ImageData.CreateFromBase64Str(imageBase64Data).ReSaveAsPng();
 
         var imageDesc =
             $"""
@@ -227,7 +228,7 @@ public class DalleImageGenFunc : IToolFunction
 
              Revised Prompts: {responseData?["revised_prompt"]}
              """;
-        state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageBase64Data];
+        state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imagedata"] = [imageData.ToUri()];
         state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imagedesc"] = [imageDesc];
         msgContents[0].Text += "The generated image is now displayed on the screen.\n\n";
         msg.Hidden = true; // Hide success results from user
@@ -291,7 +292,7 @@ public class DalleImageGenFunc : IToolFunction
 
         var image = new ImageDisplayer
         {
-            Image = Utils.Base64ToBitmapImage(imagedata![0]),
+            Image = ImageData.CreateFromUri(imagedata![0]).ToBitmapImage(),
             ImageTooltip = foundDesc ? imagedesc![0] : ""
         };
         yield return new BlockUIContainer(image);

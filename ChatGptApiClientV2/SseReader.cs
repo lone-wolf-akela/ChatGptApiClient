@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 // ReSharper disable InconsistentNaming
@@ -33,7 +34,6 @@ internal readonly struct SseLine
     public bool IsEmpty => _original.Length == 0;
     public bool IsComment => !IsEmpty && _original[0] == ':';
 
-    // TODO: we should not expose UTF16 publicly
     public ReadOnlyMemory<char> FieldName => _original.AsMemory(0, _colonIndex);
     public ReadOnlyMemory<char> FieldValue => _original.AsMemory(_valueIndex);
 
@@ -62,17 +62,16 @@ internal sealed class SseReader(Stream stream) : IDisposable
         }
     }
 
-    // TODO: we should support cancellation tokens, but StreamReader does not in NS2
-    public async Task<SseLine?> TryReadSingleFieldEventAsync()
+    public async Task<SseLine?> TryReadSingleFieldEventAsync(CancellationToken cancellationToken = default)
     {
         while (true)
         {
-            var line = await TryReadLineAsync().ConfigureAwait(false);
+            var line = await TryReadLineAsync(cancellationToken).ConfigureAwait(false);
             if (line == null)
                 return null;
             if (line.Value.IsEmpty)
                 throw new InvalidDataException("event expected.");
-            var empty = await TryReadLineAsync().ConfigureAwait(false);
+            var empty = await TryReadLineAsync(cancellationToken).ConfigureAwait(false);
             if (empty is { IsEmpty: false })
                 throw new NotSupportedException("Multi-filed events not supported.");
             if (!line.Value.IsComment)
@@ -92,10 +91,9 @@ internal sealed class SseReader(Stream stream) : IDisposable
         return null;
     }
 
-    // TODO: we should support cancellation tokens, but StreamReader does not in NS2
-    public async Task<SseLine?> TryReadLineAsync()
+    public async Task<SseLine?> TryReadLineAsync(CancellationToken cancellationToken = default)
     {
-        var lineText = await _reader.ReadLineAsync().ConfigureAwait(false);
+        var lineText = await _reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
         if (lineText == null)
             return null;
         if (lineText.Length == 0)

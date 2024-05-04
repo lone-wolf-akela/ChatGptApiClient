@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -26,6 +27,10 @@ using System.Runtime.Serialization;
 using NJsonSchema;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -33,6 +38,127 @@ using Newtonsoft.Json.Linq;
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
 namespace ChatGptApiClientV2;
+
+public class ImageDataConverter : JsonConverter<ImageData>
+{
+    public override bool CanWrite => true;
+    public override bool CanRead => true;
+
+    public override void WriteJson(JsonWriter writer, ImageData? value, JsonSerializer serializer)
+    {
+        if (value is null)
+        {
+            writer.WriteNull();
+            return;
+        }
+        serializer.Serialize(writer, value.ToUri());
+    }
+
+    public override ImageData? ReadJson(JsonReader reader, Type objectType, ImageData? existingValue,
+        bool hasExistingValue, JsonSerializer serializer)
+    {
+        var uri = serializer.Deserialize<string>(reader);
+        return uri is null ? null : ImageData.CreateFromUri(uri);
+    }
+}
+
+[JsonConverter(typeof(ImageDataConverter))]
+public partial class ImageData : ICloneable
+{
+    private ImageData(BinaryData data, string? mimeType, System.Windows.Size? size = null) 
+    {
+        Data = data;
+        MimeType = mimeType;
+        if (size is not null)
+        {
+            Size = size.Value;
+        }
+        else
+        {
+            var bitmap = ToBitmapImage();
+            Size = new System.Windows.Size(bitmap.PixelWidth, bitmap.PixelHeight);
+        }
+    }
+    public static async Task<ImageData> CreateFromFile(string file, CancellationToken cancellationToken = default)
+    {
+        var mime = MimeTypes.GetMimeType(file);
+        if (!mime.StartsWith("image/"))
+        {
+            throw new ArgumentException("The file is not an image.", nameof(file));
+        }
+        var bytes = await File.ReadAllBytesAsync(file, cancellationToken);
+        return new ImageData(new BinaryData(bytes), mime);
+    }
+
+    [GeneratedRegex(@"^data:(?<mime>[a-z\-\+\.]+\/[a-z\-\+\.]+);base64,(?<data>.+)$")]
+    private static partial Regex Base64UrlExtract();
+    public static ImageData CreateFromUri(string uri)
+    {
+        var r = Base64UrlExtract();
+        var match = r.Match(uri);
+        if (!match.Success)
+        {
+            // not a valid data URI, maybe passed in a raw base64 string by mistake
+            return CreateFromBase64Str(uri);
+        }
+        else
+        {
+            var mime = match.Groups["mime"].Value;
+            var data = match.Groups["data"].Value;
+            return CreateFromBase64Str(data, mime);
+        }
+    }
+    public static ImageData CreateFromBase64Str(string base64, string? mime = null)
+    {
+        var bytes = Convert.FromBase64String(base64);
+        return new ImageData(new BinaryData(bytes), mime);
+    }
+    public ImageData ReSaveAsPng()
+    {
+        using var msIn = Data.ToStream();
+        var imageSource = BitmapFrame.Create(msIn, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(imageSource));
+
+        using var msOut = new MemoryStream();
+        encoder.Save(msOut);
+        msOut.Seek(0, SeekOrigin.Begin);
+
+        return new ImageData(new BinaryData(msOut.ToArray()), "image/png");
+    }
+
+    public BitmapImage ToBitmapImage()
+    {
+        using var ms = Data.ToStream();
+        var bitmapImage = new BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.StreamSource = ms;
+        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        return bitmapImage;
+    }
+
+    public BinaryData Data { get; }
+    public string? MimeType { get; }
+    public System.Windows.Size Size { get; }
+    public string ToUri()
+    {
+        return $"data:{MimeType ?? MimeTypes.FallbackMimeType};base64,{ToBase64()}";
+    }
+    
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(Data.ToArray());
+    }
+
+    public object Clone()
+    {
+        var clonedData = Data.ToArray();
+        return new ImageData(new BinaryData(clonedData), MimeType, Size);
+    }
+}
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum RoleType
@@ -245,22 +371,20 @@ public interface IMessage : ICloneable
                 [EnumMember(Value = "high")] High
             }
 
-            public string Url { get; set; } = "";
+            public ImageData? Url { get; set; }
             public ImageDetail Detail { get; set; } = ImageDetail.Low;
 
             public object Clone()
             {
                 return new ImageUrlType
                 {
-                    Url = Url,
+                    Url = (ImageData?)Url?.Clone(),
                     Detail = Detail
                 };
             }
         }
 
         public ContentCategory Type => ContentCategory.ImageUrl;
-
-        [JsonIgnore] public System.Windows.Size? ImageSize { get; set; } // cache image size
 
         public int CountToken()
         {
@@ -276,37 +400,39 @@ public interface IMessage : ICloneable
                 return count;
             }
 
-            if (ImageSize is null)
+            var imageData = ImageUrl.Url;
+            if (imageData is null)
             {
-                var image = Utils.Base64ToBitmapImage(ImageUrl.Url);
-                ImageSize = new System.Windows.Size(image.PixelWidth, image.PixelHeight);
+                return count;
             }
 
+            var imageSize = imageData.Size;
+
             // if size is too large, scale down to fit in 2048x2048, keep aspect ratio
-            if (ImageSize.Value.Width > 2048 || ImageSize.Value.Height > 2048)
+            if (imageSize.Width > 2048 || imageSize.Height > 2048)
             {
-                var ratio = Math.Min(2048.0 / ImageSize.Value.Width, 2048.0 / ImageSize.Value.Height);
-                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio),
-                    Math.Round(ImageSize.Value.Height * ratio));
+                var ratio = Math.Min(2048.0 / imageSize.Width, 2048.0 / imageSize.Height);
+                imageSize = new System.Windows.Size(Math.Round(imageSize.Width * ratio),
+                    Math.Round(imageSize.Height * ratio));
             }
 
             // further scale down to make the shortest side fit in 768px, keep aspect ratio
-            var isWidthShorter = ImageSize.Value.Width < ImageSize.Value.Height;
-            if (isWidthShorter && ImageSize.Value.Width > 768)
+            var isWidthShorter = imageSize.Width < imageSize.Height;
+            if (isWidthShorter && imageSize.Width > 768)
             {
-                var ratio = 768.0 / ImageSize.Value.Width;
-                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio),
-                    Math.Round(ImageSize.Value.Height * ratio));
+                var ratio = 768.0 / imageSize.Width;
+                imageSize = new System.Windows.Size(Math.Round(imageSize.Width * ratio),
+                    Math.Round(imageSize.Height * ratio));
             }
-            else if (!isWidthShorter && ImageSize.Value.Height > 768)
+            else if (!isWidthShorter && imageSize.Height > 768)
             {
-                var ratio = 768.0 / ImageSize.Value.Height;
-                ImageSize = new System.Windows.Size(Math.Round(ImageSize.Value.Width * ratio),
-                    Math.Round(ImageSize.Value.Height * ratio));
+                var ratio = 768.0 / imageSize.Height;
+                imageSize = new System.Windows.Size(Math.Round(imageSize.Width * ratio),
+                    Math.Round(imageSize.Height * ratio));
             }
 
-            var tileCount = Math.Ceiling(ImageSize.Value.Width / tileSize) *
-                          Math.Ceiling(ImageSize.Value.Height / tileSize);
+            var tileCount = Math.Ceiling(imageSize.Width / tileSize) *
+                          Math.Ceiling(imageSize.Height / tileSize);
             count += (int)tileCount * tokenPerTile;
 
             return count;
@@ -318,7 +444,6 @@ public interface IMessage : ICloneable
         {
             return new ImageContent
             {
-                ImageSize = ImageSize,
                 ImageUrl = (ImageUrlType)ImageUrl.Clone()
             };
         }
@@ -461,18 +586,16 @@ public class UserMessage : IMessage
     {
         public IAttachmentInfo.AttachmentType Type => IAttachmentInfo.AttachmentType.Image;
         public string FileName { get; set; } = "";
-        public string ImageBase64Url { get; set; } = "";
+        public ImageData? ImageBase64Url { get; set; }
         public bool HighResMode { get; set; }
-        public System.Windows.Size? ImageSize { get; set; } // cache image size
 
         public object Clone()
         {
             return new ImageAttachmentInfo
             {
                 FileName = FileName,
-                ImageBase64Url = ImageBase64Url,
+                ImageBase64Url = (ImageData?)ImageBase64Url?.Clone(),
                 HighResMode = HighResMode,
-                ImageSize = ImageSize
             };
         }
     }
@@ -513,7 +636,6 @@ public class UserMessage : IMessage
                             ? IMessage.ImageContent.ImageUrlType.ImageDetail.High
                             : IMessage.ImageContent.ImageUrlType.ImageDetail.Low
                     },
-                    ImageSize = imageFile.ImageSize
                 },
                 _ => throw new InvalidOperationException()
             };
@@ -575,14 +697,14 @@ public class ToolMessage : IMessage
     [Obsolete("Prefer to use `GetToolcallMessage` method to provide generated data.")]
     public class GeneratedImage : ICloneable
     {
-        public string ImageBase64Url { get; set; } = "";
+        public ImageData? ImageBase64Url { get; set; }
         public string Description { get; set; } = "";
 
         public object Clone()
         {
             return new GeneratedImage
             {
-                ImageBase64Url = ImageBase64Url,
+                ImageBase64Url = (ImageData?)ImageBase64Url?.Clone(),
                 Description = Description
             };
         }
