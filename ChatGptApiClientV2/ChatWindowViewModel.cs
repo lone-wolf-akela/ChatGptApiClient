@@ -715,6 +715,11 @@ public partial class ChatWindowMessageTab : ObservableObject
     }
 
     private ChatCompletionRequest? syncedSession;
+    public void RemoveLastMessage()
+    {
+        syncedSession?.Messages.RemoveAt(syncedSession.Messages.Count - 1);
+        Messages.RemoveAt(Messages.Count - 1);
+    }
 
     public async Task SyncChatSession(ChatCompletionRequest session, Guid tabId, SystemState state,
         bool enableMarkdown)
@@ -1031,12 +1036,45 @@ public partial class ChatWindowViewModel : ObservableObject
 
     public int TextInputTokenNum => Utils.GetStringTokenCount(TextInput);
 
+    [ObservableProperty]
+    private bool isIdle = true;
+    partial void OnIsIdleChanged(bool value)
+    {
+        ReGenerateCommand.NotifyCanExecuteChanged();
+        SendCommand.NotifyCanExecuteChanged();
+    }
 
-    [RelayCommand(IncludeCancelCommand = true)]
+    [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(IsIdle))]
+    private async Task ReGenerateAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            IsIdle = false;
+
+            if (SelectedMessageTab is null)
+            {
+                return;
+            }
+            while (SelectedMessageTab.Messages.Count > 0 &&
+                SelectedMessageTab.Messages.Last().Role is RoleType.Assistant or RoleType.Tool)
+            {
+                SelectedMessageTab.RemoveLastMessage();
+            }
+            await State.UserSendText(null, null, SelectedMessageTab.TabId, cancellationToken);
+        }
+        finally
+        {
+            IsIdle = true;
+        }
+    }
+
+    [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(IsIdle))]
     private async Task SendAsync(CancellationToken cancellationToken)
     {
         try
         {
+            IsIdle = false;
+
             if(SelectedMessageTab is null)
             {
                 return;
@@ -1050,6 +1088,23 @@ public partial class ChatWindowViewModel : ObservableObject
         catch (OperationCanceledException)
         {
             // ignore
+        }
+        finally
+        {
+            IsIdle = true;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelSending()
+    {
+        if (SendCancelCommand.CanExecute(null))
+        {
+            SendCancelCommand.Execute(null);
+        }
+        if (ReGenerateCancelCommand.CanExecute(null))
+        {
+            ReGenerateCancelCommand.Execute(null);
         }
     }
 

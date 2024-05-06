@@ -727,7 +727,7 @@ public partial class SystemState : ObservableObject
         throw new NotSupportedException($"Unsupported file type: {mime}");
     }
 
-    public async Task UserSendText(string text, IEnumerable<string> files, Guid sessionId,
+    public async Task UserSendText(string? text, IEnumerable<string>? files, Guid sessionId,
         CancellationToken cancellationToken = default)
     {
         SessionDict.TryAdd(sessionId, null);
@@ -739,23 +739,27 @@ public partial class SystemState : ObservableObject
             Config.Seed = Random.Next();
         }
 
-        List<IAttachmentInfo> attachments = [];
-        foreach (var file in files)
+        if (text is not null)
         {
-            attachments.Add(await OpenFileAsAttachment(file, cancellationToken));
+            List<IAttachmentInfo> attachments = [];
+            foreach (var file in files ?? [])
+            {
+                attachments.Add(await OpenFileAsAttachment(file, cancellationToken));
+            }
+
+            var textContent = new IMessage.TextContent { Text = text };
+            var contentList = new List<IMessage.IContent> { textContent };
+
+            var userMsg = new UserMessage
+            {
+                Content = contentList,
+                Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName,
+                Attachments = attachments
+            };
+
+            selectedSession!.Messages.Add(userMsg);
         }
 
-        var textContent = new IMessage.TextContent { Text = text };
-        var contentList = new List<IMessage.IContent> { textContent };
-
-        var userMsg = new UserMessage
-        {
-            Content = contentList,
-            Name = string.IsNullOrEmpty(Config.UserNickName) ? null : Config.UserNickName,
-            Attachments = attachments
-        };
-
-        selectedSession!.Messages.Add(userMsg);
         await ResetSession(sessionId, selectedSession);
 
         await Send(sessionId, cancellationToken);

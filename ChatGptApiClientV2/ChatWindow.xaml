@@ -219,8 +219,10 @@
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       Background="{DynamicResource BorderBrush}" />
         <DockPanel Grid.Row="3" Margin="0,5,0,0">
-            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom">
-                <hc:UniformSpacingPanel Margin="0,0,0,10" Orientation="Horizontal" HorizontalSpacing="5"
+            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Bottom" MinWidth="100">
+                <Button Content="重新生成" Margin="0,0,0,5" HorizontalAlignment="Stretch"
+                        ToolTip="使AI重新生成最后一次的回复" Command="{Binding ReGenerateCommand}"/>
+                <hc:UniformSpacingPanel Margin="0,0,0,5" Orientation="Horizontal" HorizontalSpacing="5"
                                         VerticalSpacing="5" Width="102" ChildWrapping="Wrap">
                     <hc:UniformSpacingPanel.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
@@ -250,24 +252,20 @@
                             Content="&#xe91b;"
                             Panel.ZIndex="1" />
                 </hc:UniformSpacingPanel>
-                <hc:SimplePanel>
+                <hc:SimplePanel HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
                     <Button Command="{Binding SendCommand}"
-                            VerticalAlignment="Bottom"
                             HorizontalAlignment="Stretch"
-                            MinHeight="50"
-                            MinWidth="100"
-                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            MinHeight="40"
+                            Visibility="{Binding IsIdle, Converter={StaticResource Boolean2VisibilityConverter}}">
                         <TextBlock TextAlignment="Center">
                             发送<LineBreak />Ctrl + Enter
                         </TextBlock>
                     </Button>
-                    <Button Command="{Binding SendCancelCommand}"
-                            VerticalAlignment="Bottom"
-                            HorizontalAlignment="Stretch"
-                            MinHeight="50"
-                            MinWidth="100"
+                    <Button Command="{Binding CancelSendingCommand}"
                             Content="停止接收"
-                            Visibility="{Binding SendCommand.CanBeCanceled, Converter={StaticResource Boolean2VisibilityConverter}}" />
+                            HorizontalAlignment="Stretch"
+                            MinHeight="40"
+                            Visibility="{Binding IsIdle, Converter={StaticResource Boolean2VisibilityReConverter}}" />
                 </hc:SimplePanel>
             </StackPanel>
             <hc:SimplePanel>
