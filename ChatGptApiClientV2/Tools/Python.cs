@@ -32,6 +32,7 @@ using System.Diagnostics;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
 using System.Threading;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -71,6 +72,7 @@ public class PythonFunc : IToolFunction
     public class Args
     {
         [Description("Python code to be executed. It must contains a `main()` function.")]
+        [Required]
         public string Code { get; set; } = "";
     }
 
@@ -300,6 +302,7 @@ public class ShowImageFunc : IToolFunction
     {
         [Description(
             "The name of the image file that is in the \"sandbox\" directory. You should only provide the filename here, do not include the path.")]
+        [Required]
         public string FileName { get; set; } = "";
     }
 

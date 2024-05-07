@@ -32,6 +32,7 @@ using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using ChatGptApiClientV2.Controls;
 using System.Threading;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable UnusedMember.Local
 // ReSharper disable UnusedAutoPropertyAccessor.Local
@@ -72,10 +73,12 @@ public class DalleImageGenFunc : IToolFunction
             4. The prompt must be from 100 to 200 words long. If the user give too few details, please add more details to the prompt.
             5. If the user requested modifications to previous images, the prompt should not simply be longer, but rather it should be refactored to integrate the suggestions into the prompt.
             """)]
+        [Required]
         public string Prompts { get; set; } = "";
 
         [Description(
-            "The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits. Always include this parameter in the request.")]
+            "The size of the requested image. Use 1024x1024 (square) as the default, 1792x1024 if the user requests a wide image, and 1024x1792 for full-body portraits.")]
+        [Required]
         public ImageSize Size { get; set; } = ImageSize.Sqaure;
     }
 

@@ -28,6 +28,7 @@ using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -50,7 +51,9 @@ public class BingSearchFunc : IToolFunction
 {
     public class Args
     {
-        [Description("The search query.")] public string Query { get; set; } = "";
+        [Description("The search query.")]
+        [Required]
+        public string Query { get; set; } = "";
 
         [Description(
             "The offset of the index of the first result to return. The default number of results per page is 10, so StartOffset=10 would start at the top of the second page of results. Default to be 0, i.e. the first page of results.")]

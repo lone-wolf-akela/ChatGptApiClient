@@ -28,6 +28,7 @@ using System.Windows.Documents;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -50,6 +51,7 @@ public class WolframAlphaFunc : IToolFunction
     {
         [Description(
             "Your question. The query must be in English. Make your question clear and accurate, preventing any possible confusion. For example, when talking about year, using 'the year of 2023', instead of just a plain number '2023'.")]
+        [Required]
         public string Query { get; set; } = "";
     }
 

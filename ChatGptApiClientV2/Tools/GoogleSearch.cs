@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using static ChatGptApiClientV2.Tools.IToolFunction;
 using System.Threading;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -53,7 +54,9 @@ public class GoogleSearchFunc : IToolFunction
 {
     public class Args
     {
-        [Description("The search query.")] public string Query { get; set; } = "";
+        [Description("The search query.")]
+        [Required]
+        public string Query { get; set; } = "";
 
         [Description(
             "The index of the first result to return. The default number of results per page is 10, so StartIndex=11 would start at the top of the second page of results. Default to be 1, i.e. the first page of results.")]
@@ -219,6 +222,7 @@ public class WebsiteAccessFunc : IToolFunction
     public class Args
     {
         [Description("The URL of the website to access.")]
+        [Required]
         public string Url { get; set; } = "";
     }
 
@@ -391,6 +395,7 @@ public class WebsiteNextPageFunc : IToolFunction
     {
         [Description(
             "The URL of the website to access. Must be a URL that has been called with website_access previously.")]
+        [Required]
         public string Url { get; set; } = "";
     }
 
