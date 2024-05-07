@@ -21,7 +21,6 @@ using HandyControl.Controls;
 using HandyControl.Tools;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Forms;
 using System.Windows.Interop;
 
 namespace ChatGptApiClientV2;
@@ -62,13 +61,16 @@ public partial class Settings
             var point = targetElement.PointToScreen(new Point(0, 0));
             var dpi = VisualTreeHelper.GetDpi(this);
 
-            var currentScreen = Screen.FromHandle(new WindowInteropHelper(this).Handle);
+            var hWnd = new WindowInteropHelper(this).Handle;
+            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            var displayArea = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(
+                windowId, Microsoft.UI.Windowing.DisplayAreaFallback.Nearest);
 
             var workArea = new Rect(
-                currentScreen.WorkingArea.Left / dpi.DpiScaleX,
-                currentScreen.WorkingArea.Top / dpi.DpiScaleY,
-                currentScreen.WorkingArea.Width / dpi.DpiScaleX,
-                currentScreen.WorkingArea.Height / dpi.DpiScaleY);
+                displayArea.WorkArea.X / dpi.DpiScaleX,
+                displayArea.WorkArea.Y / dpi.DpiScaleY,
+                displayArea.WorkArea.Width / dpi.DpiScaleX,
+                displayArea.WorkArea.Height / dpi.DpiScaleY);
 
             point.X /= dpi.DpiScaleX;
             point.Y /= dpi.DpiScaleY;

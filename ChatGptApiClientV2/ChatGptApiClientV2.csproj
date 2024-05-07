@@ -5,11 +5,9 @@
         <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
         <Nullable>enable</Nullable>
         <UseWPF>true</UseWPF>
-        <UseWindowsForms>true</UseWindowsForms>
         <ApplicationIcon>chatgpt-icon.ico</ApplicationIcon>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationManifest>app.manifest</ApplicationManifest>
-        <NoWarn>$(NoWarn);WFAC010</NoWarn>
         <!-- Below is workaround for ENC0003 error in hotreload.
              See https://github.com/dotnet/sdk/issues/36666
              Remove it when we update to dotnet-8.0.200
@@ -17,6 +15,9 @@
         <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
         <Platforms>x64;ARM64</Platforms>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+        <RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>  
+        <WindowsPackageType>None</WindowsPackageType>
+        <UseRidGraph>true</UseRidGraph>
     </PropertyGroup>
 
     <ItemGroup>
@@ -104,6 +105,7 @@
         <PackageReference Include="Markdig" Version="0.37.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
         <PackageReference Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24179.1" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240428000" />
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NJsonSchema" Version="11.0.0" />
