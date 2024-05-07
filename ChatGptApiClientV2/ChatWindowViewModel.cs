@@ -300,6 +300,14 @@ public partial class ChatWindowMessage : ObservableObject
     }
 
     public AssistantType Assistant { get; init; }
+    public DateTime? DateTime { private get; init; }
+    public string FormattedDateTime =>
+        IsStreaming ? "生成中..." :
+        DateTime is null ? "" :
+        // if is the same day as today, only show time
+        DateTime.Value.Date == System.DateTime.Now.Date ? DateTime.Value.ToString("HH:mm:ss") :
+        // else, also show date
+        DateTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
 
     private readonly BlockUIContainer loadingBar;
 
@@ -748,7 +756,8 @@ public partial class ChatWindowMessageTab : ObservableObject
                 Assistant = state.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
                     ? AssistantType.Claude
                     : AssistantType.ChatGPT,
-                SourceMessage = msg
+                SourceMessage = msg,
+                DateTime = msg.DateTime
             };
             foreach (var content in msg.Content)
             {

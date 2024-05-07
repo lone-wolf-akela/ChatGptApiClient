@@ -479,6 +479,7 @@ public interface IMessage : ICloneable
     }
 
     public int CountToken();
+    public DateTime DateTime { get; set; }
 }
 
 public class SystemMessage : IMessage
@@ -494,9 +495,11 @@ public class SystemMessage : IMessage
         return new SystemMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
-            Name = Name
+            Name = Name,
+            DateTime = DateTime
         };
     }
+    public DateTime DateTime { get; set; } = DateTime.Now;
 }
 
 public class UserMessage : IMessage
@@ -604,6 +607,7 @@ public class UserMessage : IMessage
     public RoleType Role => RoleType.User;
     public string? Name { get; set; }
     public bool Hidden => false;
+    public DateTime DateTime { get; set; } = DateTime.Now;
 
     public int CountToken()
     {
@@ -651,7 +655,8 @@ public class UserMessage : IMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             Name = Name,
-            Attachments = (from a in Attachments select (IAttachmentInfo)a.Clone()).ToList()
+            Attachments = (from a in Attachments select (IAttachmentInfo)a.Clone()).ToList(),
+            DateTime = DateTime
         };
     }
 }
@@ -663,6 +668,7 @@ public class AssistantMessage : IMessage
     public string? Name { get; set; }
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool Hidden => false;
+    public DateTime DateTime { get; set; } = DateTime.Now;
 
     public int CountToken()
     {
@@ -682,7 +688,8 @@ public class AssistantMessage : IMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             Name = Name,
-            ToolCalls = (from t in ToolCalls select (ToolCallType)t.Clone()).ToList()
+            ToolCalls = (from t in ToolCalls select (ToolCallType)t.Clone()).ToList(),
+            DateTime = DateTime
         };
     }
 }
@@ -714,6 +721,7 @@ public class ToolMessage : IMessage
     public List<GeneratedImage> GeneratedImages { get; set; } = [];
 
     public bool Hidden { get; set; }
+    public DateTime DateTime { get; set; } = DateTime.Now;
     public int CountToken() => ((IMessage)this).CountTokenBase();
 
     public object Clone()
@@ -725,7 +733,8 @@ public class ToolMessage : IMessage
 #pragma warning disable CS0618 // 类型或成员已过时
             GeneratedImages = (from g in GeneratedImages select (GeneratedImage)g.Clone()).ToList(),
 #pragma warning restore CS0618 // 类型或成员已过时
-            Hidden = Hidden
+            Hidden = Hidden,
+            DateTime = DateTime
         };
     }
 }
@@ -798,6 +807,7 @@ public class ChatCompletionRequest
 
         foreach (var msg in messages)
         {
+            msg.DateTime = DateTime.Now;
             var contentList = msg.Content.ToList();
             foreach (var content in contentList)
             {

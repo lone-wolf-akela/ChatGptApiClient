@@ -678,11 +678,17 @@
                                                                     Document="{Binding Path=RenderedMessage}"
                                                                     IsToolBarVisible="False"
                                                                     VerticalScrollBarVisibility="Hidden"
+                                                                    Margin="0,5,0,0"
                                                                     PreviewMouseWheel="ScrollToParentProcecssor">
                                                                 </FlowDocumentScrollViewer>
+                                                                <TextBlock Text="{Binding FormattedDateTime}"
+                                                                           VerticalAlignment="Top"
+                                                                           Foreground="{Binding ForegroundColor}"
+                                                                           Opacity="0.5"
+                                                                           Margin="18,5,0,0" />
                                                                 <hc:SimplePanel VerticalAlignment="Top"
                                                                     HorizontalAlignment="Right"
-                                                                    Margin="0,3,10,0"
+                                                                    Margin="0,2,10,0"
                                                                     Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type hc:SimplePanel}}, Converter={StaticResource Boolean2VisibilityConverter}}"
                                                                     d:Visibility="Visible">
                                                                     <hc:SimplePanel.Resources>
@@ -724,7 +730,7 @@
                                                                         Visibility="{Binding IsWaitingDeleteConfirm, Converter={StaticResource Boolean2VisibilityConverter}}">
                                                                         <Button Content="&#xe73d;" ToolTip="确认删除"
                                                                             Foreground="#F00000"
-                                                                            Command="{Binding DataContext.RemoveMessageCommand, ElementName=LstMsg}"
+                                                                            Command="{Binding DataContext.RemoveMessageCommand, ElementName=LstMsg, TargetNullValue={x:Null}}"
                                                                             CommandParameter="{Binding}" />
                                                                         <Button Content="&#xe711;" ToolTip="取消删除"
                                                                             Command="{Binding CancelDeleteMessageCommand}" />
