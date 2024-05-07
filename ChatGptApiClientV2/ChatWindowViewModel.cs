@@ -905,7 +905,7 @@ public partial class ChatWindowViewModel : ObservableObject
 
     private void SetIsLoading(bool loading, Guid tabId)
     {
-        Application.Current.Dispatcher.Invoke(() => { GetTabById(tabId).IsLoading = loading; });
+        GetTabById(tabId).IsLoading = loading;
     }
 
     [ObservableProperty]
@@ -1097,10 +1097,6 @@ public partial class ChatWindowViewModel : ObservableObject
             TextInput = "";
             FileAttachments.Clear();
             await State.UserSendText(input, files, SelectedMessageTab.TabId, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // ignore
         }
         finally
         {

@@ -234,8 +234,10 @@ public partial class SystemState : ObservableObject
 
     public event ChatSessionChangedHandler? ChatSessionChangedEvent;
 
-    private async Task<ChatCompletionRequest> ResetSession(Guid sessionId,
-        ChatCompletionRequest? loadedSession = null)
+    private async Task<ChatCompletionRequest> ResetSession(
+        Guid sessionId,
+        ChatCompletionRequest? loadedSession = null,
+        bool saveSession = true)
     {
         loadedSession ??= BuildFromInitPrompts(
             InitialPrompts?.SelectedOption?.Messages,
@@ -251,7 +253,10 @@ public partial class SystemState : ObservableObject
             await ChatSessionChangedEvent.Invoke(loadedSession, sessionId);
         }
 
-        await SaveSessionToPath(sessionId, "./latest_session.json");
+        if (saveSession)
+        {
+            await SaveSessionToPath(sessionId, "./latest_session.json");
+        }
 
         return loadedSession;
     }
@@ -852,7 +857,7 @@ public partial class SystemState : ObservableObject
 
         if (loadedSession is not null)
         {
-            await ResetSession(sessionId, loadedSession);
+            await ResetSession(sessionId, loadedSession, false);
         }
 
         SetIsLoadingHandlerEvent?.Invoke(false, sessionId);
