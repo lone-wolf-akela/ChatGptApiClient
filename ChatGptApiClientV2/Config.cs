@@ -268,9 +268,15 @@ public partial class Config : ObservableValidator
 
     [ObservableProperty] private bool useRandomSeed;
     partial void OnUseRandomSeedChanged(bool value) => SaveConfig();
+    public enum MarkdownRenderMode
+    {
+        Disabled,
+        EnabledForAllMessages,
+        EnabledForAssistantMessages
+    }
 
-    [ObservableProperty] private bool enableMarkdown;
-    partial void OnEnableMarkdownChanged(bool value) => SaveConfig();
+    [ObservableProperty] private MarkdownRenderMode enableMarkdown;
+    partial void OnEnableMarkdownChanged(MarkdownRenderMode value) => SaveConfig();
 
     [ObservableProperty] private bool uploadHiresImage;
     partial void OnUploadHiresImageChanged(bool value) => SaveConfig();
@@ -450,7 +456,7 @@ public partial class Config : ObservableValidator
         presencePenalty = 0.0f;
         maxTokens = 0;
         seed = 0;
-        enableMarkdown = false;
+        enableMarkdown = MarkdownRenderMode.EnabledForAssistantMessages;
         selectedModelIndex = 0;
         selectedModelVersionIndex = 0;
         useRandomSeed = true;

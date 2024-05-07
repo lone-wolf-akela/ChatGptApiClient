@@ -722,7 +722,7 @@ public partial class ChatWindowMessageTab : ObservableObject
     }
 
     public async Task SyncChatSession(ChatCompletionRequest session, Guid tabId, SystemState state,
-        bool enableMarkdown)
+        Config.MarkdownRenderMode markdownMode)
     {
         Messages.Clear();
         syncedSession = session;
@@ -752,6 +752,10 @@ public partial class ChatWindowMessageTab : ObservableObject
             };
             foreach (var content in msg.Content)
             {
+                var enableMarkdown = 
+                    (msg.Role == RoleType.Assistant && markdownMode == Config.MarkdownRenderMode.EnabledForAssistantMessages)
+                    || markdownMode == Config.MarkdownRenderMode.EnabledForAllMessages;
+
                 if (content is TextContent textContent)
                 {
                     await chatMsg.AddText(textContent, enableMarkdown);
@@ -994,9 +998,9 @@ public partial class ChatWindowViewModel : ObservableObject
 
     public event ScrollToEndHandler? ScrollToEndEvent;
 
-    private async Task SyncChatSession(ChatCompletionRequest session, bool enableMarkdown, Guid tabId)
+    private async Task SyncChatSession(ChatCompletionRequest session, Config.MarkdownRenderMode markdownMode, Guid tabId)
     {
-        await GetTabById(tabId).SyncChatSession(session, tabId, State, enableMarkdown);
+        await GetTabById(tabId).SyncChatSession(session, tabId, State, markdownMode);
         ScrollToEndEvent?.Invoke(tabId);
 
         PrintCommand.NotifyCanExecuteChanged();

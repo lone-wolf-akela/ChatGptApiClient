@@ -25,7 +25,6 @@
            xmlns:local="clr-namespace:ChatGptApiClientV2"
            xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
            xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
-           xmlns:generic="clr-namespace:System.Collections.Generic;assembly=System.Runtime"
            mc:Ignorable="d" Icon="/chatgpt-icon.ico"
            Title="ChatWindow" Height="600" Width="1000"
            AllowDrop="True"
@@ -92,7 +91,7 @@
             <StackPanel Orientation="Horizontal">
                 <StackPanel Margin="0,0,5,0" Orientation="Horizontal">
                     <Label Content="模型" />
-                    <ComboBox x:Name="CbxModel" Width="200" ItemsSource="{Binding State.Config.ModelOptions}"
+                    <ComboBox x:Name="CbxModel" Width="175" ItemsSource="{Binding State.Config.ModelOptions}"
                               SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -103,7 +102,7 @@
                 </StackPanel>
                 <StackPanel Margin="0,0,0,0" Orientation="Horizontal">
                     <Label Content="版本" />
-                    <ComboBox x:Name="CbxModelVersion" Width="200"
+                    <ComboBox x:Name="CbxModelVersion" Width="175"
                               ItemsSource="{Binding State.Config.ModelVersionOptions}"
                               SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
@@ -210,10 +209,19 @@
                         </Popup>
                     </StackPanel>
                 </ToggleButton>
-                <hc:Divider Orientation="Vertical" Margin="10,0,10,0" />
-                <CheckBox IsChecked="{Binding State.Config.EnableMarkdown}"
-                          Content="Markdown格式化"
-                          Command="{Binding SwitchMarkdownRenderingCommand}" />
+                <hc:Divider Orientation="Vertical" Margin="10,0,0,0" />
+                <Label Content="Markdown 渲染" />
+                <hc:ButtonGroup Style="{StaticResource ButtonGroupSolidDynamicColor}">
+                    <RadioButton Content="不启用"
+                                 IsChecked="{Binding State.Config.EnableMarkdown, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:Config+MarkdownRenderMode.Disabled}}"
+                                 Command="{Binding SwitchMarkdownRenderingCommand}" />
+                    <RadioButton Content="仅AI"
+                                 IsChecked="{Binding State.Config.EnableMarkdown, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:Config+MarkdownRenderMode.EnabledForAssistantMessages}}"
+                                 Command="{Binding SwitchMarkdownRenderingCommand}" />
+                    <RadioButton Content="启用"
+                                 IsChecked="{Binding State.Config.EnableMarkdown, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:Config+MarkdownRenderMode.EnabledForAllMessages}}"
+                                 Command="{Binding SwitchMarkdownRenderingCommand}" />
+                </hc:ButtonGroup>
             </StackPanel>
         </DockPanel>
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -253,7 +261,9 @@
                             Panel.ZIndex="1" />
                 </hc:UniformSpacingPanel>
                 <hc:SimplePanel HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
-                    <Button Command="{Binding SendCommand}"
+                    <Button Style="{StaticResource ButtonPrimary}"
+                            Command="{Binding SendCommand}"
+                            Effect="{StaticResource EffectShadow1}"
                             HorizontalAlignment="Stretch"
                             MinHeight="40"
                             Visibility="{Binding IsIdle, Converter={StaticResource Boolean2VisibilityConverter}}">
@@ -261,8 +271,10 @@
                             发送<LineBreak />Ctrl + Enter
                         </TextBlock>
                     </Button>
-                    <Button Command="{Binding CancelSendingCommand}"
+                    <Button Style="{StaticResource ButtonDanger}"
+                            Command="{Binding CancelSendingCommand}"
                             Content="停止接收"
+                            Effect="{StaticResource EffectShadow1}"
                             HorizontalAlignment="Stretch"
                             MinHeight="40"
                             Visibility="{Binding IsIdle, Converter={StaticResource Boolean2VisibilityReConverter}}" />
@@ -677,10 +689,12 @@
                                                                         <Style TargetType="Button"
                                                                                BasedOn="{StaticResource ButtonDefault}">
                                                                             <Setter Property="FontFamily"
-                                                                                Value="./font/#Segoe Fluent Icons" />
+                                                                                    Value="./font/#Segoe Fluent Icons" />
                                                                             <Setter Property="Padding" Value="0" />
+                                                                            <Setter Property="Foreground"
+                                                                                    Value="Black" />
                                                                             <Setter Property="Background"
-                                                                                Value="Transparent" />
+                                                                                    Value="Transparent" />
                                                                             <Setter Property="Height" Value="20" />
                                                                             <Setter Property="Width" Value="20" />
                                                                             <Setter Property="Margin" Value="2,0,0,0" />

@@ -260,7 +260,9 @@ public class PythonFunc : IToolFunction
              ```
              """;
 
-        if (state.Config.EnableMarkdown)
+        if (state.Config.EnableMarkdown
+            is Config.MarkdownRenderMode.EnabledForAllMessages
+            or Config.MarkdownRenderMode.EnabledForAssistantMessages)
         {
             var doc = Markdig.Wpf.Markdown.ToFlowDocument(
                 codeText,
