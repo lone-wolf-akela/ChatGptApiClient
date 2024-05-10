@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 	ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
 	Copyright (C) 2024 Lone Wolf Akela
 
@@ -60,7 +60,7 @@
                 <Border x:Name="ImageMask"
                         Background="White"
                         CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}" />
-                <Image Source="{Binding Image}"
+                <Image Source="{Binding ImageSource}"
                        Stretch="Uniform"
                        MaxHeight="{Binding ImageMaxHeight}"
                        SnapsToDevicePixels="True"

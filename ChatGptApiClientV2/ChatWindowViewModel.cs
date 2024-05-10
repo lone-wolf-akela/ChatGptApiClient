@@ -106,7 +106,7 @@ public partial class FileAttachmentInfo : ObservableObject
                     var newIcon = await ConvertThumbnailToImageSource(newIconSource);
                     fileInfo.Icon = newIcon;
                 }
-                catch (Exception)
+                catch
                 {
                     // ignore
                 }
@@ -366,7 +366,7 @@ public partial class ChatWindowMessage : ObservableObject
                         .Build());
                 return [.. doc.Blocks];
             }
-            catch (Exception)
+            catch
             {
                 // render failure, fallback to plain text mode
                 return [new Paragraph(new Run(Text))];
@@ -400,7 +400,7 @@ public partial class ChatWindowMessage : ObservableObject
         {
             var imageGrid = new Controls.ImageDisplayer
             {
-                Image = Image,
+                ImageSource = Image,
                 FileName = FileName,
                 ImageTooltip = ImageTooltip
             };

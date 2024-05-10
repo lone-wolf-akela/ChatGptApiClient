@@ -41,39 +41,10 @@ using Microsoft.ML.Tokenizers;
 
 namespace ChatGptApiClientV2;
 
-public static class TabControlHelper
+public static partial class TabControlHelper
 {
-    public static readonly DependencyProperty AddTabCommandProperty = DependencyProperty.RegisterAttached(
-        "AddTabCommand",
-        typeof(ICommand),
-        typeof(TabControlHelper),
-        new PropertyMetadata(null));
-
-    public static void SetAddTabCommand(UIElement element, ICommand? value)
-    {
-        element.SetValue(AddTabCommandProperty, value);
-    }
-
-    public static ICommand? GetAddTabCommand(UIElement element)
-    {
-        return element.GetValue(AddTabCommandProperty) as ICommand;
-    }
-
-    public static readonly DependencyProperty AddTabBtnTooltip = DependencyProperty.RegisterAttached(
-        "AddTabBtnTooltip",
-        typeof(object),
-        typeof(TabControlHelper),
-        new PropertyMetadata(null));
-
-    public static void SetAddTabBtnTooltip(UIElement element, object? value)
-    {
-        element.SetValue(AddTabBtnTooltip, value);
-    }
-
-    public static object? GetAddTabBtnTooltip(UIElement element)
-    {
-        return element.GetValue(AddTabBtnTooltip);
-    }
+    public static readonly DependencyProperty AddTabCommandProperty = GenAttached.AddTabCommand<ICommand?>(null);
+    public static readonly DependencyProperty AddTabBtnTooltipProperty = GenAttached.AddTabBtnTooltip<object?>(null);
 }
 
 public class BottomCornerRadiusConverter : MarkupExtension, IValueConverter

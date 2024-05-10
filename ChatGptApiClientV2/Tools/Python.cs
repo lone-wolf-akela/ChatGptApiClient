@@ -381,7 +381,7 @@ public class ShowImageFunc : IToolFunction
             var image = new ImageDisplayer
             {
                 FileName = imageFileName,
-                Image = ImageData.CreateFromUri(imageUrl).ToBitmapImage()
+                ImageSource = ImageData.CreateFromUri(imageUrl).ToBitmapImage()
             };
             imageBlock = new BlockUIContainer(image);
         }

@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -16,11 +16,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.Windows.Documents;
 
 namespace ChatGptApiClientV2.Controls;
 
@@ -29,68 +31,16 @@ namespace ChatGptApiClientV2.Controls;
 /// </summary>
 public partial class ImageDisplayer
 {
-    public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
-        nameof(IsExpanded),
-        typeof(bool),
-        typeof(ImageDisplayer),
-        new PropertyMetadata(true)
-    );
-
-    public static readonly DependencyProperty FileNameProperty = DependencyProperty.Register(
-        nameof(FileName),
-        typeof(string),
-        typeof(ImageDisplayer),
-        new PropertyMetadata("")
-    );
-
-    public static readonly DependencyProperty ImageProperty = DependencyProperty.Register(
-        nameof(Image),
-        typeof(BitmapSource),
-        typeof(ImageDisplayer)
-    );
-
-    public static readonly DependencyProperty ImageTooltipProperty = DependencyProperty.Register(
-        nameof(ImageTooltip),
-        typeof(string),
-        typeof(ImageDisplayer),
-        new PropertyMetadata(null, OnImageTooltipChanged)
-    );
-
-    public static readonly DependencyProperty ImageMaxHeightProperty = DependencyProperty.Register(
-        nameof(ImageMaxHeight),
-        typeof(double),
-        typeof(ImageDisplayer),
-        new PropertyMetadata(300.0)
-    );
-
-    public bool IsExpanded
+    public static readonly DependencyProperty IsExpandedProperty = Gen.IsExpanded(true);
+    public static readonly DependencyProperty FileNameProperty = Gen.FileName("");
+    public static readonly DependencyProperty ImageSourceProperty = Gen.ImageSource<BitmapSource>();
+    public static readonly DependencyProperty ImageMaxHeightProperty = Gen.ImageMaxHeight(300.0);
+    public static readonly DependencyProperty ImageTooltipProperty = Gen.ImageTooltip<string?>(null);
+    private static void OnImageTooltipChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        get => (bool)GetValue(IsExpandedProperty);
-        init => SetValue(IsExpandedProperty, value);
-    }
-
-    public string FileName
-    {
-        get => (string)GetValue(FileNameProperty);
-        init => SetValue(FileNameProperty, value);
-    }
-
-    public BitmapSource Image
-    {
-        get => (BitmapSource)GetValue(ImageProperty);
-        init => SetValue(ImageProperty, value);
-    }
-
-    public string ImageTooltip
-    {
-        get => (string)GetValue(ImageTooltipProperty);
-        init => SetValue(ImageTooltipProperty, value);
-    }
-
-    public double ImageMaxHeight
-    {
-        get => (double)GetValue(ImageMaxHeightProperty);
-        init => SetValue(ImageMaxHeightProperty, value);
+        var control = (ImageDisplayer)d;
+        control.TgglDetails.Visibility =
+            !string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public ImageDisplayer()
@@ -98,12 +48,6 @@ public partial class ImageDisplayer
         InitializeComponent();
     }
 
-    private static void OnImageTooltipChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var control = (ImageDisplayer)d;
-        control.TgglDetails.Visibility =
-            !string.IsNullOrEmpty((string)e.NewValue) ? Visibility.Visible : Visibility.Collapsed;
-    }
 
     private void ImageGrid_MouseEnter(object sender, MouseEventArgs e)
     {
@@ -114,19 +58,46 @@ public partial class ImageDisplayer
     {
         BtnPanel.Visibility = Visibility.Collapsed;
     }
-
+    private class TempFileCleanerClass
+    {
+        private readonly List<string> files = [];
+        public void AddFile(string file)
+        {
+            files.Add(file);
+        }
+        private void CleanFiles()
+        {
+            foreach (var file in files)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+        public TempFileCleanerClass()
+        {
+            Application.Current.Exit += (sender, args) => CleanFiles();
+        }
+    }
+    private static readonly TempFileCleanerClass TempFileCleaner = new();
     private async void BtnOpenImageViewer_Click(object sender, RoutedEventArgs e)
     {
         var tmpName = Path.GetTempFileName();
         await using (var fs = File.Create(tmpName))
         {
             var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(Image));
+            encoder.Frames.Add(BitmapFrame.Create(ImageSource));
             encoder.Save(fs);
         }
 
         var imageName = Path.ChangeExtension(tmpName, "png");
         File.Move(tmpName, imageName);
+        TempFileCleaner.AddFile(imageName);
         Process.Start(new ProcessStartInfo(imageName) { UseShellExecute = true });
     }
 }

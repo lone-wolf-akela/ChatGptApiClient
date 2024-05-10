@@ -295,7 +295,7 @@ public class DalleImageGenFunc : IToolFunction
 
         var image = new ImageDisplayer
         {
-            Image = ImageData.CreateFromUri(imagedata![0]).ToBitmapImage(),
+            ImageSource = ImageData.CreateFromUri(imagedata![0]).ToBitmapImage(),
             ImageTooltip = foundDesc ? imagedesc![0] : ""
         };
         yield return new BlockUIContainer(image);
