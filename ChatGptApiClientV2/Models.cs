@@ -41,30 +41,35 @@ public class ModelInfo
     [
         new ModelInfo
         {
+            Name = "gpt-4o", Description = "gpt-4o (128k tokens)", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 100
+        },
+        new ModelInfo
+        {
             Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 1
+            DisplayPriority = 200
         },
         new ModelInfo
         {
             Name = "claude-3", Description = "claude-3 (200k tokens)", Provider = ProviderEnum.Anthropic,
-            DisplayPriority = 2
+            DisplayPriority = 300
         },
 
         new ModelInfo
         {
             Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo (16k tokens)", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 3
+            DisplayPriority = 400
         },
 
         new ModelInfo
         {
             Name = "gpt-3.5-4k", Description = "gpt-3.5 turbo (4k tokens, 已弃用)", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 100
+            DisplayPriority = 10000
         },
         new ModelInfo
         {
             Name = "gpt-4-8k", Description = "gpt-4 (8k tokens, 已弃用)", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 101
+            DisplayPriority = 10100
         }
     ];
 }
@@ -168,6 +173,16 @@ public class ModelVersionInfo
         {
             ModelType = "claude-3", Name = "claude-3-opus-20240229", Description = "Opus (大, 2024-02-29)",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o", Name = "gpt-4o", Description = "最新 (2024-05-13)",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o", Name = "gpt-4o-2024-05-13", Description = "2024-05-13",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true
         }
     ];
 }
