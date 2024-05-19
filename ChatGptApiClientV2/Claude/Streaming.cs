@@ -12,20 +12,22 @@ namespace ChatGptApiClientV2.Claude;
 [JsonConverter(typeof(StringEnumConverter))]
 public enum StreamingResponseType
 {
-    [EnumMember(Value = "message_start")] MessageStart,
-
+    [EnumMember(Value = "message_start")] 
+    MessageStart,
     [EnumMember(Value = "content_block_start")]
     ContentBlockStart,
-    [EnumMember(Value = "ping")] Ping,
-
+    [EnumMember(Value = "ping")] 
+    Ping,
     [EnumMember(Value = "content_block_delta")]
     ContentBlockDelta,
-
     [EnumMember(Value = "content_block_stop")]
     ContentBlockStop,
-    [EnumMember(Value = "message_delta")] MessageDelta,
-    [EnumMember(Value = "message_stop")] MessageStop,
-    [EnumMember(Value = "error")] Error
+    [EnumMember(Value = "message_delta")] 
+    MessageDelta,
+    [EnumMember(Value = "message_stop")] 
+    MessageStop,
+    [EnumMember(Value = "error")] 
+    Error
 }
 
 public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
@@ -124,7 +126,8 @@ public class StreamingMessageStart : IStreamingResponse
 [JsonConverter(typeof(StringEnumConverter))]
 public enum StreamingContentBlockType
 {
-    [EnumMember(Value = "text")] Text
+    [EnumMember(Value = "text")] Text,
+    [EnumMember(Value = "tool_use")] ToolUse
 }
 
 public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlock>
@@ -148,6 +151,9 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
                 case StreamingContentBlockType.Text:
                     serializer.Serialize(writer, (StreamingContentBlockText)value);
                     break;
+                case StreamingContentBlockType.ToolUse:
+                    serializer.Serialize(writer, (StreamingContentBlockToolUse)value);
+                    break;
                 default:
                     throw new JsonSerializationException();
             }
@@ -166,6 +172,8 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
         {
             StreamingContentBlockType.Text => jobj.ToObject<StreamingContentBlockText>(serializer) ??
                                               throw new JsonSerializationException(),
+            StreamingContentBlockType.ToolUse => jobj.ToObject<StreamingContentBlockToolUse>(serializer) ??
+                                                 throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
         canRead = true;
@@ -185,6 +193,13 @@ public class StreamingContentBlockText : IStreamingContentBlock
     public string Text { get; set; } = "";
 }
 
+public class StreamingContentBlockToolUse : IStreamingContentBlock
+{
+    public StreamingContentBlockType Type => StreamingContentBlockType.ToolUse;
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+}
+
 public class StreamingContentBlockStart : IStreamingResponse
 {
     public StreamingResponseType Type => StreamingResponseType.ContentBlockStart;
@@ -195,7 +210,8 @@ public class StreamingContentBlockStart : IStreamingResponse
 [JsonConverter(typeof(StringEnumConverter))]
 public enum StreamingContentBlockDeltaContentType
 {
-    [EnumMember(Value = "text_delta")] TextDelta
+    [EnumMember(Value = "text_delta")] TextDelta,
+    [EnumMember(Value = "input_json_delta")] InputJsonDelta
 }
 
 public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreamingContentBlockDeltaContent>
@@ -220,6 +236,9 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
                 case StreamingContentBlockDeltaContentType.TextDelta:
                     serializer.Serialize(writer, (StreamingContentBlockTextDelta)value);
                     break;
+                case StreamingContentBlockDeltaContentType.InputJsonDelta:
+                    serializer.Serialize(writer, (StreamingContentBlockInputJsonDelta)value);
+                    break;
                 default:
                     throw new JsonSerializationException();
             }
@@ -238,6 +257,8 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
         {
             StreamingContentBlockDeltaContentType.TextDelta =>
                 jobj.ToObject<StreamingContentBlockTextDelta>(serializer) ?? throw new JsonSerializationException(),
+            StreamingContentBlockDeltaContentType.InputJsonDelta =>
+                jobj.ToObject<StreamingContentBlockInputJsonDelta>(serializer) ?? throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
         canRead = true;
@@ -255,6 +276,12 @@ public class StreamingContentBlockTextDelta : IStreamingContentBlockDeltaContent
 {
     public StreamingContentBlockDeltaContentType Type => StreamingContentBlockDeltaContentType.TextDelta;
     public string Text { get; set; } = "";
+}
+
+public class StreamingContentBlockInputJsonDelta : IStreamingContentBlockDeltaContent
+{
+    public StreamingContentBlockDeltaContentType Type => StreamingContentBlockDeltaContentType.InputJsonDelta;
+    public string PartialJson { get; set; } = "";
 }
 
 public class StreamingContentBlockDelta : IStreamingResponse
