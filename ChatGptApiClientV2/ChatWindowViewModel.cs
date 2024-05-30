@@ -696,7 +696,7 @@ public partial class ChatWindowMessageTab : ObservableObject
         Messages.Last().AddStreamText(text);
     }
 
-    public int GetCurrentStreamTokenNum()
+    public int GetCurrentStreamTokenNum(ModelVersionInfo.TokenizerEnum tokenizer)
     {
         if (Messages.Count == 0)
         {
@@ -709,7 +709,7 @@ public partial class ChatWindowMessageTab : ObservableObject
             return 0;
         }
 
-        return Utils.GetStringTokenCount(lastMsg.StreamMessage.ToString());
+        return Utils.GetStringTokenCount(lastMsg.StreamMessage.ToString(), tokenizer);
     }
 
     public void AddMessage(RoleType role, AssistantType assistantType)
@@ -996,6 +996,12 @@ public partial class ChatWindowViewModel : ObservableObject
         State.SetStreamProgressEvent += SetStreamProgress;
         State.SetIsLoadingHandlerEvent += SetIsLoading;
 
+        State.Config.SelectedModelChangedEvent += () =>
+        {
+            OnPropertyChanged(nameof(SessionTokenNum));
+            OnPropertyChanged(nameof(TextInputTokenNum));
+        };
+
         FileAttachments.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(IsFileAttachmentsEmpty));
@@ -1019,7 +1025,8 @@ public partial class ChatWindowViewModel : ObservableObject
 
     public int SessionTokenNum =>
         SelectedMessageTab is null ? 0 :
-        State.GetSessionTokens(SelectedMessageTab.TabId) + SelectedMessageTab.GetCurrentStreamTokenNum();
+        State.GetSessionTokens(SelectedMessageTab.TabId) + 
+        SelectedMessageTab.GetCurrentStreamTokenNum(State.Config.SelectedModel?.Tokenizer ?? ModelVersionInfo.TokenizerEnum.Cl100KBase);
 
     private void AddStreamText(string text, Guid tabId)
     {
@@ -1047,7 +1054,8 @@ public partial class ChatWindowViewModel : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
     private string textInput = "";
 
-    public int TextInputTokenNum => Utils.GetStringTokenCount(TextInput);
+    public int TextInputTokenNum => Utils.GetStringTokenCount(TextInput, 
+        State.Config.SelectedModel?.Tokenizer ?? ModelVersionInfo.TokenizerEnum.Cl100KBase);
 
     [ObservableProperty]
     private bool isIdle = true;

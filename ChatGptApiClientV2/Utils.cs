@@ -275,12 +275,17 @@ public static partial class Utils
     }
 
 
-    private static Tokenizer? gpt4Tokenizer;
+    private static Tokenizer? cl100KBaseTokenizer;
+    private static Tokenizer? o200KBaseTokenizer;
 
-    public static int GetStringTokenCount(string str)
+    public static int GetStringTokenCount(string str, ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        gpt4Tokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
-        var tokenCount = gpt4Tokenizer.CountTokens(str);
+        cl100KBaseTokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
+        o200KBaseTokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4o");
+
+        var t = tokenizer == ModelVersionInfo.TokenizerEnum.O200KBase ? o200KBaseTokenizer : cl100KBaseTokenizer;
+
+        var tokenCount = t.CountTokens(str);
         return tokenCount;
     }
 

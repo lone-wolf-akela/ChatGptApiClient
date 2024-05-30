@@ -881,7 +881,8 @@ public partial class SystemState : ObservableObject
             return 0;
         }
 
-        var count = session?.CountTokens() ?? 0;
+        var count = session?.CountTokens(Config.SelectedModel?.Tokenizer ?? ModelVersionInfo.TokenizerEnum.Cl100KBase) 
+            ?? 0;
         return count;
     }
 }

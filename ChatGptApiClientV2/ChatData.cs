@@ -337,16 +337,16 @@ public interface IMessage : ICloneable
     public interface IContent : ICloneable
     {
         public ContentCategory Type { get; }
-        public int CountToken();
+        public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer);
     }
 
     public class TextContent : IContent
     {
         public ContentCategory Type => ContentCategory.Text;
 
-        public int CountToken()
+        public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
         {
-            return Utils.GetStringTokenCount(Text);
+            return Utils.GetStringTokenCount(Text, tokenizer);
         }
 
         public string Text { get; set; } = "";
@@ -386,7 +386,7 @@ public interface IMessage : ICloneable
 
         public ContentCategory Type => ContentCategory.ImageUrl;
 
-        public int CountToken()
+        public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
         {
             // see https://platform.openai.com/docs/guides/vision
             const int baseTokenNum = 85;
@@ -466,19 +466,19 @@ public interface IMessage : ICloneable
 
     public bool Hidden { get; }
 
-    public int CountTokenBase()
+    public int CountTokenBase(ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        var count = 3 + Content.Sum(c => c.CountToken());
+        var count = 3 + Content.Sum(c => c.CountToken(tokenizer));
 
         if (Name is not null)
         {
-            count += 1 + Utils.GetStringTokenCount(Name);
+            count += 1 + Utils.GetStringTokenCount(Name, tokenizer);
         }
 
         return count;
     }
 
-    public int CountToken();
+    public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer);
     public DateTime DateTime { get; set; }
 }
 
@@ -488,7 +488,7 @@ public class SystemMessage : IMessage
     public RoleType Role => RoleType.System;
     public string? Name { get; set; }
     public bool Hidden => false;
-    public int CountToken() => ((IMessage)this).CountTokenBase();
+    public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer) => ((IMessage)this).CountTokenBase(tokenizer);
 
     public object Clone()
     {
@@ -609,11 +609,11 @@ public class UserMessage : IMessage
     public bool Hidden => false;
     public DateTime DateTime { get; set; } = DateTime.Now;
 
-    public int CountToken()
+    public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        var count = ((IMessage)this).CountTokenBase();
+        var count = ((IMessage)this).CountTokenBase(tokenizer);
         var attachments = GenerateAttachmentContentList();
-        count += attachments.Sum(c => c.CountToken());
+        count += attachments.Sum(c => c.CountToken(tokenizer));
 
         return count;
     }
@@ -670,13 +670,13 @@ public class AssistantMessage : IMessage
     public bool Hidden => false;
     public DateTime DateTime { get; set; } = DateTime.Now;
 
-    public int CountToken()
+    public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        var count = ((IMessage)this).CountTokenBase();
+        var count = ((IMessage)this).CountTokenBase(tokenizer);
         foreach (var tc in ToolCalls ?? [])
         {
-            count += Utils.GetStringTokenCount(tc.Function.Name);
-            count += Utils.GetStringTokenCount(tc.Function.Arguments);
+            count += Utils.GetStringTokenCount(tc.Function.Name, tokenizer);
+            count += Utils.GetStringTokenCount(tc.Function.Arguments, tokenizer);
         }
 
         return count;
@@ -722,7 +722,7 @@ public class ToolMessage : IMessage
 
     public bool Hidden { get; set; }
     public DateTime DateTime { get; set; } = DateTime.Now;
-    public int CountToken() => ((IMessage)this).CountTokenBase();
+    public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer) => ((IMessage)this).CountTokenBase(tokenizer);
 
     public object Clone()
     {
@@ -837,12 +837,12 @@ public class ChatCompletionRequest
         return request;
     }
 
-    public int CountTokens()
+    public int CountTokens(ModelVersionInfo.TokenizerEnum tokenizer)
     {
         var count = 0;
         foreach (var msg in Messages)
         {
-            count += msg.CountToken();
+            count += msg.CountToken(tokenizer);
         }
 
         return count;

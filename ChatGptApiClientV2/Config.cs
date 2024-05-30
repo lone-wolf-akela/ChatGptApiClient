@@ -336,6 +336,7 @@ public partial class Config : ObservableValidator
 
         SaveConfig();
         UpdateModelVersionList();
+        SelectedModelChangedEvent?.Invoke();
     }
 
     private void UpdateModelVersionList()
@@ -352,6 +353,7 @@ public partial class Config : ObservableValidator
             foreach (var id in AzureDeploymentList)
             {
                 var knowledgeCutoff =
+                    id.Contains("gpt-4o") ? new DateTime(2023, 10, 1) :
                     id.Contains("gpt-4") && id.Contains("1106") ? new DateTime(2023, 4, 1) :
                     id.Contains("gpt-4") && id.Contains("0125") ? new DateTime(2023, 12, 1) :
                     id.Contains("gpt-4") && id.Contains("2024-04-09") ? new DateTime(2023, 12, 1) :
@@ -365,13 +367,17 @@ public partial class Config : ObservableValidator
                     true;
                 // ReSharper restore SimplifyConditionalTernaryExpression
 
+                var tokenizer = id.Contains("gpt-4o") ? ModelVersionInfo.TokenizerEnum.O200KBase : 
+                    ModelVersionInfo.TokenizerEnum.Cl100KBase;
+
                 ModelVersionOptions.Add(new ModelVersionInfo
                 {
                     ModelType = "azure",
                     Name = id,
                     Description = id,
                     KnowledgeCutoff = knowledgeCutoff,
-                    FunctionCallSupported = functionCallSupported
+                    FunctionCallSupported = functionCallSupported,
+                    Tokenizer = tokenizer
                 });
             }
         }
@@ -406,6 +412,7 @@ public partial class Config : ObservableValidator
         }
 
         SaveConfig();
+        SelectedModelChangedEvent?.Invoke();
     }
 
     [JsonIgnore]
@@ -419,6 +426,9 @@ public partial class Config : ObservableValidator
         SelectedModelVersionIndex >= 0 && SelectedModelVersionIndex < ModelVersionOptions.Count
             ? ModelVersionOptions[SelectedModelVersionIndex]
             : null;
+
+    public delegate void SelectedModelChangedHandler();
+    public event SelectedModelChangedHandler? SelectedModelChangedEvent;
 
     [JsonIgnore] public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
 
