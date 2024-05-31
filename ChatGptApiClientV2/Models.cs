@@ -16,8 +16,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Immutable;
+using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -25,10 +28,11 @@ namespace ChatGptApiClientV2;
 
 public class ModelInfo
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum ProviderEnum
     {
-        OpenAI,
-        Anthropic
+        [EnumMember(Value = "openai")] OpenAI,
+        [EnumMember(Value = "anthropic")] Anthropic
     }
     public string Name { get; init; } = "";
     // ReSharper disable once UnusedAutoPropertyAccessor.Global

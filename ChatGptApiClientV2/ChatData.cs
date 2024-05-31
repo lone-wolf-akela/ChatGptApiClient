@@ -496,7 +496,7 @@ public class SystemMessage : IMessage
         {
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             Name = Name,
-            DateTime = DateTime
+            DateTime = DateTime,
         };
     }
     public DateTime DateTime { get; set; } = DateTime.Now;
@@ -669,6 +669,7 @@ public class AssistantMessage : IMessage
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool Hidden => false;
     public DateTime DateTime { get; set; } = DateTime.Now;
+    public ModelInfo.ProviderEnum Provider { get; set; }
 
     public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
     {
@@ -689,7 +690,8 @@ public class AssistantMessage : IMessage
             Content = (from c in Content select (IMessage.IContent)c.Clone()).ToList(),
             Name = Name,
             ToolCalls = (from t in ToolCalls select (ToolCallType)t.Clone()).ToList(),
-            DateTime = DateTime
+            DateTime = DateTime,
+            Provider = Provider
         };
     }
 }

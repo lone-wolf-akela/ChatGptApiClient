@@ -263,7 +263,7 @@ public partial class SystemState : ObservableObject
 
     private static readonly Random Random = new();
 
-    public delegate void NewMessageHandler(RoleType role, Guid sessionId);
+    public delegate void NewMessageHandler(RoleType role, Guid sessionId, ModelInfo.ProviderEnum? provider);
 
     public delegate void StreamTextHandler(string text, Guid sessionId);
 
@@ -273,9 +273,17 @@ public partial class SystemState : ObservableObject
     public event StreamTextHandler? StreamTextEvent;
     public event SetStreamProgressHandler? SetStreamProgressEvent;
 
-    public void NewMessage(RoleType role, Guid sessionId)
+    public void NewMessage(RoleType role, Guid sessionId, ModelInfo.ProviderEnum? provider = null)
     {
-        NewMessageEvent?.Invoke(role, sessionId);
+        if (provider is null && role == RoleType.Assistant)
+        {
+            throw new InvalidOperationException("provider should not be null when role is assistant.");
+        }
+        if (provider is not null && role != RoleType.Assistant)
+        {
+           throw new InvalidOperationException("provider should be null when role is not assistant.");
+        }
+        NewMessageEvent?.Invoke(role, sessionId, provider);
     }
 
     public void StreamText(string text, Guid sessionId)
@@ -383,7 +391,7 @@ public partial class SystemState : ObservableObject
 
         NetStatus.Status = NetStatus.StatusEnum.Receiving;
 
-        NewMessage(RoleType.Assistant, sessionId);
+        NewMessage(RoleType.Assistant, sessionId, Config.SelectedModelType.Provider);
 
         try
         {

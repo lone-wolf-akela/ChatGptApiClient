@@ -327,7 +327,8 @@ public class OpenAIEndpoint : IServerEndpoint
                 [
                     new IMessage.TextContent { Text = errorMessage ?? responseSb.ToString() }
                 ],
-                ToolCalls = ToolCalls.ToList()
+                ToolCalls = ToolCalls.ToList(),
+                Provider = ModelInfo.ProviderEnum.OpenAI
             };
             return response;
         }
@@ -824,7 +825,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var response = new AssistantMessage
             {
                 Content = assistantTextContent,
-                ToolCalls = ToolCalls.ToList()
+                ToolCalls = ToolCalls.ToList(),
+                Provider = ModelInfo.ProviderEnum.Anthropic
             };
             return response;
         }

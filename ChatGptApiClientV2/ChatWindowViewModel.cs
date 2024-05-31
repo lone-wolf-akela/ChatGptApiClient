@@ -293,13 +293,7 @@ public partial class ChatWindowMessage : ObservableObject
         OnPropertyChanged(nameof(RenderedMessage)); // need this or the displayed message will be cleared
     }
 
-    public enum AssistantType
-    {
-        ChatGPT,
-        Claude
-    }
-
-    public AssistantType Assistant { get; init; }
+    public ModelInfo.ProviderEnum? Provider { get; init; }
     public DateTime? DateTime { private get; init; }
     public string FormattedDateTime =>
         IsStreaming ? "生成中..." :
@@ -587,7 +581,7 @@ public partial class ChatWindowMessage : ObservableObject
 
     public Uri Avatar => Role switch
     {
-        RoleType.Assistant => Assistant == AssistantType.ChatGPT ? new Uri(ChatGPTIcon) : new Uri(ClaudeIcon),
+        RoleType.Assistant => Provider == ModelInfo.ProviderEnum.OpenAI ? new Uri(ChatGPTIcon) : new Uri(ClaudeIcon),
         RoleType.Tool => new Uri(ToolIcon),
         _ => new Uri(ChatGPTIcon)
     };
@@ -712,9 +706,9 @@ public partial class ChatWindowMessageTab : ObservableObject
         return Utils.GetStringTokenCount(lastMsg.StreamMessage.ToString(), tokenizer);
     }
 
-    public void AddMessage(RoleType role, AssistantType assistantType)
+    public void AddMessage(RoleType role, ModelInfo.ProviderEnum? provider)
     {
-        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true, Assistant = assistantType });
+        Messages.Add(new ChatWindowMessage { Role = role, IsStreaming = true, Provider = provider });
     }
 
     public void SetStreamProgress(double progress, string text)
@@ -753,9 +747,7 @@ public partial class ChatWindowMessageTab : ObservableObject
             var chatMsg = new ChatWindowMessage
             {
                 Role = msg.Role,
-                Assistant = state.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
-                    ? AssistantType.Claude
-                    : AssistantType.ChatGPT,
+                Provider = msg is AssistantMessage aMsg ? aMsg.Provider : null,
                 SourceMessage = msg,
                 DateTime = msg.DateTime
             };
@@ -1035,13 +1027,9 @@ public partial class ChatWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(SessionTokenNum));
     }
 
-    private void AddMessage(RoleType role, Guid tabId)
+    private void AddMessage(RoleType role, Guid tabId, ModelInfo.ProviderEnum? provider)
     {
-        GetTabById(tabId).AddMessage(
-            role,
-            State.Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic
-                ? AssistantType.Claude
-                : AssistantType.ChatGPT);
+        GetTabById(tabId).AddMessage(role, provider);
         ScrollToEndEvent?.Invoke(tabId);
     }
 
