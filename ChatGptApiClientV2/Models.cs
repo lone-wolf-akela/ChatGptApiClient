@@ -52,6 +52,13 @@ public class ModelInfo
             Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 200
         },
+
+        new ModelInfo
+        {
+            Name = "claude-3.5", Description = "claude-3.5 (200k tokens)", Provider = ProviderEnum.Anthropic,
+            DisplayPriority = 250
+        },
+
         new ModelInfo
         {
             Name = "claude-3", Description = "claude-3 (200k tokens)", Provider = ProviderEnum.Anthropic,
@@ -198,6 +205,12 @@ public class ModelVersionInfo
         {
             ModelType = "claude-3", Name = "claude-3-opus-20240229", Description = "Opus (大, 2024-02-29)",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "claude-3.5", Name = "claude-3-5-sonnet-20240620", Description = "Sonnet (中, 2024-06-20)",
+            KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase
         },
         new ModelVersionInfo
