@@ -49,6 +49,11 @@ public class ModelInfo
         },
         new ModelInfo
         {
+            Name = "gpt-4o-mini", Description = "gpt-4o mini (128k tokens)", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 150
+        },
+        new ModelInfo
+        {
             Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 200
         },
@@ -222,6 +227,18 @@ public class ModelVersionInfo
         new ModelVersionInfo
         {
             ModelType = "gpt-4o", Name = "gpt-4o-2024-05-13", Description = "2024-05-13",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o-mini", Name = "gpt-4o-mini", Description = "最新 (2024-07-18)",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o-mini", Name = "gpt-4o-mini-2024-07-18", Description = "2024-07-18",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         }

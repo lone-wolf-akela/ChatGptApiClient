@@ -189,13 +189,10 @@ public class BingSearchFunc : IToolFunction
 
     public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
-        var argsJson = JToken.Parse(argstr);
-        var argsReader = new JTokenReader(argsJson);
-        var argsSerializer = new JsonSerializer();
         Args args;
         try
         {
-            var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
+            var parsedArgs = JsonConvert.DeserializeObject<Args>(argstr);
             if (parsedArgs is null)
             {
                 return [new Paragraph(new Run("Bing 搜索..."))];

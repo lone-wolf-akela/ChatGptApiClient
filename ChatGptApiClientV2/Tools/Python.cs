@@ -148,13 +148,10 @@ public class PythonFunc : IToolFunction
         var result = new ToolResult(msg, true);
         msgContents.Add(new IMessage.TextContent { Text = "" });
 
-        var argsJson = JToken.Parse(argstr);
-        var argsReader = new JTokenReader(argsJson);
-        var argsSerializer = new JsonSerializer();
         Args args;
         try
         {
-            var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
+            var parsedArgs = JsonConvert.DeserializeObject<Args>(argstr);
             if (parsedArgs is null)
             {
                 msgContents[0].Text += $"Failed to parse arguments for Python Execution. The args are: {argstr}\n\n";

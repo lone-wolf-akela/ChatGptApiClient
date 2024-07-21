@@ -95,7 +95,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.17" />
+        <PackageReference Include="Azure.AI.OpenAI" Version="2.0.0-beta.2" />
         <PackageReference Include="boilerplatezero" Version="2.0.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -109,12 +109,13 @@
         <PackageReference Include="Markdig" Version="0.37.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
         <PackageReference Include="Microsoft.ML.Tokenizers" Version="0.22.0-preview.24271.1" />
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240428000" />
-        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
+        <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NJsonSchema" Version="11.0.0" />
-        <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.0" />
-        <PackageReference Include="PuppeteerSharp" Version="18.0.0" />
+        <PackageReference Include="NJsonSchema" Version="11.0.2" />
+        <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.0.2" />
+        <PackageReference Include="OpenAI" Version="2.0.0-beta.7" />
+        <PackageReference Include="PuppeteerSharp" Version="18.0.4" />
         <PackageReference Include="pythonnet" Version="3.0.3" />
         <PackageReference Include="SharpVectors" Version="1.8.4" />
     </ItemGroup>

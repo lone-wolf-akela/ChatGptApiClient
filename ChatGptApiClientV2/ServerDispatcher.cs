@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,8 @@ using HandyControl.Tools.Extension;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using OpenAI;
+using OpenAI.Chat;
 using static ChatGptApiClientV2.ChatCompletionRequest;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
@@ -92,54 +95,60 @@ public class OpenAIEndpoint : IServerEndpoint
             throw new ArgumentException("Invalid service type");
         }
 
-        client = options.Service == ServerEndpointOptions.ServiceType.Azure
-            ? new OpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey))
-            : new OpenAIClient(options.Key);
-        if (options.Service == ServerEndpointOptions.ServiceType.Custom)
+        if (options.Service == ServerEndpointOptions.ServiceType.Azure)
         {
-            // use reflection to hijack the _endpoint (Uri Type) field, which is private
-            var endpointField =
-                client.GetType().GetField("_endpoint",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?? throw new InvalidOperationException("Could not find _endpoint field");
-            endpointField.SetValue(client, new Uri(options.Endpoint));
+            var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey));
+            client = azure.GetChatClient(options.Model);
         }
+        else if (options.Service == ServerEndpointOptions.ServiceType.OpenAI)
+        {
+            client = new ChatClient(options.Model, options.Key);
+        }
+        else if (options.Service == ServerEndpointOptions.ServiceType.Custom)
+        {
+            var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint) };
+            client = new ChatClient(options.Model, options.Key, opt);
+        }
+        else
+        {
+            throw new InvalidOperationException("Invalid service type");
+        }
+
     }
 
-    private IEnumerable<ChatCompletionsFunctionToolDefinition> GetToolDefinitions()
+    private IEnumerable<ChatTool> GetToolDefinitions()
     {
         var lst =
             from tool in options.Tools ?? []
-            select new ChatCompletionsFunctionToolDefinition
-            {
-                Name = tool.Function.Name,
-                Description = tool.Function.Description,
-                Parameters = BinaryData.FromString(tool.Function.Parameters.ToJson())
-            };
+            select ChatTool.CreateFunctionTool(
+                tool.Function.Name,
+                tool.Function.Description,
+                BinaryData.FromString(tool.Function.Parameters.ToJson())
+                );
         return lst;
     }
 
-    private static ChatRequestMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
+    private static ChatMessage ChatDataMessageToChatRequestMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
         if (chatDataMsg is UserMessage userMsg)
         {
             contents.AddRange(userMsg.GenerateAttachmentContentList());
-            var contentLst = new List<ChatMessageContentItem>();
+            var contentLst = new List<ChatMessageContentPart>();
             foreach (var content in contents)
             {
                 if (content is IMessage.TextContent textContent)
                 {
-                    contentLst.Add(new ChatMessageTextContentItem(textContent.Text));
+                    contentLst.Add(ChatMessageContentPart.CreateTextMessageContentPart(textContent.Text));
                 }
                 else if (content is IMessage.ImageContent imageContent)
                 {
                     var detailLevel =
                         imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                            ? ChatMessageImageDetailLevel.Low
-                            : ChatMessageImageDetailLevel.High;
+                            ? ImageChatMessageContentPartDetail.Low
+                            : ImageChatMessageContentPartDetail.High;
                     var imageData = imageContent.ImageUrl.Url;
-                    contentLst.Add(new ChatMessageImageContentItem(imageData?.Data, imageData?.MimeType, detailLevel));
+                    contentLst.Add(ChatMessageContentPart.CreateImageMessageContentPart(imageData?.Data, imageData?.MimeType, detailLevel));
                 }
                 else
                 {
@@ -147,13 +156,17 @@ public class OpenAIEndpoint : IServerEndpoint
                 }
             }
 
-            var chatRequestUserMessage = new ChatRequestUserMessage(contentLst);
             if (chatDataMsg.Name is not null)
             {
-                chatRequestUserMessage.Name = chatDataMsg.Name;
+                return new UserChatMessage(contentLst)
+                {
+                    ParticipantName = chatDataMsg.Name
+                };
             }
-
-            return chatRequestUserMessage;
+            else
+            {
+                return new UserChatMessage(contentLst);
+            }
         }
 
         foreach (var content in contents)
@@ -169,15 +182,15 @@ public class OpenAIEndpoint : IServerEndpoint
 
         if (chatDataMsg is SystemMessage)
         {
-            return new ChatRequestSystemMessage(combinedContent);
+            return new SystemChatMessage(combinedContent);
         }
 
         if (chatDataMsg is AssistantMessage assistantMessage)
         {
-            var chatRequestAssistantMsg = new ChatRequestAssistantMessage(combinedContent);
+            var chatRequestAssistantMsg = new AssistantChatMessage(combinedContent);
             var convertedToolCalls =
                 from toolCall in assistantMessage.ToolCalls ?? []
-                select new ChatCompletionsFunctionToolCall(
+                select ChatToolCall.CreateFunctionToolCall(
                     toolCall.Id,
                     toolCall.Function.Name,
                     toolCall.Function.Arguments
@@ -188,13 +201,13 @@ public class OpenAIEndpoint : IServerEndpoint
 
         if (chatDataMsg is ToolMessage toolMessage)
         {
-            return new ChatRequestToolMessage(combinedContent, toolMessage.ToolCallId);
+            return new ToolChatMessage(toolMessage.ToolCallId, combinedContent);
         }
 
         throw new ArgumentException("Invalid role");
     }
 
-    private static IEnumerable<ChatRequestMessage> GetChatRequestMessages(IEnumerable<IMessage> msgLst)
+    private static IEnumerable<ChatMessage> GetChatRequestMessages(IEnumerable<IMessage> msgLst)
     {
         var lst =
             from msg in msgLst
@@ -202,25 +215,22 @@ public class OpenAIEndpoint : IServerEndpoint
         return lst;
     }
 
-    public async Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
+    public Task BuildSession(ChatCompletionRequest session, CancellationToken cancellationToken = default)
     {
         try
         {
-            var chatCompletionsOptions = new ChatCompletionsOptions
+            var chatCompletionsOptions = new ChatCompletionOptions
             {
-                DeploymentName = options.Model,
                 MaxTokens = options.MaxTokens,
                 PresencePenalty = options.PresencePenalty,
                 Seed = options.Seed,
                 Temperature = options.Temperature,
-                NucleusSamplingFactor = options.TopP,
+                TopP = options.TopP,
                 User = options.UserId
             };
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
-            chatCompletionsOptions.Messages.AddRange(GetChatRequestMessages(session.Messages));
 
-            streamingResponse = await client.GetChatCompletionsStreamingAsync(chatCompletionsOptions, cancellationToken)
-                .ConfigureAwait(false);
+            streamingResponse = client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
             responseSb.Clear();
             errorMessage = null;
             systemFingerprint = "";
@@ -232,6 +242,7 @@ public class OpenAIEndpoint : IServerEndpoint
         {
             errorMessage = e.Message;
         }
+        return Task.CompletedTask;
     }
 
     public async IAsyncEnumerable<string> Streaming(
@@ -247,7 +258,7 @@ public class OpenAIEndpoint : IServerEndpoint
             throw new InvalidOperationException("Session not built");
         }
 
-        var enumerator = streamingResponse.EnumerateValues().GetAsyncEnumerator(cancellationToken);
+        var enumerator = streamingResponse.GetAsyncEnumerator(cancellationToken);
 
         try
         {
@@ -278,34 +289,34 @@ public class OpenAIEndpoint : IServerEndpoint
                     systemFingerprint = chatUpdate.SystemFingerprint;
                 }
 
-                if (chatUpdate.ToolCallUpdate is StreamingFunctionToolCallUpdate toolCallUpdate)
+                foreach(var toolCallUpdate in chatUpdate.ToolCallUpdates)
                 {
                     if (!string.IsNullOrEmpty(toolCallUpdate.Id))
                     {
-                        toolCallIdsByIndex[toolCallUpdate.ToolCallIndex] = toolCallUpdate.Id;
+                        toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.Id;
                     }
 
-                    if (!string.IsNullOrEmpty(toolCallUpdate.Name))
+                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionName))
                     {
-                        funcNamesByIndex[toolCallUpdate.ToolCallIndex] = toolCallUpdate.Name;
+                        funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
                     }
 
-                    if (!string.IsNullOrEmpty(toolCallUpdate.ArgumentsUpdate))
+                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate))
                     {
-                        if (!funcArgsByIndex.TryGetValue(toolCallUpdate.ToolCallIndex, out var arg))
+                        if (!funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
                         {
                             arg = new StringBuilder();
-                            funcArgsByIndex[toolCallUpdate.ToolCallIndex] = arg;
+                            funcArgsByIndex[toolCallUpdate.Index] = arg;
                         }
 
-                        arg.Append(toolCallUpdate.ArgumentsUpdate);
+                        arg.Append(toolCallUpdate.FunctionArgumentsUpdate);
                     }
                 }
 
-                if (!string.IsNullOrEmpty(chatUpdate.ContentUpdate))
+                foreach(var part in chatUpdate.ContentUpdate)
                 {
-                    responseSb.Append(chatUpdate.ContentUpdate);
-                    yield return chatUpdate.ContentUpdate;
+                    responseSb.Append(part.Text);
+                    yield return part.Text;
                 }
             }
         }
@@ -355,8 +366,8 @@ public class OpenAIEndpoint : IServerEndpoint
     }
 
     private readonly ServerEndpointOptions options;
-    private readonly OpenAIClient client;
-    private StreamingResponse<StreamingChatCompletionsUpdate>? streamingResponse;
+    private readonly ChatClient client;
+    private AsyncResultCollection<StreamingChatCompletionUpdate>? streamingResponse;
     private readonly StringBuilder responseSb = new();
     private string? errorMessage;
     private string systemFingerprint = "";
