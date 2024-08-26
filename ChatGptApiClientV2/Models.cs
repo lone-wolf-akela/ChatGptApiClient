@@ -220,7 +220,13 @@ public class ModelVersionInfo
         },
         new ModelVersionInfo
         {
-            ModelType = "gpt-4o", Name = "gpt-4o", Description = "最新 (2024-05-13)",
+            ModelType = "gpt-4o", Name = "chatgpt-4o-latest", Description = "最新 (2024-08-06)",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o", Name = "gpt-4o-2024-08-06", Description = "2024-08-06",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
