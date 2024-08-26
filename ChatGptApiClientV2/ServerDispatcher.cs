@@ -88,6 +88,8 @@ public class OpenAIEndpoint : IServerEndpoint
     {
         options = o;
 
+        TimeSpan default_timeout = TimeSpan.FromMinutes(10);
+
         if (options.Service is not (ServerEndpointOptions.ServiceType.OpenAI
             or ServerEndpointOptions.ServiceType.Azure
             or ServerEndpointOptions.ServiceType.Custom))
@@ -97,16 +99,18 @@ public class OpenAIEndpoint : IServerEndpoint
 
         if (options.Service == ServerEndpointOptions.ServiceType.Azure)
         {
+            var opt = new AzureOpenAIClientOptions { NetworkTimeout = default_timeout };
             var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey));
             client = azure.GetChatClient(options.Model);
         }
         else if (options.Service == ServerEndpointOptions.ServiceType.OpenAI)
         {
-            client = new ChatClient(options.Model, options.Key);
+            var opt = new OpenAIClientOptions { NetworkTimeout = default_timeout };
+            client = new ChatClient(options.Model, options.Key, opt);
         }
         else if (options.Service == ServerEndpointOptions.ServiceType.Custom)
         {
-            var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint) };
+            var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = default_timeout };
             client = new ChatClient(options.Model, options.Key, opt);
         }
         else
