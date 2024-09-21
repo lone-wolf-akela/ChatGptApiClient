@@ -44,6 +44,9 @@
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             </Style>
+            <Style x:Key="CalendarSolidStyle" TargetType="Calendar" BasedOn="{StaticResource CalendarBaseStyle}">
+                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
+            </Style>
             <Style TargetType="StatusBar" BasedOn="{StaticResource StatusBarBaseStyle}">
                 <Setter Property="Background" Value="Transparent" />
             </Style>
@@ -361,6 +364,10 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+            <Style x:Key="TagCustomStyle" BasedOn="{StaticResource TagBaseStyle}" TargetType="hc:Tag">
+                <Setter Property="Margin" Value="5,2,0,2"/>
+                <Setter Property="Background" Value="{DynamicResource SolidRegionBrush}"/>
             </Style>
             <Geometry x:Key="StraightBubbleTailGeometry">M-6.5253045E-55,0 L29.9,0.2 29.9,0.066666668 C33,15.466667 38.166667,23.1 44.966667,35 L44.966667,35.133333 C25.766667,28.433333 7.35,15.625 -6.5253045E-55,0 z</Geometry>
         </ResourceDictionary>

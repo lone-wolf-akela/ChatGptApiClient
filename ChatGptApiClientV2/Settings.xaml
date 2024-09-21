@@ -23,7 +23,7 @@
            xmlns:local="clr-namespace:ChatGptApiClientV2"
            xmlns:hc="https://handyorg.github.io/handycontrol"
            mc:Ignorable="d" Icon="/chatgpt-icon.ico"
-           Title="Settings" Height="650" Width="1080"
+           Title="Settings" Height="800" Width="1080"
            Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <d:Window.DataContext>
         <local:SettingsViewModel />
@@ -116,6 +116,10 @@
                         <RowDefinition Height="5" />
                         <!-- 4: Row  3 -->
                         <RowDefinition Height="auto" />
+                        <!-- 5: Margin -->
+                        <RowDefinition Height="5" />
+                        <!-- 6: Row  4 -->
+                        <RowDefinition Height="auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <!-- 0:Label   0 -->
@@ -200,10 +204,21 @@
                                 Value="{Binding Path=Config.TopP, Mode=TwoWay}" Margin="0,0,5,0"
                                 VerticalAlignment="Center" />
                     </DockPanel>
-                    <DockPanel Grid.Row="4" Grid.ColumnSpan="10">
+                    <DockPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="10">
+                        <Label Content="停止生成序列" VerticalAlignment="Center" HorizontalAlignment="Left"
+                               DockPanel.Dock="Left" MinWidth="100" HorizontalContentAlignment="Left"/>
+                        <Button Content="添加" DockPanel.Dock="Right" VerticalAlignment="Stretch" Height="Auto" Margin="5,0,0,0"
+                                Command="{Binding BtnAddStopSequenceCommand}"/>
+                        <hc:TextBox hc:InfoElement.Placeholder="在此添加新序列" Text="{Binding TextAddStopSequence}"
+                                    DockPanel.Dock="Right" Margin="5,0,0,0"
+                                    Width="200" HorizontalScrollBarVisibility="Auto"/>
+                        <hc:TagContainer ItemsSource="{Binding Path=Config.StopSequences}"
+                                         ItemContainerStyle="{StaticResource TagCustomStyle}"/>
+                    </DockPanel>
+                    <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="10">
                         <Label Content="用户标识符" VerticalAlignment="Center" HorizontalAlignment="Left" 
-                               DockPanel.Dock="Left"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="8" IsReadOnly="True"
+                               DockPanel.Dock="Left" MinWidth="100" HorizontalContentAlignment="Left"/>
+                        <TextBox IsReadOnly="True"
                                  Text="{Binding Config.UserAdvertisingId, Mode=OneWay}"
                                  ToolTip="用于服务端统计 API 使用信息。可通过系统的“设置-隐私和安全性-常规-个性化广告”相关设置项进行管理。" />
                     </DockPanel>
@@ -319,6 +334,44 @@
                                    VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                             <hc:PasswordBox UnsafePassword="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}"
                                             IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </StackPanel>
+                </Grid>
+                <hc:Divider Margin="0" Content="本地部署聊天服务器设置" HorizontalContentAlignment="Left" />
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
+                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="服务端口 URL"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <TextBox TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
+                                     Text="{Binding Config.OtherOpenAICompatServiceURL, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="模型知识截止日期"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <DatePicker SelectedDate="{Binding Config.OtherOpenAICompatModelKnowledgeCutoff}"
+                                        CalendarStyle="{StaticResource CalendarSolidStyle}"/>
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,5,0">
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="模型名称"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <TextBox TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
+                                     Text="{Binding Config.OtherOpenAICompatModelName, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="允许使用工具"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <CheckBox IsChecked="{Binding Path=Config.OtherOpenAICompatModelEnableToolUse}"/>
                         </DockPanel>
                     </StackPanel>
                 </Grid>

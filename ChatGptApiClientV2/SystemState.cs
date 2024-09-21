@@ -239,11 +239,27 @@ public partial class SystemState : ObservableObject
         ChatCompletionRequest? loadedSession = null,
         bool saveSession = true)
     {
+        string? productName = Config.SelectedModelType?.Provider switch
+        {
+            ModelInfo.ProviderEnum.OpenAI => "ChatGPT",
+            ModelInfo.ProviderEnum.Anthropic => "Claude",
+            ModelInfo.ProviderEnum.OtherOpenAICompat => Config.SelectedModel?.Name,
+            _ => throw new InvalidOperationException()
+        };
+
+        string providerName = Config.SelectedModelType?.Provider switch
+        {
+            ModelInfo.ProviderEnum.OpenAI => "OpenAI",
+            ModelInfo.ProviderEnum.Anthropic => "Anthropic",
+            ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelProviderName,
+            _ => throw new InvalidOperationException()
+        };
+
         loadedSession ??= BuildFromInitPrompts(
             InitialPrompts?.SelectedOption?.Messages,
             Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now,
-            Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Claude" : "ChatGPT",
-            Config.SelectedModelType?.Provider == ModelInfo.ProviderEnum.Anthropic ? "Anthropic" : "OpenAI"
+            productName ?? "Assistant",
+            providerName
         );
 
         SessionDict[sessionId] = loadedSession;
@@ -309,26 +325,40 @@ public partial class SystemState : ObservableObject
         string apiKey;
         int? maxTokens;
         float temperature;
-        if (selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI)
+        switch (selectedModelType.Provider)
         {
-            service = Config.ServiceProvider switch
+            case ModelInfo.ProviderEnum.OpenAI:
             {
-                Config.ServiceProviderType.OpenAI => ServerEndpointOptions.ServiceType.OpenAI,
-                Config.ServiceProviderType.Azure => ServerEndpointOptions.ServiceType.Azure,
-                _ => ServerEndpointOptions.ServiceType.Custom
-            };
-            endpointUrl = Config.ServiceURL;
-            apiKey = Config.API_KEY;
-            maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
-            temperature = Config.Temperature;
-        }
-        else
-        {
-            service = ServerEndpointOptions.ServiceType.Claude;
-            endpointUrl = Config.AnthropicServiceURL;
-            apiKey = Config.AnthropicAPIKey;
-            maxTokens = Config.MaxTokens == 0 ? 4096 : Config.MaxTokens;
-            temperature = Config.Temperature / 2.0f; // while openai use 0~2 as temperature range, anthropic use 0~1
+                service = Config.ServiceProvider switch
+                {
+                    Config.ServiceProviderType.OpenAI => ServerEndpointOptions.ServiceType.OpenAI,
+                    Config.ServiceProviderType.Azure => ServerEndpointOptions.ServiceType.Azure,
+                    _ => ServerEndpointOptions.ServiceType.Custom
+                };
+                endpointUrl = Config.ServiceURL;
+                apiKey = Config.API_KEY;
+                maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
+                temperature = Config.Temperature;
+                break;
+            }
+            case ModelInfo.ProviderEnum.OtherOpenAICompat:
+            {
+                service = ServerEndpointOptions.ServiceType.OtherOpenAICompat;
+                endpointUrl = Config.OtherOpenAICompatServiceURL;
+                maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
+                temperature = Config.Temperature;
+                apiKey = "SomeKey"; // this cannot be empty or the OpenAI SDK will throw an exception
+                break;
+            }
+            default:
+            {
+                service = ServerEndpointOptions.ServiceType.Claude;
+                endpointUrl = Config.AnthropicServiceURL;
+                apiKey = Config.AnthropicAPIKey;
+                maxTokens = Config.MaxTokens == 0 ? 4096 : Config.MaxTokens;
+                temperature = Config.Temperature / 2.0f; // while openai use 0~2 as temperature range, anthropic use 0~1
+                break;
+            }
         }
 
         var serverOptions = new ServerEndpointOptions
@@ -343,10 +373,11 @@ public partial class SystemState : ObservableObject
             Seed = Config.Seed,
             Temperature = temperature,
             TopP = Config.TopP,
-            UserId = Config.UserAdvertisingId
+            UserId = Config.UserAdvertisingId,
+            StopSequences = Config.StopSequences
         };
 
-        if (serverOptions.MaxTokens is null && selectedModel.Name.Contains("vision"))
+        if (serverOptions.MaxTokens is null && selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI && selectedModel.Name.Contains("vision"))
         {
             serverOptions.MaxTokens = 4096; // for gpt4-vision-preview: its default max token number is very low
         }

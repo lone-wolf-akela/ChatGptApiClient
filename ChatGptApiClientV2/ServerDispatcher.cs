@@ -49,6 +49,7 @@ public class ServerEndpointOptions
         OpenAI,
         Azure,
         Claude,
+        OtherOpenAICompat,
         Custom
     }
 
@@ -64,6 +65,7 @@ public class ServerEndpointOptions
     public float? TopP { get; set; }
     public IEnumerable<ToolType>? Tools { get; set; }
     public string? UserId { get; set; }
+    public IEnumerable<string>? StopSequences { get; set; }
 }
 
 public interface IServerEndpoint
@@ -88,34 +90,40 @@ public class OpenAIEndpoint : IServerEndpoint
     {
         options = o;
 
-        TimeSpan default_timeout = TimeSpan.FromMinutes(10);
+        TimeSpan defaultTimeout = TimeSpan.FromMinutes(10);
 
-        if (options.Service is not (ServerEndpointOptions.ServiceType.OpenAI
-            or ServerEndpointOptions.ServiceType.Azure
-            or ServerEndpointOptions.ServiceType.Custom))
+        switch (options.Service)
         {
-            throw new ArgumentException("Invalid service type");
-        }
-
-        if (options.Service == ServerEndpointOptions.ServiceType.Azure)
-        {
-            var opt = new AzureOpenAIClientOptions { NetworkTimeout = default_timeout };
-            var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey));
-            client = azure.GetChatClient(options.Model);
-        }
-        else if (options.Service == ServerEndpointOptions.ServiceType.OpenAI)
-        {
-            var opt = new OpenAIClientOptions { NetworkTimeout = default_timeout };
-            client = new ChatClient(options.Model, options.Key, opt);
-        }
-        else if (options.Service == ServerEndpointOptions.ServiceType.Custom)
-        {
-            var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = default_timeout };
-            client = new ChatClient(options.Model, options.Key, opt);
-        }
-        else
-        {
-            throw new InvalidOperationException("Invalid service type");
+            case ServerEndpointOptions.ServiceType.Azure:
+            {
+                var opt = new AzureOpenAIClientOptions { NetworkTimeout = defaultTimeout };
+                var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey));
+                client = azure.GetChatClient(options.Model);
+                break;
+            }
+            case ServerEndpointOptions.ServiceType.OpenAI:
+            {
+                var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
+                client = new ChatClient(options.Model, options.Key, opt);
+                break;
+            }
+            case ServerEndpointOptions.ServiceType.Custom:
+            {
+                var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
+                client = new ChatClient(options.Model, options.Key, opt);
+                break;
+            }
+            case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
+            {
+                var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
+                client = new ChatClient(options.Model, options.Key, opt);
+                break;
+            }
+            case ServerEndpointOptions.ServiceType.Claude:
+            default:
+            {
+                throw new InvalidOperationException("Invalid service type");
+            }
         }
 
     }
@@ -233,6 +241,10 @@ public class OpenAIEndpoint : IServerEndpoint
                 User = options.UserId
             };
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
+            if (options.StopSequences is not null)
+            {
+                chatCompletionsOptions.StopSequences.AddRange(options.StopSequences);
+            }
 
             streamingResponse = client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
             responseSb.Clear();
@@ -288,7 +300,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 }
 
                 var chatUpdate = enumerator.Current;
-                if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint))
+                if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && !chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
                 {
                     systemFingerprint = chatUpdate.SystemFingerprint;
                 }
@@ -321,6 +333,11 @@ public class OpenAIEndpoint : IServerEndpoint
                 {
                     responseSb.Append(part.Text);
                     yield return part.Text;
+                }
+
+                if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
+                {
+                    responseSb.Append(chatUpdate.SystemFingerprint["stopping_word ".Length..]);
                 }
             }
         }
@@ -565,7 +582,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 Tools = tools.Count != 0 ? tools : null,
                 TopP = options.TopP,
                 Stream = true,
-                Metadata = options.UserId is null ? null : new Claude.Metadata { UserId = options.UserId }
+                Metadata = options.UserId is null ? null : new Claude.Metadata { UserId = options.UserId },
+                StopSequences = options.StopSequences
             };
 
             var postStr = createMsg.ToJson();

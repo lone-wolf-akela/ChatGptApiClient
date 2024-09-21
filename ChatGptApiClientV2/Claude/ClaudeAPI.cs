@@ -231,6 +231,17 @@ public class CreateMessage
     public Metadata? Metadata { get; set; }
 
     /// <summary>
+    /// <para> Custom text sequences that will cause the model to stop generating. </para>
+    /// <para> Our models will normally stop when they have naturally completed their turn,
+    /// which will result in a response <c>stop_reason</c> of <c>"end_turn"</c>. </para>
+    /// <para> If you want the model to stop generating when it encounters custom strings of text,
+    /// you can use the <c>stop_sequences</c> parameter. If the model encounters one of the custom sequences,
+    /// the response <c>stop_reason</c> value will be <c>"stop_sequence"</c> and the response <c>stop_sequence</c>
+    /// value will contain the matched stop sequence. </para>
+    /// </summary>
+    public IEnumerable<string>? StopSequences { get; set; }
+
+    /// <summary>
     /// Whether to incrementally stream the response using server-sent events.
     /// </summary>
     public bool? Stream { get; set; }

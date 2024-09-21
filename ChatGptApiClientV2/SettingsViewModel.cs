@@ -74,6 +74,23 @@ public partial class SettingsViewModel : ObservableObject
         TextAddAzureDeploymentId = "";
     }
 
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnAddStopSequenceCommand))]
+    private string textAddStopSequence = "";
+
+    private bool TextAddStopSequenceNotEmpty => !string.IsNullOrEmpty(TextAddStopSequence);
+
+    [RelayCommand]
+    private void BtnAddStopSequence()
+    {
+        if (Config.StopSequences.Contains(TextAddStopSequence))
+        {
+            return;
+        }
+
+        Config.StopSequences.Add(TextAddStopSequence);
+        TextAddStopSequence = "";
+    }
+
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnDelAzureDeploymentIdCommand))]
     private int selectedAzureDeploymentIdIndex = -1;
 

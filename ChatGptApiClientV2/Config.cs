@@ -48,6 +48,10 @@ public partial class Config : ObservableValidator
     }
     [JsonIgnore] private static string ConfigPath => "config.json";
 
+    public ObservableCollection<string> StopSequences { get; } = [];
+    private void StopSequencesCollectionChanged(object? sender,
+        System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => SaveConfig();
+
     [ObservableProperty] private double uiScale;
 
     partial void OnUiScaleChanged(double value)
@@ -131,6 +135,39 @@ public partial class Config : ObservableValidator
                 SaveConfig();
             }
         }
+    }
+
+    [ObservableProperty] [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+    private string otherOpenAICompatServiceURL;
+    partial void OnOtherOpenAICompatServiceURLChanged(string value) => SaveConfig();
+
+    [ObservableProperty] private bool otherOpenAICompatModelEnableToolUse;
+
+    partial void OnOtherOpenAICompatModelEnableToolUseChanged(bool value)
+    {
+        UpdateModelOptionList();
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
+    [ObservableProperty] private string otherOpenAICompatModelName;
+
+    partial void OnOtherOpenAICompatModelNameChanged(string value)
+    {
+        UpdateModelOptionList();
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
+    [ObservableProperty] private string otherOpenAICompatModelProviderName;
+
+    [ObservableProperty] private DateTime otherOpenAICompatModelKnowledgeCutoff;
+
+    partial void OnOtherOpenAICompatModelKnowledgeCutoffChanged(DateTime value)
+    {
+        UpdateModelOptionList();
+        UpdateModelVersionList();
+        SaveConfig();
     }
 
     public enum AnthropicServiceProviderType
@@ -304,7 +341,7 @@ public partial class Config : ObservableValidator
 
         foreach (var model in ModelInfo.ModelList)
         {
-            if (model.Provider == ModelInfo.ProviderEnum.Anthropic)
+            if (model.Provider != ModelInfo.ProviderEnum.OpenAI)
             {
                 ModelOptions.Add(model);
             }
@@ -388,6 +425,13 @@ public partial class Config : ObservableValidator
                 select model;
             foreach (var model in models)
             {
+                if (model.ModelType == "Local")
+                {
+                    model.KnowledgeCutoff = OtherOpenAICompatModelKnowledgeCutoff;
+                    model.FunctionCallSupported = OtherOpenAICompatModelEnableToolUse;
+                    model.Name = OtherOpenAICompatModelName;
+                    model.Description = OtherOpenAICompatModelName;
+                }
                 ModelVersionOptions.Add(model);
             }
         }
@@ -450,6 +494,11 @@ public partial class Config : ObservableValidator
         userNickName = "";
         serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         serviceURL = "";
+        otherOpenAICompatServiceURL = "http://127.0.0.1:8080";
+        otherOpenAICompatModelEnableToolUse = false;
+        otherOpenAICompatModelKnowledgeCutoff = new DateTime(2023, 1, 1);
+        otherOpenAICompatModelName = "LLaMA";
+        otherOpenAICompatModelProviderName = "Meta AI";
         anthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
         anthropicServiceURL = "";
         azureEndpoint = "";
@@ -475,6 +524,7 @@ public partial class Config : ObservableValidator
         pythonEnv = null;
 
         AzureDeploymentList.CollectionChanged += AzureDeploymentListCollectionChanged;
+        StopSequences.CollectionChanged += StopSequencesCollectionChanged;
 
         UpdateModelOptionList();
         UpdateModelVersionList();

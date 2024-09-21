@@ -32,7 +32,8 @@ public class ModelInfo
     public enum ProviderEnum
     {
         [EnumMember(Value = "openai")] OpenAI,
-        [EnumMember(Value = "anthropic")] Anthropic
+        [EnumMember(Value = "anthropic")] Anthropic,
+        [EnumMember(Value = "other_oai_compat")] OtherOpenAICompat
     }
     public string Name { get; init; } = "";
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
@@ -54,22 +55,24 @@ public class ModelInfo
         },
         new ModelInfo
         {
-            Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)", Provider = ProviderEnum.OpenAI,
+            Name = "claude-3.5", Description = "claude-3.5 (200k tokens)", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 200
         },
-
         new ModelInfo
         {
-            Name = "claude-3.5", Description = "claude-3.5 (200k tokens)", Provider = ProviderEnum.Anthropic,
+            Name = "Local", Description = "本地部署端口", Provider = ProviderEnum.OtherOpenAICompat,
             DisplayPriority = 250
         },
-
         new ModelInfo
         {
             Name = "claude-3", Description = "claude-3 (200k tokens)", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 300
         },
-
+        new ModelInfo
+        {
+            Name = "gpt-4-128k", Description = "gpt-4 turbo (128k tokens)", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 350
+        },
         new ModelInfo
         {
             Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo (16k tokens)", Provider = ProviderEnum.OpenAI,
@@ -97,11 +100,10 @@ public class ModelVersionInfo
         Cl100KBase
     }
     public string ModelType { get; init; } = "";
-    public string Name { get; init; } = "";
-    // ReSharper disable once UnusedAutoPropertyAccessor.Global
-    public string Description { get; init; } = "";
-    public DateTime KnowledgeCutoff { get; init; } = DateTime.MinValue;
-    public bool FunctionCallSupported { get; init; }
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
+    public bool FunctionCallSupported { get; set; }
     public TokenizerEnum Tokenizer { get; init; }
 
     public static readonly ImmutableArray<ModelVersionInfo> VersionList =
@@ -246,6 +248,12 @@ public class ModelVersionInfo
         {
             ModelType = "gpt-4o-mini", Name = "gpt-4o-mini-2024-07-18", Description = "2024-07-18",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "Local", Name = "local", Description = "本地",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
             Tokenizer = TokenizerEnum.O200KBase
         }
     ];
