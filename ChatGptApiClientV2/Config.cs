@@ -161,6 +161,13 @@ public partial class Config : ObservableValidator
 
     [ObservableProperty] private string otherOpenAICompatModelProviderName;
 
+    partial void OnOtherOpenAICompatModelProviderNameChanged(string value)
+    {
+        UpdateModelOptionList();
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
     [ObservableProperty] private DateTime otherOpenAICompatModelKnowledgeCutoff;
 
     partial void OnOtherOpenAICompatModelKnowledgeCutoffChanged(DateTime value)

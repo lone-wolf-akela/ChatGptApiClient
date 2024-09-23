@@ -360,7 +360,8 @@ public class OpenAIEndpoint : IServerEndpoint
                     new IMessage.TextContent { Text = errorMessage ?? responseSb.ToString() }
                 ],
                 ToolCalls = ToolCalls.ToList(),
-                Provider = ModelInfo.ProviderEnum.OpenAI
+                Provider = options.Service == ServerEndpointOptions.ServiceType.OtherOpenAICompat ? 
+                    ModelInfo.ProviderEnum.OtherOpenAICompat : ModelInfo.ProviderEnum.OpenAI
             };
             return response;
         }

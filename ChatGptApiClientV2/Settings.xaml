@@ -213,7 +213,8 @@
                                     DockPanel.Dock="Right" Margin="5,0,0,0"
                                     Width="200" HorizontalScrollBarVisibility="Auto"/>
                         <hc:TagContainer ItemsSource="{Binding Path=Config.StopSequences}"
-                                         ItemContainerStyle="{StaticResource TagCustomStyle}"/>
+                                         ItemContainerStyle="{StaticResource TagCustomStyle}"
+                                         ToolTip="模型会在生成设定的序列时停止输出" />
                     </DockPanel>
                     <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="10">
                         <Label Content="用户标识符" VerticalAlignment="Center" HorizontalAlignment="Left" 
@@ -343,8 +344,11 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
+                    <hc:Divider Grid.Column="3" Margin="0" Orientation="Vertical" />
                     <StackPanel Grid.Column="0" Margin="0,0,5,0">
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="服务端口 URL"
@@ -357,7 +361,8 @@
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="模型知识截止日期"
                                    HorizontalContentAlignment="Left" Width="100" />
                             <DatePicker SelectedDate="{Binding Config.OtherOpenAICompatModelKnowledgeCutoff}"
-                                        CalendarStyle="{StaticResource CalendarSolidStyle}"/>
+                                        CalendarStyle="{StaticResource CalendarSolidStyle}"
+                                        ToolTip="用于自动填充初始提示词" />
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,0,5,0">
@@ -366,12 +371,23 @@
                                    HorizontalContentAlignment="Left" Width="100" />
                             <TextBox TextWrapping="Wrap"
                                      VerticalAlignment="Center"
-                                     Text="{Binding Config.OtherOpenAICompatModelName, UpdateSourceTrigger=PropertyChanged}" />
+                                     Text="{Binding Config.OtherOpenAICompatModelName, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="用于自动填充初始提示词" />
                         </DockPanel>
                         <DockPanel Margin="0,0,0,5">
                             <Label DockPanel.Dock="Left" MinWidth="150" Content="允许使用工具"
                                    HorizontalContentAlignment="Left" Width="100" />
                             <CheckBox IsChecked="{Binding Path=Config.OtherOpenAICompatModelEnableToolUse}"/>
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Margin="0,0,5,0">
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="模型提供商"
+                                   HorizontalContentAlignment="Left" Width="100" />
+                            <TextBox TextWrapping="Wrap"
+                                     VerticalAlignment="Center"
+                                     Text="{Binding Config.OtherOpenAICompatModelProviderName, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="用于自动填充初始提示词" />
                         </DockPanel>
                     </StackPanel>
                 </Grid>

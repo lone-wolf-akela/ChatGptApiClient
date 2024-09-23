@@ -577,11 +577,18 @@ public partial class ChatWindowMessage : ObservableObject
 
     private const string ChatGPTIcon = "pack://application:,,,/images/chatgpt-icon.svg";
     private const string ClaudeIcon = "pack://application:,,,/images/claude-ai-icon.svg";
+    private const string OtherModelIcon = "pack://application:,,,/images/meta-ai-icon.svg";
     private const string ToolIcon = "pack://application:,,,/images/set-up-svgrepo-com.svg";
 
     public Uri Avatar => Role switch
     {
-        RoleType.Assistant => Provider == ModelInfo.ProviderEnum.OpenAI ? new Uri(ChatGPTIcon) : new Uri(ClaudeIcon),
+        RoleType.Assistant => Provider switch
+        {
+            ModelInfo.ProviderEnum.OpenAI => new Uri(ChatGPTIcon),
+            ModelInfo.ProviderEnum.Anthropic => new Uri(ClaudeIcon),
+            ModelInfo.ProviderEnum.OtherOpenAICompat => new Uri(OtherModelIcon),
+            _ => new Uri(ChatGPTIcon),
+        },
         RoleType.Tool => new Uri(ToolIcon),
         _ => new Uri(ChatGPTIcon)
     };
@@ -592,7 +599,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.System => Brushes.White,
         RoleType.Assistant => Brushes.Black,
         RoleType.Tool => Brushes.White,
-        _ => throw new InvalidOperationException()
+        _ => Brushes.Black
     };
 
     public Brush BackgroundColor => Role switch
@@ -601,7 +608,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Assistant => new SolidColorBrush(Color.FromRgb(232, 230, 231)),
         RoleType.System => new SolidColorBrush(Color.FromRgb(77, 150, 244)),
         RoleType.Tool => new SolidColorBrush(Color.FromRgb(255, 173, 61)),
-        _ => throw new InvalidOperationException()
+        _ => new SolidColorBrush(Color.FromRgb(232, 230, 231)),
     };
 
     public bool ShowLeftAvatar => Role switch
@@ -610,7 +617,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Assistant => true,
         RoleType.System => false,
         RoleType.Tool => true,
-        _ => throw new InvalidOperationException()
+        _ => false
     };
 
     public bool ShowRightAvatar => Role switch
@@ -619,7 +626,7 @@ public partial class ChatWindowMessage : ObservableObject
         RoleType.Assistant => false,
         RoleType.System => false,
         RoleType.Tool => false,
-        _ => throw new InvalidOperationException()
+        _ => false
     };
 
     public bool ShowLeftBlank => Role switch
