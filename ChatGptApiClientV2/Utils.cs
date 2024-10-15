@@ -280,8 +280,8 @@ public static partial class Utils
 
     public static int GetStringTokenCount(string str, ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        cl100KBaseTokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4");
-        o200KBaseTokenizer ??= Tokenizer.CreateTiktokenForModel("gpt-4o");
+        cl100KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4");
+        o200KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4o");
 
         var t = tokenizer == ModelVersionInfo.TokenizerEnum.O200KBase ? o200KBaseTokenizer : cl100KBaseTokenizer;
 

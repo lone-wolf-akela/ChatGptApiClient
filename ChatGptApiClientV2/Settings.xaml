@@ -389,6 +389,12 @@
                                      Text="{Binding Config.OtherOpenAICompatModelProviderName, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="用于自动填充初始提示词" />
                         </DockPanel>
+                        <DockPanel Margin="0,0,0,5">
+                            <Label DockPanel.Dock="Left" MinWidth="150" Content="模型 API KEY"
+                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.OtherOpenAICompatModelAPIKey, Mode=TwoWay}"
+                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                        </DockPanel>
                     </StackPanel>
                 </Grid>
                 <hc:Divider Margin="0" Content="插件设置" HorizontalContentAlignment="Left" />

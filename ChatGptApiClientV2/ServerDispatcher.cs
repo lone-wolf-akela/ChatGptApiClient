@@ -22,8 +22,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +33,8 @@ using Azure;
 using Azure.AI.OpenAI;
 using Flurl;
 using HandyControl.Tools.Extension;
+using HarmonyLib;
+using Namotion.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -39,8 +43,62 @@ using OpenAI.Chat;
 using static ChatGptApiClientV2.ChatCompletionRequest;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
-
 namespace ChatGptApiClientV2;
+
+// Some 3rd party API provider will return "finish_reason" as an empty string "", which cause
+// error with openai sdk, as it expects a null instead. we need to patch it here
+
+public static class Patcher
+{
+    [ModuleInitializer]
+    public static void Patch()
+    {
+        var harmony = new Harmony("Lone Wolf Patch");
+        var assembly = Assembly.GetExecutingAssembly();
+        harmony.PatchAll(assembly);
+    }
+}
+
+[HarmonyPatch(typeof(StreamingChatCompletionUpdate), "DeserializeStreamingChatCompletionUpdates")]
+class Patch
+{
+    static void Prefix(ref JsonElement element)
+    {
+        using var doc = JsonDocument.Parse(element.GetRawText());
+        var root = doc.RootElement.Clone();
+
+        var jsonObject = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(root.GetRawText());
+
+        if (jsonObject is null || !jsonObject.TryGetValue("choices", out var choicesObj))
+        {
+            return;
+        }
+
+        if (choicesObj is JsonElement { ValueKind: JsonValueKind.Array } choicesElement)
+        {
+            var choicesList = new List<Dictionary<string, object>>();
+            foreach (var choiceElement in choicesElement.EnumerateArray())
+            {
+                var choiceDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(choiceElement.GetRawText());
+
+                if (choiceDict != null &&
+                    choiceDict.TryGetValue("finish_reason", out var finishReason) &&
+                    finishReason is JsonElement { ValueKind: JsonValueKind.String } finishReasonStr &&
+                    string.IsNullOrEmpty(finishReasonStr.GetString()))
+                {
+                    choiceDict.Remove("finish_reason");
+                }
+
+                choicesList.Add(choiceDict!);
+            }
+
+            jsonObject["choices"] = choicesList;
+        }
+
+        var modifiedJson = System.Text.Json.JsonSerializer.SerializeToElement(jsonObject);
+        element = modifiedJson;
+    }
+}
 
 public class ServerEndpointOptions
 {
@@ -90,7 +148,7 @@ public class OpenAIEndpoint : IServerEndpoint
     {
         options = o;
 
-        TimeSpan defaultTimeout = TimeSpan.FromMinutes(10);
+        var defaultTimeout = TimeSpan.FromMinutes(10);
 
         switch (options.Service)
         {
@@ -104,19 +162,19 @@ public class OpenAIEndpoint : IServerEndpoint
             case ServerEndpointOptions.ServiceType.OpenAI:
             {
                 var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, options.Key, opt);
+                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Custom:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, options.Key, opt);
+                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
                 break;
             }
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, options.Key, opt);
+                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Claude:
@@ -151,16 +209,16 @@ public class OpenAIEndpoint : IServerEndpoint
             {
                 if (content is IMessage.TextContent textContent)
                 {
-                    contentLst.Add(ChatMessageContentPart.CreateTextMessageContentPart(textContent.Text));
+                    contentLst.Add(ChatMessageContentPart.CreateTextPart(textContent.Text));
                 }
                 else if (content is IMessage.ImageContent imageContent)
                 {
                     var detailLevel =
                         imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                            ? ImageChatMessageContentPartDetail.Low
-                            : ImageChatMessageContentPartDetail.High;
+                            ? ChatImageDetailLevel.Low
+                            : ChatImageDetailLevel.High;
                     var imageData = imageContent.ImageUrl.Url;
-                    contentLst.Add(ChatMessageContentPart.CreateImageMessageContentPart(imageData?.Data, imageData?.MimeType, detailLevel));
+                    contentLst.Add(ChatMessageContentPart.CreateImagePart(imageData?.Data, imageData?.MimeType, detailLevel));
                 }
                 else
                 {
@@ -233,12 +291,14 @@ public class OpenAIEndpoint : IServerEndpoint
         {
             var chatCompletionsOptions = new ChatCompletionOptions
             {
-                MaxTokens = options.MaxTokens,
+                MaxOutputTokenCount = options.MaxTokens,
                 PresencePenalty = options.PresencePenalty,
+#pragma warning disable OPENAI001
                 Seed = options.Seed,
+#pragma warning restore OPENAI001
                 Temperature = options.Temperature,
                 TopP = options.TopP,
-                User = options.UserId
+                EndUserId = options.UserId
             };
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             if (options.StopSequences is not null)
@@ -389,7 +449,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
     private readonly ServerEndpointOptions options;
     private readonly ChatClient client;
-    private AsyncResultCollection<StreamingChatCompletionUpdate>? streamingResponse;
+    private AsyncCollectionResult<StreamingChatCompletionUpdate>? streamingResponse;
     private readonly StringBuilder responseSb = new();
     private string? errorMessage;
     private string systemFingerprint = "";

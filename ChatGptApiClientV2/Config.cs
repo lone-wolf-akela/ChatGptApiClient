@@ -263,6 +263,9 @@ public partial class Config : ObservableValidator
     [ObservableProperty] private string anthropicAPIKey;
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
 
+    [ObservableProperty] private string otherOpenAICompatModelAPIKey;
+    partial void OnOtherOpenAICompatModelAPIKeyChanged(string value) => SaveConfig();
+
     private void AzureDeploymentListCollectionChanged(object? sender,
         System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
@@ -511,6 +514,7 @@ public partial class Config : ObservableValidator
         azureEndpoint = "";
         _API_KEY = "";
         anthropicAPIKey = "";
+        otherOpenAICompatModelAPIKey = "";
         azureAPIKey = "";
         azureDalleDeploymentId = "dall-e-3";
         googleSearchAPIKey = "";

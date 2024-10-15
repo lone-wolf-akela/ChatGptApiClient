@@ -347,7 +347,8 @@ public partial class SystemState : ObservableObject
                 endpointUrl = Config.OtherOpenAICompatServiceURL;
                 maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
                 temperature = Config.Temperature;
-                apiKey = "SomeKey"; // this cannot be empty or the OpenAI SDK will throw an exception
+                // this key cannot be empty or the OpenAI SDK will throw an exception
+                apiKey = !string.IsNullOrEmpty(Config.OtherOpenAICompatModelAPIKey) ? Config.OtherOpenAICompatModelAPIKey : "SomeKey";
                 break;
             }
             default:
