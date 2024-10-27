@@ -18,6 +18,7 @@
 
 using System;
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -59,10 +60,10 @@ public static class Patcher
     }
 }
 
-[HarmonyPatch(typeof(StreamingChatCompletionUpdate), "DeserializeStreamingChatCompletionUpdates")]
+[HarmonyPatch(typeof(StreamingChatCompletionUpdate), "DeserializeStreamingChatCompletionUpdate")]
 class Patch
 {
-    static void Prefix(ref JsonElement element)
+    static void Prefix(ref JsonElement element, ModelReaderWriterOptions options)
     {
         using var doc = JsonDocument.Parse(element.GetRawText());
         var root = doc.RootElement.Clone();
@@ -155,26 +156,29 @@ public class OpenAIEndpoint : IServerEndpoint
             case ServerEndpointOptions.ServiceType.Azure:
             {
                 var opt = new AzureOpenAIClientOptions { NetworkTimeout = defaultTimeout };
-                var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new AzureKeyCredential(options.AzureKey));
+                var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new ApiKeyCredential(options.AzureKey), opt);
                 client = azure.GetChatClient(options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.OpenAI:
             {
                 var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
+                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
+                client = openai.GetChatClient(options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Custom:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
+                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
+                client = openai.GetChatClient(options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                client = new ChatClient(options.Model, new ApiKeyCredential(options.Key), opt);
+                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
+                client = openai.GetChatClient(options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Claude:
@@ -263,7 +267,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 select ChatToolCall.CreateFunctionToolCall(
                     toolCall.Id,
                     toolCall.Function.Name,
-                    toolCall.Function.Arguments
+                    BinaryData.FromString(toolCall.Function.Arguments)
                 );
             chatRequestAssistantMsg.ToolCalls.AddRange(convertedToolCalls);
             return chatRequestAssistantMsg;
@@ -367,9 +371,9 @@ public class OpenAIEndpoint : IServerEndpoint
 
                 foreach(var toolCallUpdate in chatUpdate.ToolCallUpdates)
                 {
-                    if (!string.IsNullOrEmpty(toolCallUpdate.Id))
+                    if (!string.IsNullOrEmpty(toolCallUpdate.ToolCallId))
                     {
-                        toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.Id;
+                        toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.ToolCallId;
                     }
 
                     if (!string.IsNullOrEmpty(toolCallUpdate.FunctionName))
@@ -377,7 +381,7 @@ public class OpenAIEndpoint : IServerEndpoint
                         funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
                     }
 
-                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate))
+                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
                     {
                         if (!funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
                         {
@@ -413,11 +417,16 @@ public class OpenAIEndpoint : IServerEndpoint
     {
         get
         {
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                responseSb.AppendLine();
+                responseSb.AppendLine(errorMessage);
+            }
             var response = new AssistantMessage
             {
                 Content =
                 [
-                    new IMessage.TextContent { Text = errorMessage ?? responseSb.ToString() }
+                    new IMessage.TextContent { Text = responseSb.ToString() }
                 ],
                 ToolCalls = ToolCalls.ToList(),
                 Provider = options.Service == ServerEndpointOptions.ServiceType.OtherOpenAICompat ? 
