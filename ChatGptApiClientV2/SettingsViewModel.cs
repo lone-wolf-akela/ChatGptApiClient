@@ -87,6 +87,15 @@ public partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        const int maxStopSequences = 4;
+
+        if (Config.StopSequences.Count >= maxStopSequences)
+        {
+            MessageBox.Show($"OpenAI API 仅支持最多{maxStopSequences}个停止序列", "错误",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
         Config.StopSequences.Add(TextAddStopSequence);
         TextAddStopSequence = "";
     }
