@@ -248,13 +248,13 @@ public class ModelVersionInfo
         },
         new ModelVersionInfo
         {
-            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20241022", Description = "2024-10-22)",
+            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20241022", Description = "2024-10-22",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase
         },
         new ModelVersionInfo
         {
-            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20240620", Description = "2024-06-20)",
+            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20240620", Description = "2024-06-20",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase
         },
