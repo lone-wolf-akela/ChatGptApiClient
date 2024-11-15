@@ -332,7 +332,6 @@ public partial class SystemState : ObservableObject
                 service = Config.ServiceProvider switch
                 {
                     Config.ServiceProviderType.OpenAI => ServerEndpointOptions.ServiceType.OpenAI,
-                    Config.ServiceProviderType.Azure => ServerEndpointOptions.ServiceType.Azure,
                     _ => ServerEndpointOptions.ServiceType.Custom
                 };
                 endpointUrl = Config.ServiceURL;
@@ -367,7 +366,6 @@ public partial class SystemState : ObservableObject
             Service = service,
             Endpoint = endpointUrl,
             Key = apiKey,
-            AzureKey = Config.AzureAPIKey,
             Model = selectedModel.Name,
             MaxTokens = maxTokens,
             PresencePenalty = Config.PresencePenalty,

@@ -96,7 +96,6 @@ public partial class Config : ObservableValidator
     {
         [Description("Artonelico OpenAI 代理")] ArtonelicoOpenAIProxy,
         [Description("OpenAI 官方接口（需科学上网）")] OpenAI,
-        [Description("Microsoft Azure")] Azure,
         [Description("其他")] Others
     }
 
@@ -110,7 +109,6 @@ public partial class Config : ObservableValidator
     partial void OnServiceProviderChanged(ServiceProviderType value)
     {
         ValidateProperty(ServiceURL, nameof(ServiceURL));
-        ValidateProperty(AzureEndpoint, nameof(AzureEndpoint));
         UpdateModelOptionList();
         UpdateModelVersionList();
         SaveConfig();
@@ -125,7 +123,6 @@ public partial class Config : ObservableValidator
         {
             ServiceProviderType.ArtonelicoOpenAIProxy => "https://www.artonelico.top/openai-proxy/v1",
             ServiceProviderType.OpenAI => "https://api.openai.com/v1",
-            ServiceProviderType.Azure => AzureEndpoint,
             _ => serviceURL
         };
         set
@@ -220,23 +217,14 @@ public partial class Config : ObservableValidator
         }
     }
 
-    [ObservableProperty] [NotifyDataErrorInfo] [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
-    private string azureEndpoint;
-
     [JsonIgnore]
-    public string DalleImageGenServiceURL => ServiceProvider switch
-    {
-        ServiceProviderType.Azure => Url.Combine(AzureEndpoint,
-            $"openai/deployments/{AzureDalleDeploymentId}/images/generations?api-version=2024-02-01"),
-        _ => Url.Combine(ServiceURL, "images/generations")
-    };
+    public string DalleImageGenServiceURL => Url.Combine(ServiceURL, "images/generations");
 
     [JsonIgnore]
     public bool ServiceURLEditable => ServiceProvider switch
     {
         ServiceProviderType.ArtonelicoOpenAIProxy => false,
         ServiceProviderType.OpenAI => false,
-        ServiceProviderType.Azure => true,
         ServiceProviderType.Others => true,
         _ => throw new InvalidOperationException()
     };
@@ -256,27 +244,11 @@ public partial class Config : ObservableValidator
 
     partial void OnAPI_KEYChanged(string value) => SaveConfig();
 
-    [ObservableProperty] private string azureAPIKey;
-    partial void OnAzureAPIKeyChanged(string value) => SaveConfig();
-    public ObservableCollection<string> AzureDeploymentList { get; } = [];
-
     [ObservableProperty] private string anthropicAPIKey;
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
 
     [ObservableProperty] private string otherOpenAICompatModelAPIKey;
     partial void OnOtherOpenAICompatModelAPIKeyChanged(string value) => SaveConfig();
-
-    private void AzureDeploymentListCollectionChanged(object? sender,
-        System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-    {
-        if (ServiceProvider == ServiceProviderType.Azure)
-        {
-            UpdateModelVersionList();
-        }
-    }
-
-    [ObservableProperty] private string azureDalleDeploymentId;
-    partial void OnAzureDalleDeploymentIdChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
     [ObservableProperty] private string googleSearchEngineID;
@@ -333,19 +305,11 @@ public partial class Config : ObservableValidator
     private void UpdateModelOptionList()
     {
         ModelOptions.Clear();
-        if (ServiceProvider == ServiceProviderType.Azure)
+        foreach (var model in ModelInfo.ModelList)
         {
-            ModelOptions.Add(new ModelInfo
-                { Name = "azure", Description = "Azure OpenAI Service", DisplayPriority = -100 });
-        }
-        else
-        {
-            foreach (var model in ModelInfo.ModelList)
+            if (model.Provider == ModelInfo.ProviderEnum.OpenAI)
             {
-                if (model.Provider == ModelInfo.ProviderEnum.OpenAI)
-                {
-                    ModelOptions.Add(model);
-                }
+                ModelOptions.Add(model);
             }
         }
 
@@ -395,55 +359,19 @@ public partial class Config : ObservableValidator
             return;
         }
 
-        if (SelectedModelType.Name == "azure")
+        var models = from model in ModelVersionInfo.VersionList
+            where model.ModelType == SelectedModelType.Name
+            select model;
+        foreach (var model in models)
         {
-            foreach (var id in AzureDeploymentList)
+            if (model.ModelType == "Local")
             {
-                var knowledgeCutoff =
-                    id.Contains("gpt-4o") ? new DateTime(2023, 10, 1) :
-                    id.Contains("gpt-4") && id.Contains("1106") ? new DateTime(2023, 4, 1) :
-                    id.Contains("gpt-4") && id.Contains("0125") ? new DateTime(2023, 12, 1) :
-                    id.Contains("gpt-4") && id.Contains("2024-04-09") ? new DateTime(2023, 12, 1) :
-                    new DateTime(2021, 9, 1);
-
-                // ReSharper disable SimplifyConditionalTernaryExpression
-                var functionCallSupported =
-                    id.Contains("0301") ? false :
-                    id.Contains("vision") && id.Contains("1106") ? false :
-                    id.Contains("0314") ? false :
-                    true;
-                // ReSharper restore SimplifyConditionalTernaryExpression
-
-                var tokenizer = id.Contains("gpt-4o") ? ModelVersionInfo.TokenizerEnum.O200KBase : 
-                    ModelVersionInfo.TokenizerEnum.Cl100KBase;
-
-                ModelVersionOptions.Add(new ModelVersionInfo
-                {
-                    ModelType = "azure",
-                    Name = id,
-                    Description = id,
-                    KnowledgeCutoff = knowledgeCutoff,
-                    FunctionCallSupported = functionCallSupported,
-                    Tokenizer = tokenizer
-                });
+                model.KnowledgeCutoff = OtherOpenAICompatModelKnowledgeCutoff;
+                model.FunctionCallSupported = OtherOpenAICompatModelEnableToolUse;
+                model.Name = OtherOpenAICompatModelName;
+                model.Description = OtherOpenAICompatModelName;
             }
-        }
-        else
-        {
-            var models = from model in ModelVersionInfo.VersionList
-                where model.ModelType == SelectedModelType.Name
-                select model;
-            foreach (var model in models)
-            {
-                if (model.ModelType == "Local")
-                {
-                    model.KnowledgeCutoff = OtherOpenAICompatModelKnowledgeCutoff;
-                    model.FunctionCallSupported = OtherOpenAICompatModelEnableToolUse;
-                    model.Name = OtherOpenAICompatModelName;
-                    model.Description = OtherOpenAICompatModelName;
-                }
-                ModelVersionOptions.Add(model);
-            }
+            ModelVersionOptions.Add(model);
         }
 
         SelectedModelVersionIndex = 0;
@@ -511,12 +439,9 @@ public partial class Config : ObservableValidator
         otherOpenAICompatModelProviderName = "Meta AI";
         anthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
         anthropicServiceURL = "";
-        azureEndpoint = "";
         _API_KEY = "";
         anthropicAPIKey = "";
         otherOpenAICompatModelAPIKey = "";
-        azureAPIKey = "";
-        azureDalleDeploymentId = "dall-e-3";
         googleSearchAPIKey = "";
         googleSearchEngineID = "";
         bingSearchAPIKey = "";
@@ -534,7 +459,6 @@ public partial class Config : ObservableValidator
         pythonDllPath = "";
         pythonEnv = null;
 
-        AzureDeploymentList.CollectionChanged += AzureDeploymentListCollectionChanged;
         StopSequences.CollectionChanged += StopSequencesCollectionChanged;
 
         UpdateModelOptionList();

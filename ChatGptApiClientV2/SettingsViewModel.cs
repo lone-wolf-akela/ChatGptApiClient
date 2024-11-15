@@ -27,57 +27,27 @@ namespace ChatGptApiClientV2;
 
 public partial class SettingsViewModel : ObservableObject
 {
-    private static bool IsDeignMode => DesignerProperties.GetIsInDesignMode(new DependencyObject());
-
-    private void ConfigServiceProviderPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(Config.ServiceProvider))
-        {
-            OnPropertyChanged(nameof(IsAzure));
-        }
-    }
+    private static bool IsDesignMode => DesignerProperties.GetIsInDesignMode(new DependencyObject());
 
     // ReSharper disable once UnusedMember.Global
     public SettingsViewModel()
     {
-        Debug.Assert(IsDeignMode);
+        Debug.Assert(IsDesignMode);
         Config = new Config
         {
-            ServiceProvider = Config.ServiceProviderType.Azure
+            ServiceProvider = Config.ServiceProviderType.ArtonelicoOpenAIProxy
         };
-        Config.PropertyChanged += ConfigServiceProviderPropertyChanged;
     }
 
     public SettingsViewModel(Config conf)
     {
         Config = conf;
-        Config.PropertyChanged += ConfigServiceProviderPropertyChanged;
     }
 
     [ObservableProperty] private Config config;
-    public bool IsAzure => Config.ServiceProvider == Config.ServiceProviderType.Azure;
-
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnAddAzureDeploymentIdCommand))]
-    private string textAddAzureDeploymentId = "";
-
-    private bool TextAddAzureDeploymentIdNotEmpty => !string.IsNullOrEmpty(TextAddAzureDeploymentId);
-
-    [RelayCommand(CanExecute = nameof(TextAddAzureDeploymentIdNotEmpty))]
-    private void BtnAddAzureDeploymentId()
-    {
-        if (Config.AzureDeploymentList.Contains(TextAddAzureDeploymentId))
-        {
-            return;
-        }
-
-        Config.AzureDeploymentList.Add(TextAddAzureDeploymentId);
-        TextAddAzureDeploymentId = "";
-    }
 
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnAddStopSequenceCommand))]
     private string textAddStopSequence = "";
-
-    private bool TextAddStopSequenceNotEmpty => !string.IsNullOrEmpty(TextAddStopSequence);
 
     [RelayCommand]
     private void BtnAddStopSequence()
@@ -100,25 +70,10 @@ public partial class SettingsViewModel : ObservableObject
         TextAddStopSequence = "";
     }
 
-    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnDelAzureDeploymentIdCommand))]
-    private int selectedAzureDeploymentIdIndex = -1;
-
-    private bool SelectedAzureDeploymentIdIndexValid => SelectedAzureDeploymentIdIndex >= 0;
-
-    [RelayCommand(CanExecute = nameof(SelectedAzureDeploymentIdIndexValid))]
-    private void BtnDelAzureDeploymentId()
-    {
-        if (SelectedAzureDeploymentIdIndex >= 0)
-        {
-            Config.AzureDeploymentList.RemoveAt(SelectedAzureDeploymentIdIndex);
-        }
-    }
-
     // ReSharper disable once UnusedMember.Global
     public static IEnumerable<Utils.PythonEnv> PythonEnvs => Utils.FindPythonEnvs();
 
     public void UnLoadViewModel()
     {
-        Config.PropertyChanged -= ConfigServiceProviderPropertyChanged;
     }
 }

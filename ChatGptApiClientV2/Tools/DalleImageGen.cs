@@ -156,11 +156,7 @@ public class DalleImageGenFunc : IToolFunction
             return result;
         }
 
-        HttpClient.DefaultRequestHeaders.Authorization = state.Config.ServiceProvider switch
-        {
-            Config.ServiceProviderType.Azure => null,
-            _ => new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY)
-        };
+        HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", state.Config.API_KEY);
 
         state.NewMessage(RoleType.Tool, sessionId);
         state.StreamText("生成中...\n\n", sessionId);
@@ -179,10 +175,6 @@ public class DalleImageGenFunc : IToolFunction
             RequestUri = new Uri(state.Config.DalleImageGenServiceURL),
             Content = postContent
         };
-        if (state.Config.ServiceProvider == Config.ServiceProviderType.Azure)
-        {
-            request.Headers.Add("api-key", state.Config.AzureAPIKey);
-        }
 
         state.NetStatus.Status = NetStatus.StatusEnum.Sending;
         var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

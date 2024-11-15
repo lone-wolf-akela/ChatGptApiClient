@@ -75,7 +75,7 @@ public class ModelInfo
         },
         new ModelInfo
         {
-            Name = "Local", Description = "本地部署端口", Provider = ProviderEnum.OtherOpenAICompat,
+            Name = "Local", Description = "第三方聊天服务", Provider = ProviderEnum.OtherOpenAICompat,
             DisplayPriority = 300
         },
         /*new ModelInfo

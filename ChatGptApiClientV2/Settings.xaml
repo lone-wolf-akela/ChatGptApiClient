@@ -229,70 +229,28 @@
                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
                             <DockPanel Margin="0,0,0,5">
                                 <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI 服务源" VerticalAlignment="Center"
-                   HorizontalContentAlignment="Left" />
+                                       HorizontalContentAlignment="Left" />
                                 <ComboBox
-                ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
-                SelectedValuePath="Value"
-                DisplayMemberPath="Description"
-                SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}" />
+                                        ItemsSource="{Binding Path=Config.ServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                        SelectedValuePath="Value"
+                                        DisplayMemberPath="Description"
+                                        SelectedValue="{Binding Path=Config.ServiceProvider, Mode=TwoWay}" />
                             </DockPanel>
-                            <DockPanel Margin="0,0,0,5"
-                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            <DockPanel Margin="0,0,0,5">
                                 <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL"
-                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                       VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                                 <TextBox x:Name="TxtbxServiceurl"
-                     TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     IsEnabled="{Binding Path=Config.ServiceURLEditable}"
-                     Text="{Binding Config.ServiceURL, UpdateSourceTrigger=PropertyChanged}" />
-
+                                         TextWrapping="Wrap"
+                                         VerticalAlignment="Center"
+                                         IsEnabled="{Binding Path=Config.ServiceURLEditable}"
+                                         Text="{Binding Config.ServiceURL, UpdateSourceTrigger=PropertyChanged}" />
                             </DockPanel>
-                            <DockPanel Margin="0,0,0,5"
-                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure Endpoint"
-                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <TextBox x:Name="TxtbxAzureendpoint"
-                     TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     Text="{Binding Config.AzureEndpoint, UpdateSourceTrigger=PropertyChanged}" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5"
-                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityReConverter}}">
+                            <DockPanel Margin="0,0,0,5">
                                 <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI API KEY"
                    VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                                 <hc:PasswordBox UnsafePassword="{Binding Path=Config.API_KEY, Mode=TwoWay}"
                             IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                             </DockPanel>
-                            <DockPanel Margin="0,0,0,5"
-                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="Azure API KEY"
-                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <hc:PasswordBox UnsafePassword="{Binding Path=Config.AzureAPIKey, Mode=TwoWay}"
-                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                            </DockPanel>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" Margin="5,0,0,0">
-                            <Border Padding="5,0,5,5" Margin="0,0,0,5" CornerRadius="{StaticResource DefaultCornerRadius}"
-                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0.5"
-                Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                <StackPanel>
-                                    <Label Content="Azure 部署 ID" VerticalAlignment="Stretch"
-                       HorizontalContentAlignment="Left" HorizontalAlignment="Stretch" />
-                                    <ListBox Margin="0,0,0,5"
-                         Height="100"
-                         ItemsSource="{Binding Config.AzureDeploymentList}"
-                         SelectedIndex="{Binding SelectedAzureDeploymentIdIndex}" />
-                                    <DockPanel>
-                                        <Button MinWidth="100" DockPanel.Dock="Right" Content="删除选中"
-                            Command="{Binding BtnDelAzureDeploymentIdCommand}" />
-                                        <Button MinWidth="100" DockPanel.Dock="Right" Content="添加" Margin="0,0,5,0"
-                            Command="{Binding BtnAddAzureDeploymentIdCommand}" />
-                                        <TextBox
-                        Text="{Binding TextAddAzureDeploymentId, UpdateSourceTrigger=PropertyChanged}"
-                        Margin="0,0,5,0" />
-                                    </DockPanel>
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -414,13 +372,6 @@
                    VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                                 <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleSearchAPIKey, Mode=TwoWay}"
                             IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5"
-                   Visibility="{Binding Path=IsAzure, Converter={StaticResource Boolean2VisibilityConverter}}">
-                                <Label DockPanel.Dock="Left" MinWidth="170" Content="Azure DALL-E 部署 ID"
-                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <TextBox Text="{Binding Path=Config.AzureDalleDeploymentId, Mode=TwoWay}"
-                     TextWrapping="Wrap" VerticalAlignment="Center" />
                             </DockPanel>
                         </StackPanel>
                         <StackPanel Grid.Column="2" Margin="5,0,0,0">

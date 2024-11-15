@@ -30,8 +30,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure;
-using Azure.AI.OpenAI;
 using Flurl;
 using HandyControl.Tools.Extension;
 using HarmonyLib;
@@ -106,7 +104,6 @@ public class ServerEndpointOptions
     public enum ServiceType
     {
         OpenAI,
-        Azure,
         Claude,
         OtherOpenAICompat,
         Custom
@@ -115,7 +112,6 @@ public class ServerEndpointOptions
     public ServiceType Service { get; set; }
     public string Endpoint { get; set; } = "";
     public string Key { get; set; } = "";
-    public string AzureKey { get; set; } = "";
     public string Model { get; set; } = "";
     public int? MaxTokens { get; set; }
     public float? PresencePenalty { get; set; }
@@ -153,13 +149,6 @@ public class OpenAIEndpoint : IServerEndpoint
 
         switch (options.Service)
         {
-            case ServerEndpointOptions.ServiceType.Azure:
-            {
-                var opt = new AzureOpenAIClientOptions { NetworkTimeout = defaultTimeout };
-                var azure = new AzureOpenAIClient(new Uri(options.Endpoint), new ApiKeyCredential(options.AzureKey), opt);
-                client = azure.GetChatClient(options.Model);
-                break;
-            }
             case ServerEndpointOptions.ServiceType.OpenAI:
             {
                 var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
