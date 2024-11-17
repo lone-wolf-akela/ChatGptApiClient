@@ -112,6 +112,8 @@
         <PackageReference Include="Markdig" Version="0.38.0" />
         <PackageReference Include="Markdig.Wpf" Version="0.5.0.1" />
         <PackageReference Include="Microsoft.ML.Tokenizers" Version="1.0.0" />
+        <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.0" />
+        <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.0" />
         <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.240923002" />
         <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

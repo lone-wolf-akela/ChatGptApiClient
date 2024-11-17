@@ -275,15 +275,15 @@ public static partial class Utils
     }
 
 
-    private static Tokenizer? cl100KBaseTokenizer;
-    private static Tokenizer? o200KBaseTokenizer;
+    private static Tokenizer? _cl100KBaseTokenizer;
+    private static Tokenizer? _o200KBaseTokenizer;
 
     public static int GetStringTokenCount(string str, ModelVersionInfo.TokenizerEnum tokenizer)
     {
-        cl100KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4");
-        o200KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4o");
+        _cl100KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4");
+        _o200KBaseTokenizer ??= TiktokenTokenizer.CreateForModel("gpt-4o");
 
-        var t = tokenizer == ModelVersionInfo.TokenizerEnum.O200KBase ? o200KBaseTokenizer : cl100KBaseTokenizer;
+        var t = tokenizer == ModelVersionInfo.TokenizerEnum.O200KBase ? _o200KBaseTokenizer : _cl100KBaseTokenizer;
 
         var tokenCount = t.CountTokens(str);
         return tokenCount;
