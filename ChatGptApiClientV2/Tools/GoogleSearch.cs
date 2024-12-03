@@ -165,7 +165,7 @@ public class GoogleSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -176,14 +176,14 @@ public class GoogleSearchFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Google 搜索..."))];
+                return new ToolCallMessage("Google 搜索...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Google 搜索..."))];
+            return new ToolCallMessage("Google 搜索...");
         }
 
         args.Query = args.Query.Trim();
@@ -211,7 +211,7 @@ public class GoogleSearchFunc : IToolFunction
         paragraph.Inlines.Add(new Run($"{args.Query}"));
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        return new ToolCallMessage($"Google 搜索:\n{args.Query}", [paragraph]);
     }
 }
 
@@ -330,7 +330,7 @@ public class WebsiteAccessFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -341,14 +341,14 @@ public class WebsiteAccessFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("访问网站..."))];
+                return new ToolCallMessage("访问网站...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("访问网站..."))];
+            return new ToolCallMessage("访问网站...");
         }
 
         List<string> stickers =
@@ -375,7 +375,7 @@ public class WebsiteAccessFunc : IToolFunction
         paragraph.Inlines.Add(link);
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        return new ToolCallMessage($"访问网站:\n{args.Url}", [paragraph]);
     }
 }
 
@@ -467,7 +467,7 @@ public class WebsiteNextPageFunc : IToolFunction
         return Task.FromResult(result);
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         List<string> stickers =
         [
@@ -487,14 +487,14 @@ public class WebsiteNextPageFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("访问下一页..."))];
+                return new ToolCallMessage("访问下一页...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("访问下一页..."))];
+            return new ToolCallMessage("访问下一页...");
         }
 
         var floater = Utils.CreateStickerFloater(stickers, toolcallId);
@@ -512,6 +512,6 @@ public class WebsiteNextPageFunc : IToolFunction
         paragraph.Inlines.Add(link);
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        return new ToolCallMessage($"访问下一页:\n{args.Url}", [paragraph]);
     }
 }

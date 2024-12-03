@@ -45,6 +45,12 @@ public interface IToolCollection
     public string DisplayName { get; }
 }
 
+public class ToolCallMessage(string altText, IEnumerable<Block>? blocks = null)
+{
+    public IEnumerable<Block> Blocks { get; } = blocks ?? [new Paragraph(new Run(altText))];
+    public string AltText { get; } = altText;
+}
+
 public interface IToolFunction
 {
     public string? Description { get; }
@@ -73,7 +79,7 @@ public interface IToolFunction
     public Task<ToolResult> Action(SystemState state, Guid sessionId, string toolcallId, string argstr,
         CancellationToken cancellationToken = default);
 
-    IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId);
+    ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId);
 
     public ChatCompletionRequest.ToolType GetToolRequest() => new()
     {

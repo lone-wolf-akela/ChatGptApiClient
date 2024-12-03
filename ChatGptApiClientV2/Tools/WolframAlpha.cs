@@ -165,7 +165,7 @@ public class WolframAlphaFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -176,14 +176,14 @@ public class WolframAlphaFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
+                return new ToolCallMessage("询问 Wolfram|Alpha...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("询问 Wolfram|Alpha..."))];
+            return new ToolCallMessage("询问 Wolfram|Alpha...");
         }
 
         List<string> stickers =
@@ -205,6 +205,6 @@ public class WolframAlphaFunc : IToolFunction
         paragraph.Inlines.Add(new Run($"{args.Query}"));
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        return new ToolCallMessage($"询问 Wolfram|Alpha:\n{args.Query}", [paragraph]);
     }
 }

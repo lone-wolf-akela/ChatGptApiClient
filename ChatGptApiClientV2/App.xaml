@@ -21,6 +21,7 @@
              xmlns:hc="https://handyorg.github.io/handycontrol"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
              xmlns:local="clr-namespace:ChatGptApiClientV2"
+             xmlns:wpfMath="clr-namespace:WpfMath.Controls;assembly=WpfMath"
              StartupUri="ChatWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>

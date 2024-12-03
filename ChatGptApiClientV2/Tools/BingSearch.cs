@@ -187,7 +187,7 @@ public class BingSearchFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         Args args;
         try
@@ -195,14 +195,14 @@ public class BingSearchFunc : IToolFunction
             var parsedArgs = JsonConvert.DeserializeObject<Args>(argstr);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("Bing 搜索..."))];
+                return new ToolCallMessage("Bing 搜索...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("Bing 搜索..."))];
+            return new ToolCallMessage("Bing 搜索...");
         }
 
         args.Query = args.Query.Trim();
@@ -230,6 +230,6 @@ public class BingSearchFunc : IToolFunction
         paragraph.Inlines.Add(new Run($"{args.Query}"));
         paragraph.Inlines.Add(new LineBreak());
 
-        return [paragraph];
+        return new ToolCallMessage($"Bing 搜索:\n{args.Query}", [paragraph]);
     }
 }

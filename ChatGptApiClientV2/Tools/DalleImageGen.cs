@@ -229,7 +229,7 @@ public class DalleImageGenFunc : IToolFunction
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -250,8 +250,7 @@ public class DalleImageGenFunc : IToolFunction
 
         if (isFailed)
         {
-            yield return new Paragraph(new Run("使用 DALL-E 生成图像..."));
-            yield break;
+            return new ToolCallMessage("使用 DALL-E 生成图像...");
         }
 
         List<string> stickers =
@@ -270,8 +269,6 @@ public class DalleImageGenFunc : IToolFunction
         paragraph.Inlines.Add(new LineBreak());
         paragraph.Inlines.Add(new LineBreak());
 
-        yield return paragraph;
-
         var foundData =
             state.SessionDict[sessionId]!.PluginData.TryGetValue($"{Name}_{toolcallId}_imagedata",
                 out var imagedata);
@@ -280,7 +277,7 @@ public class DalleImageGenFunc : IToolFunction
                 out var imagedesc);
         if (!foundData)
         {
-            yield break;
+            return new ToolCallMessage("使用 DALL-E 生成图像.", [paragraph]);
         }
 
         var image = new ImageDisplayer
@@ -288,6 +285,6 @@ public class DalleImageGenFunc : IToolFunction
             ImageSource = ImageData.CreateFromUri(imagedata![0]).ToBitmapImage(),
             ImageTooltip = foundDesc ? imagedesc![0] : ""
         };
-        yield return new BlockUIContainer(image);
+        return new ToolCallMessage($"使用 DALL-E 生成图像:\n{image.ImageTooltip}", [paragraph, new BlockUIContainer(image)]);
     }
 }

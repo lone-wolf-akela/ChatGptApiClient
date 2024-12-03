@@ -207,7 +207,7 @@ public class PythonFunc : IToolFunction
         }
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var argsJson = JToken.Parse(argstr);
         var argsReader = new JTokenReader(argsJson);
@@ -218,14 +218,14 @@ public class PythonFunc : IToolFunction
             var parsedArgs = argsSerializer.Deserialize<Args>(argsReader);
             if (parsedArgs is null)
             {
-                return [new Paragraph(new Run("运行 Python 代码..."))];
+                return new ToolCallMessage("运行 Python 代码...");
             }
 
             args = parsedArgs;
         }
         catch (JsonSerializationException)
         {
-            return [new Paragraph(new Run("运行 Python 代码..."))];
+            return new ToolCallMessage("运行 Python 代码...");
         }
 
         List<string> stickers =
@@ -283,7 +283,7 @@ public class PythonFunc : IToolFunction
             blocks.Add(paragraph2);
         }
 
-        return blocks;
+        return new ToolCallMessage($"运行 Python 代码:\n{codeText}", blocks);
     }
 }
 
@@ -361,20 +361,21 @@ public class ShowImageFunc : IToolFunction
         state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imageurl"] = [imageUrl];
         state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_filename"] = [args.FileName];
         result.ResponeRequired = false;
+        msg.Hidden = true;
         return result;
     }
 
-    public IEnumerable<Block> GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
+    public ToolCallMessage GetToolcallMessage(SystemState state, Guid sessionId, string argstr, string toolcallId)
     {
         var paragraph = new Paragraph();
         paragraph.Inlines.Add(new Run("显示图片..."));
-        yield return paragraph;
 
-        BlockUIContainer? imageBlock = null;
+        BlockUIContainer imageBlock;
+        string imageFileName;
         try
         {
             var imageUrl = state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_imageurl"][0];
-            var imageFileName = state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_filename"][0];
+            imageFileName = state.SessionDict[sessionId]!.PluginData[$"{Name}_{toolcallId}_filename"][0];
             var image = new ImageDisplayer
             {
                 FileName = imageFileName,
@@ -384,12 +385,9 @@ public class ShowImageFunc : IToolFunction
         }
         catch (KeyNotFoundException)
         {
-            // do nothing, the toolcall may have failed
+            return new ToolCallMessage("显示图片...");
         }
 
-        if (imageBlock is not null)
-        {
-            yield return imageBlock;
-        }
+        return new ToolCallMessage($"显示图片: {imageFileName}", [paragraph, imageBlock]);
     }
 }

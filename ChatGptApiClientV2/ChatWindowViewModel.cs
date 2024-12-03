@@ -270,8 +270,7 @@ public partial class ChatWindowMessage : ObservableObject
         using (var msPlainText = new MemoryStream())
         {
             text.Save(msPlainText, DataFormats.Text);
-            var plainText = Encoding.UTF8.GetString(msPlainText.ToArray());
-            dataObject.SetData(DataFormats.Text, plainText);
+            dataObject.SetData(DataFormats.Text, PlainText);
         }
 
         using (var msXaml = new MemoryStream())
@@ -326,6 +325,7 @@ public partial class ChatWindowMessage : ObservableObject
     public interface IRichMessage : INotifyPropertyChanged
     {
         public IEnumerable<Block> Rendered { get; }
+        public string PlainText { get; }
     }
 
     private partial class TextMessage(string srcStr, bool enableMarkdown, TextContent? sourceContent)
@@ -357,6 +357,7 @@ public partial class ChatWindowMessage : ObservableObject
                         .UsePipeTables()
                         .UseEmphasisExtras()
                         .UseAutoLinks()
+                        .UseMathBlock()
                         .Build());
                 return [.. doc.Blocks];
             }
@@ -380,6 +381,8 @@ public partial class ChatWindowMessage : ObservableObject
                 return _cachedRenderResult;
             }
         }
+
+        public string PlainText => Text;
     }
 
     private partial class ImageMessage(BitmapImage image, string? filename, string? tooltip) : ObservableObject, IRichMessage
@@ -415,9 +418,11 @@ public partial class ChatWindowMessage : ObservableObject
                 return _cachedRenderResult;
             }
         }
+
+        public string PlainText => $"{FileName}{Environment.NewLine}{ImageTooltip}";
     }
 
-    private partial class BlocksMessage(IEnumerable<Block> blocks) : ObservableObject, IRichMessage
+    private partial class BlocksMessage(IEnumerable<Block> blocks, string altText) : ObservableObject, IRichMessage
     {
         private IEnumerable<Block> Blocks { get; } = blocks;
 
@@ -436,6 +441,8 @@ public partial class ChatWindowMessage : ObservableObject
                 return _cachedRenderResult;
             }
         }
+
+        public string PlainText { get; } = altText;
     }
 
     private partial class TextFileMessage(string content, string? filename) : ObservableObject, IRichMessage
@@ -468,6 +475,8 @@ public partial class ChatWindowMessage : ObservableObject
                 return _cachedRenderResult;
             }
         }
+
+        public string PlainText => $"File: {FileName}";
     }
 
     public async Task AddText(TextContent text, bool enableMarkdown)
@@ -493,9 +502,9 @@ public partial class ChatWindowMessage : ObservableObject
         await AddImage(imageData.ToBitmapImage(), filename, tooltip);
     }
 
-    public async Task AddBlocks(IEnumerable<Block> blocks)
+    public async Task AddBlocks(IEnumerable<Block> blocks, string altText)
     {
-        await Task.Run(() => { _messageList.Add(new BlocksMessage(blocks)); });
+        await Task.Run(() => { _messageList.Add(new BlocksMessage(blocks, altText)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
@@ -519,6 +528,15 @@ public partial class ChatWindowMessage : ObservableObject
         _streamProgress = progress;
         _streamProgressText = text;
         OnPropertyChanged(nameof(RenderedMessage));
+    }
+
+    public string PlainText
+    {
+        get
+        {
+            var texts = from msg in _messageList select msg.PlainText;
+            return string.Join(Environment.NewLine, texts);
+        }
     }
 
     /*** end of stream (temp) data ***/
@@ -807,7 +825,8 @@ public partial class ChatWindowMessageTab : ObservableObject
             {
                 foreach (var toolcall in assistantMsg.ToolCalls ?? [])
                 {
-                    await chatMsg.AddBlocks(state.GetToolcallDescription(toolcall, tabId));
+                    var toolMsg = state.GetToolcallDescription(toolcall, tabId);
+                    await chatMsg.AddBlocks(toolMsg.Blocks, toolMsg.AltText);
                 }
             }
             else if (msg is ToolMessage toolMsg)

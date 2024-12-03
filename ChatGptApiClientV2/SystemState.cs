@@ -813,10 +813,10 @@ public partial class SystemState : ObservableObject
         await ResetSession(sessionId, selectedSession);
     }
 
-    public IEnumerable<Block> GetToolcallDescription(ToolCallType toolcall, Guid sessionId) =>
+    public ToolCallMessage GetToolcallDescription(ToolCallType toolcall, Guid sessionId) =>
         PluginLookUpTable.TryGetValue(toolcall.Function.Name, out var plugin)
             ? plugin.GetToolcallMessage(this, sessionId, toolcall.Function.Arguments, toolcall.Id)
-            : [new Paragraph(new Run($"调用函数：{toolcall.Function.Name}"))];
+            : new ToolCallMessage($"调用函数：{toolcall.Function.Name}");
 
     private async Task SaveSessionToPath(Guid sessionId, string path)
     {
