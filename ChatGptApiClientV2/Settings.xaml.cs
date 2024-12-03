@@ -36,11 +36,6 @@ public partial class Settings
         InitializeComponent();
     }
 
-    private void Window_Unloaded(object sender, RoutedEventArgs e)
-    {
-        ((SettingsViewModel)DataContext).UnLoadViewModel();
-    }
-
     private void BtnShowColorPicker_Click(object sender, RoutedEventArgs _)
     {
         var picker = SingleOpenHelper.CreateControl<ColorPicker>();

@@ -40,7 +40,7 @@ namespace ChatGptApiClientV2;
 public partial class PromptsOption : ObservableObject
 {
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(Text))]
-    private ObservableCollection<IMessage> messages = [];
+    public partial ObservableCollection<IMessage> Messages { get; set; } = [];
 
     [GeneratedRegex("(\r\n|\r|\n){2,}")]
     private static partial Regex RemoveExtraNewLine();
@@ -88,7 +88,8 @@ public partial class PromptsOption : ObservableObject
 public partial class InitialPrompts : ObservableObject
 {
     public ObservableCollection<PromptsOption> PromptsOptions { get; } = [];
-    [ObservableProperty] private PromptsOption? selectedOption;
+    [ObservableProperty]
+    public partial PromptsOption? SelectedOption { get; set; }
 
     private static List<IMessage> GenerateSystemMessageList(string text)
     {
@@ -148,10 +149,11 @@ public partial class InitialPrompts : ObservableObject
 public partial class PluginInfo(IToolCollection p) : ObservableObject
 {
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(Name))]
-    private IToolCollection plugin = p;
+    public partial IToolCollection Plugin { get; set; } = p;
 
     public string Name => Plugin.DisplayName;
-    [ObservableProperty] private bool isEnabled;
+    [ObservableProperty]
+    public partial bool IsEnabled { get; set; }
 }
 
 public partial class SystemState : ObservableObject
@@ -163,7 +165,8 @@ public partial class SystemState : ObservableObject
     public ObservableCollection<PluginInfo> Plugins { get; } = [];
     private Dictionary<string, IToolFunction> PluginLookUpTable { get; } = [];
 
-    [ObservableProperty] private InitialPrompts? initialPrompts;
+    [ObservableProperty]
+    public partial InitialPrompts? InitialPrompts { get; set; }
 
     public SystemState()
     {
@@ -651,9 +654,9 @@ public partial class SystemState : ObservableObject
 
     private class ConvertibleImageFileAttachmentReader : IFileAttachmentReader
     {
-        private string? filePathCache;
-        private DateTime? fileModifiedTimeCache;
-        private ImageData? pngCache;
+        private string? _filePathCache;
+        private DateTime? _fileModifiedTimeCache;
+        private ImageData? _pngCache;
 
         private static DateTime GetFileModifiedTime(string file)
         {
@@ -669,9 +672,9 @@ public partial class SystemState : ObservableObject
                 return false;
             }
 
-            if (filePathCache == file
-                && fileModifiedTimeCache == GetFileModifiedTime(file)
-                && pngCache is not null)
+            if (_filePathCache == file
+                && _fileModifiedTimeCache == GetFileModifiedTime(file)
+                && _pngCache is not null)
             {
                 return true;
             }
@@ -679,9 +682,9 @@ public partial class SystemState : ObservableObject
             try
             {
                 var imageDataOriginal = await ImageData.CreateFromFile(file, cancellationToken);
-                pngCache = imageDataOriginal.ReSaveAsPng();
-                filePathCache = file;
-                fileModifiedTimeCache = GetFileModifiedTime(file);
+                _pngCache = imageDataOriginal.ReSaveAsPng();
+                _filePathCache = file;
+                _fileModifiedTimeCache = GetFileModifiedTime(file);
                 return true;
             }
             catch (NotSupportedException)
@@ -701,7 +704,7 @@ public partial class SystemState : ObservableObject
             return new ImageAttachmentInfo
             {
                 FileName = Path.GetFileName(file),
-                ImageBase64Url = pngCache,
+                ImageBase64Url = _pngCache,
                 HighResMode = state.Config.UploadHiresImage,
             };
         }

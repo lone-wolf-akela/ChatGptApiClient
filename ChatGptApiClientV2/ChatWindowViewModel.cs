@@ -53,7 +53,7 @@ public partial class FileAttachmentInfo : ObservableObject
     {
         Path = path;
         Icon = icon;
-        ownerCollection = owner;
+        _ownerCollection = owner;
     }
     private static async Task<BitmapImage?> ConvertThumbnailToImageSource(Windows.Storage.FileProperties.StorageItemThumbnail? thumbnail)
     {
@@ -116,36 +116,35 @@ public partial class FileAttachmentInfo : ObservableObject
         return fileInfo;
     }
 
-    private readonly ICollection<FileAttachmentInfo> ownerCollection;
+    private readonly ICollection<FileAttachmentInfo> _ownerCollection;
 
     [RelayCommand]
     private void RemoveFile()
     {
-        ownerCollection.Remove(this);
+        _ownerCollection.Remove(this);
     }
 
     [ObservableProperty]
-    private string path;
+    public partial string Path { get; set; }
     [ObservableProperty]
-    private ImageSource? icon;
+    public partial ImageSource? Icon { get; set; }
 }
 
 public partial class ChatWindowMessage : ObservableObject
 {
-    [ObservableProperty] private bool isInEditingMode;
+    [ObservableProperty]
+    public partial bool IsInEditingMode { get; set; }
 
     public partial class EditorModeContent(string srcText) : ObservableObject
     {
         [ObservableProperty]
-        private string text = srcText; // must use constructor to init, because write to Text will make it dirty
-
-        public bool IsEditable { get; init; }
-
+        public partial string Text { get; set; } = srcText;
         partial void OnTextChanged(string value)
         {
             IsDirty = true;
         }
 
+        public bool IsEditable { get; init; }
         public bool IsDirty { get; private set; }
         public IRichMessage? SourceMessage { get; init; }
     }
@@ -156,7 +155,7 @@ public partial class ChatWindowMessage : ObservableObject
     private void EnterEditingMode()
     {
         EditorModeContents.Clear();
-        foreach (var msg in messageList)
+        foreach (var msg in _messageList)
         {
             EditorModeContent content;
             if (msg is TextMessage txtMsg)
@@ -236,7 +235,8 @@ public partial class ChatWindowMessage : ObservableObject
 
     public IMessage? SourceMessage { get; init; }
     public bool IsStreaming { get; init; }
-    [ObservableProperty] private bool isWaitingDeleteConfirm;
+    [ObservableProperty]
+    public partial bool IsWaitingDeleteConfirm { get; set; }
 
     [RelayCommand]
     private void TryDeleteMessage()
@@ -303,8 +303,7 @@ public partial class ChatWindowMessage : ObservableObject
         // else, also show date
         DateTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
 
-    private readonly BlockUIContainer loadingBar;
-
+    private readonly Block _loadingBar;
 
     public ChatWindowMessage()
     {
@@ -321,7 +320,7 @@ public partial class ChatWindowMessage : ObservableObject
 
         loadingBarCtl.SetResourceReference(Control.ForegroundProperty, "PrimaryBrush");
 
-        loadingBar = new BlockUIContainer(loadingBarCtl);
+        _loadingBar = new BlockUIContainer(loadingBarCtl);
     }
 
     public interface IRichMessage : INotifyPropertyChanged
@@ -333,16 +332,17 @@ public partial class ChatWindowMessage : ObservableObject
         : ObservableObject, IRichMessage
     {
         public TextContent? SourceContent { get; } = sourceContent;
-        [ObservableProperty] private string text = srcStr;
 
+        [ObservableProperty]
+        public partial string Text { get; set; } = srcStr;
         partial void OnTextChanged(string value)
         {
-            cachedRenderResult = null;
+            _cachedRenderResult = null;
         }
 
         private bool EnableMarkdown { get; } = enableMarkdown;
 
-        private List<Block>? cachedRenderResult;
+        private List<Block>? _cachedRenderResult;
 
         private List<Block> RenderMarkdownText()
         {
@@ -371,24 +371,24 @@ public partial class ChatWindowMessage : ObservableObject
         {
             get
             {
-                if (cachedRenderResult is not null)
+                if (_cachedRenderResult is not null)
                 {
-                    return cachedRenderResult;
+                    return _cachedRenderResult;
                 }
 
-                cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
-                return cachedRenderResult;
+                _cachedRenderResult = EnableMarkdown ? RenderMarkdownText() : [new Paragraph(new Run(Text))];
+                return _cachedRenderResult;
             }
         }
     }
 
-    private class ImageMessage(BitmapImage image, string? filename, string? tooltip) : ObservableObject, IRichMessage
+    private partial class ImageMessage(BitmapImage image, string? filename, string? tooltip) : ObservableObject, IRichMessage
     {
         private BitmapImage Image { get; } = image;
         public string FileName { get; } = filename ?? "";
         private string ImageTooltip { get; } = tooltip ?? "";
 
-        private List<Block>? cachedRenderResult;
+        private List<Block>? _cachedRenderResult;
 
         private List<Block> RenderImage()
         {
@@ -406,44 +406,44 @@ public partial class ChatWindowMessage : ObservableObject
         {
             get
             {
-                if (cachedRenderResult is not null)
+                if (_cachedRenderResult is not null)
                 {
-                    return cachedRenderResult;
+                    return _cachedRenderResult;
                 }
 
-                cachedRenderResult = RenderImage();
-                return cachedRenderResult;
+                _cachedRenderResult = RenderImage();
+                return _cachedRenderResult;
             }
         }
     }
 
-    private class BlocksMessage(IEnumerable<Block> blocks) : ObservableObject, IRichMessage
+    private partial class BlocksMessage(IEnumerable<Block> blocks) : ObservableObject, IRichMessage
     {
         private IEnumerable<Block> Blocks { get; } = blocks;
 
-        private List<Block>? cachedRenderResult;
+        private List<Block>? _cachedRenderResult;
 
         public IEnumerable<Block> Rendered
         {
             get
             {
-                if (cachedRenderResult is not null)
+                if (_cachedRenderResult is not null)
                 {
-                    return cachedRenderResult;
+                    return _cachedRenderResult;
                 }
 
-                cachedRenderResult = Blocks.ToList();
-                return cachedRenderResult;
+                _cachedRenderResult = Blocks.ToList();
+                return _cachedRenderResult;
             }
         }
     }
 
-    private class TextFileMessage(string content, string? filename) : ObservableObject, IRichMessage
+    private partial class TextFileMessage(string content, string? filename) : ObservableObject, IRichMessage
     {
         public string FileName { get; } = filename ?? "";
         private string FileContent { get; } = content;
 
-        private List<Block>? cachedRenderResult;
+        private List<Block>? _cachedRenderResult;
 
         private List<Block> RenderTextFile()
         {
@@ -459,32 +459,32 @@ public partial class ChatWindowMessage : ObservableObject
         {
             get
             {
-                if (cachedRenderResult is not null)
+                if (_cachedRenderResult is not null)
                 {
-                    return cachedRenderResult;
+                    return _cachedRenderResult;
                 }
 
-                cachedRenderResult = RenderTextFile();
-                return cachedRenderResult;
+                _cachedRenderResult = RenderTextFile();
+                return _cachedRenderResult;
             }
         }
     }
 
     public async Task AddText(TextContent text, bool enableMarkdown)
     {
-        await Task.Run(() => { messageList.Add(new TextMessage(text.Text, enableMarkdown, text)); });
+        await Task.Run(() => { _messageList.Add(new TextMessage(text.Text, enableMarkdown, text)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
     public async Task AddTextFile(string fileName, string content)
     {
-        await Task.Run(() => { messageList.Add(new TextFileMessage(content, fileName)); });
+        await Task.Run(() => { _messageList.Add(new TextFileMessage(content, fileName)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
     private async Task AddImage(BitmapImage image, string? filename, string? tooltip)
     {
-        await Task.Run(() => { messageList.Add(new ImageMessage(image, filename, tooltip)); });
+        await Task.Run(() => { _messageList.Add(new ImageMessage(image, filename, tooltip)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
@@ -495,11 +495,11 @@ public partial class ChatWindowMessage : ObservableObject
 
     public async Task AddBlocks(IEnumerable<Block> blocks)
     {
-        await Task.Run(() => { messageList.Add(new BlocksMessage(blocks)); });
+        await Task.Run(() => { _messageList.Add(new BlocksMessage(blocks)); });
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
-    private readonly List<IRichMessage> messageList = [];
+    private readonly List<IRichMessage> _messageList = [];
 
     /**** stream (temp) data ****/
     public StringBuilder? StreamMessage { get; private set; }
@@ -511,13 +511,13 @@ public partial class ChatWindowMessage : ObservableObject
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
-    private double? streamProgress;
-    private string? streamProgressText;
+    private double? _streamProgress;
+    private string? _streamProgressText;
 
     public void SetStreamProgress(double progress, string text)
     {
-        streamProgress = progress;
-        streamProgressText = text;
+        _streamProgress = progress;
+        _streamProgressText = text;
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
@@ -528,7 +528,7 @@ public partial class ChatWindowMessage : ObservableObject
         {
             var doc = Markdig.Wpf.Markdown.ToFlowDocument(""); // build from Markdown to ensure style
 
-            foreach (var msg in messageList)
+            foreach (var msg in _messageList)
             {
                 doc.Blocks.AddRange(msg.Rendered);
             }
@@ -538,11 +538,11 @@ public partial class ChatWindowMessage : ObservableObject
                 doc.Blocks.Add(new Paragraph(new Run(StreamMessage.ToString())));
             }
 
-            if (streamProgress is not null)
+            if (_streamProgress is not null)
             {
                 var progress = new HandyControl.Controls.CircleProgressBar
                 {
-                    Value = streamProgress.Value,
+                    Value = _streamProgress.Value,
                     Maximum = 1,
                     Height = 20,
                     Width = 20,
@@ -551,7 +551,7 @@ public partial class ChatWindowMessage : ObservableObject
                 };
                 var text = new TextBlock
                 {
-                    Text = streamProgressText,
+                    Text = _streamProgressText,
                     VerticalAlignment = VerticalAlignment.Center
                 };
                 var stackpanel = new StackPanel
@@ -564,7 +564,7 @@ public partial class ChatWindowMessage : ObservableObject
 
             if (IsStreaming)
             {
-                doc.Blocks.Add(loadingBar);
+                doc.Blocks.Add(_loadingBar);
             }
 
             doc.Foreground = ForegroundColor;
@@ -650,18 +650,19 @@ public partial class ChatWindowMessageTab : ObservableObject
         return tab is null || (tab.Messages.Count == 0 && !tab.UserHasGivenTitle);
     }
 
-    private static int totalTabIndexCount;
-    private readonly int assignedTabIndex = ++totalTabIndexCount;
-    private string? title;
+    private static int _totalTabIndexCount;
+    private readonly int _assignedTabIndex = ++_totalTabIndexCount;
 
+    private string? _title;
     public string? Title
     {
-        get => title ?? $"对话 {assignedTabIndex}";
-        set => SetProperty(ref title, value);
+        get => _title ?? $"对话 {_assignedTabIndex}";
+        set => SetProperty(ref _title, value);
     }
 
-    public bool UserHasGivenTitle => title is not null;
-    [ObservableProperty] private bool isEditingTitle;
+    public bool UserHasGivenTitle => _title is not null;
+    [ObservableProperty]
+    public partial bool IsEditingTitle { get; set; }
 
     [RelayCommand]
     private void EnterEditingTitleMode()
@@ -673,13 +674,14 @@ public partial class ChatWindowMessageTab : ObservableObject
     private void ConfirmEditingTitleMode()
     {
         IsEditingTitle = false;
-        if (syncedSession is not null)
+        if (_syncedSession is not null)
         {
-            syncedSession.Title = Title;
+            _syncedSession.Title = Title;
         }
     }
 
-    [ObservableProperty] private bool isLoading;
+    [ObservableProperty]
+    public partial bool IsLoading { get; set; }
     public ObservableCollection<ChatWindowMessage> Messages { get; } = [];
 
     [RelayCommand]
@@ -688,7 +690,7 @@ public partial class ChatWindowMessageTab : ObservableObject
         Messages.Remove(msg);
         if (msg.SourceMessage is not null)
         {
-            syncedSession?.Messages.Remove(msg.SourceMessage);
+            _syncedSession?.Messages.Remove(msg.SourceMessage);
         }
     }
 
@@ -723,10 +725,10 @@ public partial class ChatWindowMessageTab : ObservableObject
         Messages.Last().SetStreamProgress(progress, text);
     }
 
-    private ChatCompletionRequest? syncedSession;
+    private ChatCompletionRequest? _syncedSession;
     public void RemoveLastMessage()
     {
-        syncedSession?.Messages.RemoveAt(syncedSession.Messages.Count - 1);
+        _syncedSession?.Messages.RemoveAt(_syncedSession.Messages.Count - 1);
         Messages.RemoveAt(Messages.Count - 1);
     }
 
@@ -734,7 +736,7 @@ public partial class ChatWindowMessageTab : ObservableObject
         Config.MarkdownRenderMode markdownMode)
     {
         Messages.Clear();
-        syncedSession = session;
+        _syncedSession = session;
         if (UserHasGivenTitle)
         {
             session.Title = Title;
@@ -887,7 +889,7 @@ public partial class ChatWindowMessageTab : ObservableObject
 
     public void Reset()
     {
-        syncedSession = null;
+        _syncedSession = null;
         Title = null;
         IsEditingTitle = false;
         IsLoading = false;
@@ -900,7 +902,8 @@ public partial class ChatWindowMessageTab : ObservableObject
 /// </summary>
 public partial class ChatWindowViewModel : ObservableObject
 {
-    [ObservableProperty] private SystemState state;
+    [ObservableProperty]
+    public partial SystemState State { get; set; }
 
     private void SetIsLoading(bool loading, Guid tabId)
     {
@@ -913,7 +916,7 @@ public partial class ChatWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(PrintCommand))]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     [NotifyPropertyChangedFor(nameof(IsSelectedTabValid))]
-    private int selectedTabIndex;
+    public partial int SelectedTabIndex { get; set; }
 
     public bool IsSelectedTabValid => SelectedTabIndex >= 0 && SelectedTabIndex < ChatWindowMessageTabs.Count;
     public void SelectTab(Guid tabId)
@@ -1047,13 +1050,13 @@ public partial class ChatWindowViewModel : ObservableObject
     }
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(TextInputTokenNum))]
-    private string textInput = "";
+    public partial string TextInput { get; set; } = "";
 
     public int TextInputTokenNum => Utils.GetStringTokenCount(TextInput, 
         State.Config.SelectedModel?.Tokenizer ?? ModelVersionInfo.TokenizerEnum.Cl100KBase);
 
     [ObservableProperty]
-    private bool isIdle = true;
+    public partial bool IsIdle { get; set; } = true;
     partial void OnIsIdleChanged(bool value)
     {
         ReGenerateCommand.NotifyCanExecuteChanged();

@@ -44,10 +44,11 @@ public partial class SettingsViewModel : ObservableObject
         Config = conf;
     }
 
-    [ObservableProperty] private Config config;
+    [ObservableProperty]
+    public partial Config Config { get; set; }
 
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(BtnAddStopSequenceCommand))]
-    private string textAddStopSequence = "";
+    public partial string TextAddStopSequence { get; set; } = "";
 
     [RelayCommand]
     private void BtnAddStopSequence()
@@ -72,8 +73,4 @@ public partial class SettingsViewModel : ObservableObject
 
     // ReSharper disable once UnusedMember.Global
     public static IEnumerable<Utils.PythonEnv> PythonEnvs => Utils.FindPythonEnvs();
-
-    public void UnLoadViewModel()
-    {
-    }
 }

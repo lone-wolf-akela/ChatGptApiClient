@@ -456,19 +456,19 @@ public static partial class Utils
         }
     }
 
-    public sealed class ScopeGuard(Action action) : IDisposable
+    public sealed partial class ScopeGuard(Action action) : IDisposable
     {
-        private bool disposed;
+        private bool _disposed;
 
         public void Dispose()
         {
-            if (disposed)
+            if (_disposed)
             {
                 return;
             }
 
             action();
-            disposed = true;
+            _disposed = true;
         }
     }
 }

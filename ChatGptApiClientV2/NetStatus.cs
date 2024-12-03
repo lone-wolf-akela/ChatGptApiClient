@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -33,9 +33,10 @@ public partial class NetStatus : ObservableObject
     }
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(StatusText))] [NotifyPropertyChangedFor(nameof(StatusColor))]
-    private StatusEnum status = StatusEnum.Idle;
+    public partial StatusEnum Status { get; set; } = StatusEnum.Idle;
 
-    [ObservableProperty] private string systemFingerprint = "";
+    [ObservableProperty]
+    public partial string SystemFingerprint { get; set; } = "";
 
     public string StatusText => Status switch
     {

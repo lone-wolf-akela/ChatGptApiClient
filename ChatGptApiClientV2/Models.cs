@@ -260,7 +260,13 @@ public class ModelVersionInfo
         },
         new ModelVersionInfo
         {
-            ModelType = "gpt-4o", Name = "chatgpt-4o-latest", Description = "Latest",
+            ModelType = "gpt-4o", Name = "gpt-4o", Description = "稳定版 (2024-08-06)",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o", Name = "gpt-4o-2024-11-20", Description = "2024-11-20",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
@@ -273,6 +279,12 @@ public class ModelVersionInfo
         new ModelVersionInfo
         {
             ModelType = "gpt-4o", Name = "gpt-4o-2024-05-13", Description = "2024-05-13",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase
+        },
+        new ModelVersionInfo
+        {
+            ModelType = "gpt-4o", Name = "chatgpt-4o-latest", Description = "ChatGPT-4o Latest",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },

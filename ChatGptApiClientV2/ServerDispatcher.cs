@@ -47,7 +47,7 @@ namespace ChatGptApiClientV2;
 // Some 3rd party API provider will return "finish_reason" as an empty string "", which cause
 // error with openai sdk, as it expects a null instead. we need to patch it here
 
-public static class Patcher
+/*public static class Patcher
 {
     [ModuleInitializer]
     public static void Patch()
@@ -97,7 +97,7 @@ class Patch
         var modifiedJson = System.Text.Json.JsonSerializer.SerializeToElement(jsonObject);
         element = modifiedJson;
     }
-}
+}*/
 
 public class ServerEndpointOptions
 {
@@ -370,7 +370,8 @@ public class OpenAIEndpoint : IServerEndpoint
                         funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
                     }
 
-                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
+                    if (!toolCallUpdate.FunctionArgumentsUpdate.ToMemory().IsEmpty &&
+                        !string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
                     {
                         if (!funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
                         {

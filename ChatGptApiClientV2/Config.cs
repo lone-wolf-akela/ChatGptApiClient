@@ -52,7 +52,8 @@ public partial class Config : ObservableValidator
     private void StopSequencesCollectionChanged(object? sender,
         System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => SaveConfig();
 
-    [ObservableProperty] private double uiScale;
+    [ObservableProperty]
+    public partial double UiScale { get; set; }
 
     partial void OnUiScaleChanged(double value)
     {
@@ -60,7 +61,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private ThemeType theme;
+    [ObservableProperty]
+    public partial ThemeType Theme { get; set; }
 
     partial void OnThemeChanged(ThemeType value)
     {
@@ -68,7 +70,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private bool enableCustomThemeColor;
+    [ObservableProperty]
+    public partial bool EnableCustomThemeColor { get; set; }
 
     partial void OnEnableCustomThemeColorChanged(bool value)
     {
@@ -76,7 +79,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private SolidColorBrush customThemeColor;
+    [ObservableProperty]
+    public partial SolidColorBrush CustomThemeColor { get; set; }
 
     partial void OnCustomThemeColorChanged(SolidColorBrush value)
     {
@@ -88,7 +92,7 @@ public partial class Config : ObservableValidator
     [NotifyDataErrorInfo]
     [StringLength(maximumLength: 64, MinimumLength = 0, ErrorMessage = "昵称长度必须在 0 到 64 之间")]
     [RegularExpression("^[a-zA-Z0-9_-]*$", ErrorMessage = "用户昵称只能包含英文字母、数字、下划线（_）和连接号（-）")]
-    private string userNickName;
+    public partial string UserNickName { get; set; }
 
     partial void OnUserNickNameChanged(string value) => SaveConfig();
 
@@ -104,7 +108,7 @@ public partial class Config : ObservableValidator
     [NotifyPropertyChangedFor(nameof(ServiceURLEditable))]
     [NotifyPropertyChangedFor(nameof(ModelOptions))]
     [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
-    private ServiceProviderType serviceProvider;
+    public partial ServiceProviderType ServiceProvider { get; set; }
 
     partial void OnServiceProviderChanged(ServiceProviderType value)
     {
@@ -114,8 +118,6 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    private string serviceURL;
-
     [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     public string ServiceURL
     {
@@ -123,11 +125,11 @@ public partial class Config : ObservableValidator
         {
             ServiceProviderType.ArtonelicoOpenAIProxy => "https://www.artonelico.top/openai-proxy/v1",
             ServiceProviderType.OpenAI => "https://api.openai.com/v1",
-            _ => serviceURL
+            _ => field
         };
         set
         {
-            if (SetProperty(ref serviceURL, value, true))
+            if (SetProperty(ref field, value, true))
             {
                 SaveConfig();
             }
@@ -135,10 +137,11 @@ public partial class Config : ObservableValidator
     }
 
     [ObservableProperty] [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
-    private string otherOpenAICompatServiceURL;
+    public partial string OtherOpenAICompatServiceURL { get; set; }
     partial void OnOtherOpenAICompatServiceURLChanged(string value) => SaveConfig();
 
-    [ObservableProperty] private bool otherOpenAICompatModelEnableToolUse;
+    [ObservableProperty]
+    public partial bool OtherOpenAICompatModelEnableToolUse { get; set; }
 
     partial void OnOtherOpenAICompatModelEnableToolUseChanged(bool value)
     {
@@ -147,7 +150,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private string otherOpenAICompatModelName;
+    [ObservableProperty]
+    public partial string OtherOpenAICompatModelName { get; set; }
 
     partial void OnOtherOpenAICompatModelNameChanged(string value)
     {
@@ -156,7 +160,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private string otherOpenAICompatModelProviderName;
+    [ObservableProperty]
+    public partial string OtherOpenAICompatModelProviderName { get; set; }
 
     partial void OnOtherOpenAICompatModelProviderNameChanged(string value)
     {
@@ -165,7 +170,8 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    [ObservableProperty] private DateTime otherOpenAICompatModelKnowledgeCutoff;
+    [ObservableProperty]
+    public partial DateTime OtherOpenAICompatModelKnowledgeCutoff { get; set; }
 
     partial void OnOtherOpenAICompatModelKnowledgeCutoffChanged(DateTime value)
     {
@@ -187,7 +193,7 @@ public partial class Config : ObservableValidator
     [NotifyPropertyChangedFor(nameof(AnthropicServiceURLEditable))]
     [NotifyPropertyChangedFor(nameof(ModelOptions))]
     [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
-    private AnthropicServiceProviderType anthropicServiceProvider;
+    public partial AnthropicServiceProviderType AnthropicServiceProvider { get; set; }
 
     partial void OnAnthropicServiceProviderChanged(AnthropicServiceProviderType value)
     {
@@ -197,8 +203,6 @@ public partial class Config : ObservableValidator
         SaveConfig();
     }
 
-    private string anthropicServiceURL;
-
     [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
     public string AnthropicServiceURL
     {
@@ -206,11 +210,11 @@ public partial class Config : ObservableValidator
         {
             AnthropicServiceProviderType.ArtonelicAnthropicProxy => "https://www.artonelico.top/anthropic-proxy/v1",
             AnthropicServiceProviderType.Anthropic => "https://api.anthropic.com/v1",
-            _ => anthropicServiceURL
+            _ => field
         };
         set
         {
-            if (SetProperty(ref anthropicServiceURL, value, true))
+            if (SetProperty(ref field, value, true))
             {
                 SaveConfig();
             }
@@ -240,52 +244,63 @@ public partial class Config : ObservableValidator
 
     [ObservableProperty]
     // ReSharper disable once InconsistentNaming
-    private string _API_KEY;
+    public partial string API_KEY { get; set; }
 
     partial void OnAPI_KEYChanged(string value) => SaveConfig();
 
-    [ObservableProperty] private string anthropicAPIKey;
+    [ObservableProperty]
+    public partial string AnthropicAPIKey { get; set; }
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
 
-    [ObservableProperty] private string otherOpenAICompatModelAPIKey;
+    [ObservableProperty]
+    public partial string OtherOpenAICompatModelAPIKey { get; set; }
     partial void OnOtherOpenAICompatModelAPIKeyChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
-    [ObservableProperty] private string googleSearchEngineID;
+    [ObservableProperty]
+    public partial string GoogleSearchEngineID { get; set; }
     partial void OnGoogleSearchEngineIDChanged(string value) => SaveConfig();
-    [ObservableProperty] private string googleSearchAPIKey;
 
+    [ObservableProperty]
+    public partial string GoogleSearchAPIKey { get; set; }
     partial void OnGoogleSearchAPIKeyChanged(string value) => SaveConfig();
 
     /*******************************/
     /* Bing Search Plugin Config */
-    [ObservableProperty] private string bingSearchAPIKey;
-
+    [ObservableProperty]
+    public partial string BingSearchAPIKey { get; set; }
     partial void OnBingSearchAPIKeyChanged(string value) => SaveConfig();
 
     /*****************************/
     /* Wolfram Alpha Plugin Config*/
-    [ObservableProperty] private string wolframAlphaAppid;
+    [ObservableProperty]
+    public partial string WolframAlphaAppid { get; set; }
     partial void OnWolframAlphaAppidChanged(string value) => SaveConfig();
     /******************************/
 
 
-    [ObservableProperty] private float temperature;
+    [ObservableProperty]
+    public partial float Temperature { get; set; }
     partial void OnTemperatureChanged(float value) => SaveConfig();
 
-    [ObservableProperty] private float topP;
+    [ObservableProperty]
+    public partial float TopP { get; set; }
     partial void OnTopPChanged(float value) => SaveConfig();
 
-    [ObservableProperty] private float presencePenalty;
+    [ObservableProperty]
+    public partial float PresencePenalty { get; set; }
     partial void OnPresencePenaltyChanged(float value) => SaveConfig();
 
-    [ObservableProperty] private int maxTokens;
+    [ObservableProperty]
+    public partial int MaxTokens { get; set; }
     partial void OnMaxTokensChanged(int value) => SaveConfig();
 
-    [ObservableProperty] private int seed;
+    [ObservableProperty]
+    public partial int Seed { get; set; }
     partial void OnSeedChanged(int value) => SaveConfig();
 
-    [ObservableProperty] private bool useRandomSeed;
+    [ObservableProperty]
+    public partial bool UseRandomSeed { get; set; }
     partial void OnUseRandomSeedChanged(bool value) => SaveConfig();
     public enum MarkdownRenderMode
     {
@@ -294,10 +309,12 @@ public partial class Config : ObservableValidator
         EnabledForAssistantMessages
     }
 
-    [ObservableProperty] private MarkdownRenderMode enableMarkdown;
+    [ObservableProperty]
+    public partial MarkdownRenderMode EnableMarkdown { get; set; }
     partial void OnEnableMarkdownChanged(MarkdownRenderMode value) => SaveConfig();
 
-    [ObservableProperty] private bool uploadHiresImage;
+    [ObservableProperty]
+    public partial bool UploadHiresImage { get; set; }
     partial void OnUploadHiresImageChanged(bool value) => SaveConfig();
 
     [JsonIgnore] public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
@@ -332,7 +349,7 @@ public partial class Config : ObservableValidator
     [NotifyPropertyChangedFor(nameof(SelectedModelType))]
     [NotifyPropertyChangedFor(nameof(SelectedModel))]
     [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
-    private int selectedModelIndex;
+    public partial int SelectedModelIndex { get; set; }
 
     partial void OnSelectedModelIndexChanged(int value)
     {
@@ -380,7 +397,7 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedModel))]
     [NotifyPropertyChangedFor(nameof(SelectedModelSupportTools))]
-    private int selectedModelVersionIndex;
+    public partial int SelectedModelVersionIndex { get; set; }
 
     partial void OnSelectedModelVersionIndexChanged(int value)
     {
@@ -414,50 +431,52 @@ public partial class Config : ObservableValidator
 
     [JsonIgnore] public bool SelectedModelSupportTools => SelectedModel?.FunctionCallSupported ?? false;
 
-    [ObservableProperty] private string pythonDllPath;
+    [ObservableProperty]
+    public partial string PythonDllPath { get; set; }
     partial void OnPythonDllPathChanged(string value) => SaveConfig();
 
-    [ObservableProperty] private Utils.PythonEnv? pythonEnv;
+    [ObservableProperty]
+    public partial Utils.PythonEnv? PythonEnv { get; set; }
     partial void OnPythonEnvChanged(Utils.PythonEnv? value) => SaveConfig();
 
     public Config()
     {
-        theme = ThemeType.System;
-        enableCustomThemeColor = false;
-        customThemeColor = new SolidColorBrush(Color.FromRgb(0x2e, 0x6c, 0xf3));
+        Theme = ThemeType.System;
+        EnableCustomThemeColor = false;
+        CustomThemeColor = new SolidColorBrush(Color.FromRgb(0x2e, 0x6c, 0xf3));
         RefreshTheme();
         ThemeManager.Current.SystemThemeChanged += SystemThemeChanged;
 
-        uiScale = 1.0;
-        userNickName = "";
-        serviceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
-        serviceURL = "";
-        otherOpenAICompatServiceURL = "http://127.0.0.1:8080";
-        otherOpenAICompatModelEnableToolUse = false;
-        otherOpenAICompatModelKnowledgeCutoff = new DateTime(2023, 1, 1);
-        otherOpenAICompatModelName = "LLaMA";
-        otherOpenAICompatModelProviderName = "Meta AI";
-        anthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
-        anthropicServiceURL = "";
-        _API_KEY = "";
-        anthropicAPIKey = "";
-        otherOpenAICompatModelAPIKey = "";
-        googleSearchAPIKey = "";
-        googleSearchEngineID = "";
-        bingSearchAPIKey = "";
-        wolframAlphaAppid = "";
-        temperature = 0.5f;
-        topP = 1.0f;
-        presencePenalty = 0.0f;
-        maxTokens = 0;
-        seed = 0;
-        enableMarkdown = MarkdownRenderMode.EnabledForAssistantMessages;
-        selectedModelIndex = 0;
-        selectedModelVersionIndex = 0;
-        useRandomSeed = true;
-        uploadHiresImage = false;
-        pythonDllPath = "";
-        pythonEnv = null;
+        UiScale = 1.0;
+        UserNickName = "";
+        ServiceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
+        ServiceURL = "";
+        OtherOpenAICompatServiceURL = "http://127.0.0.1:8080";
+        OtherOpenAICompatModelEnableToolUse = false;
+        OtherOpenAICompatModelKnowledgeCutoff = new DateTime(2023, 1, 1);
+        OtherOpenAICompatModelName = "LLaMA";
+        OtherOpenAICompatModelProviderName = "Meta AI";
+        AnthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
+        AnthropicServiceURL = "";
+        API_KEY = "";
+        AnthropicAPIKey = "";
+        OtherOpenAICompatModelAPIKey = "";
+        GoogleSearchAPIKey = "";
+        GoogleSearchEngineID = "";
+        BingSearchAPIKey = "";
+        WolframAlphaAppid = "";
+        Temperature = 0.5f;
+        TopP = 1.0f;
+        PresencePenalty = 0.0f;
+        MaxTokens = 0;
+        Seed = 0;
+        EnableMarkdown = MarkdownRenderMode.EnabledForAssistantMessages;
+        SelectedModelIndex = 0;
+        SelectedModelVersionIndex = 0;
+        UseRandomSeed = true;
+        UploadHiresImage = false;
+        PythonDllPath = "";
+        PythonEnv = null;
 
         StopSequences.CollectionChanged += StopSequencesCollectionChanged;
 
