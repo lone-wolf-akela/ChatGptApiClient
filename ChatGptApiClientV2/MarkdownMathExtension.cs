@@ -18,6 +18,7 @@ using Markdig.Renderers.Wpf;
 using Markdig.Syntax;
 using Markdig.Wpf;
 using WpfMath.Controls;
+using Application = System.Windows.Application;
 
 namespace ChatGptApiClientV2;
 
@@ -87,8 +88,8 @@ public class WpfMarkdownMathBlockRenderer : WpfObjectRenderer<MathBlock>
         var lines = obj.Lines.Lines[1..^2];
         var formula = new FormulaControl
         {
-            Formula = string.Join('\n', lines),
-            LayoutTransform = new ScaleTransform(0.85, 0.85)
+            Style = Application.Current.FindResource("CustomFormulaStyle") as Style,
+            Formula = string.Join('\n', lines)
         };
         var block = new BlockUIContainer(formula);
         renderer.WriteBlock(block);
@@ -101,9 +102,8 @@ public class WpfMarkdownMathInlineRenderer : WpfObjectRenderer<MathInline>
     {
         var formula = new FormulaControl
         {
+            Style = Application.Current.FindResource("CustomFormulaStyle") as Style,
             Formula = obj.Content.ToString(),
-            LayoutTransform = new ScaleTransform(0.85, 0.85),
-            Margin = new Thickness(0, 1, 0, 1)
         };
         var inline = new InlineUIContainer(formula)
         {

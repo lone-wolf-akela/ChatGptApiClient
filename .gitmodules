@@ -1,0 +1,3 @@
+[submodule "xaml-math"]
+	path = xaml-math
+	url = https://github.com/ForNeVeR/xaml-math.git

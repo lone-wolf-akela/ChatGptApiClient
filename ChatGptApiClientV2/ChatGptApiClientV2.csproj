@@ -121,7 +121,6 @@
         <PackageReference Include="System.IO.Packaging" Version="9.0.0" />
         <PackageReference Include="System.Private.Uri" Version="4.3.2" />
         <PackageReference Include="System.Text.Json" Version="9.0.0" />
-        <PackageReference Include="WpfMath" Version="2.1.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -138,6 +137,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\poppler-wrapper\poppler-wrapper.vcxproj" />
+        <ProjectReference Include="..\xaml-math\src\WpfMath\WpfMath.csproj" />
     </ItemGroup>
 
     <ItemGroup>
