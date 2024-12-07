@@ -18,17 +18,12 @@
 
 using System;
 using System.ClientModel;
-using System.ClientModel.Primitives;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -155,21 +150,21 @@ public class OpenAIEndpoint : IServerEndpoint
             {
                 var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
                 var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
-                client = openai.GetChatClient(_options.Model);
+                _client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Custom:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };
                 var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
-                client = openai.GetChatClient(_options.Model);
+                _client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };
                 var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
-                client = openai.GetChatClient(_options.Model);
+                _client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Claude:
@@ -301,7 +296,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 chatCompletionsOptions.StopSequences.AddRange(_options.StopSequences);
             }
 
-            _streamingResponse = client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
+            _streamingResponse = _client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
             _responseSb.Clear();
             _errorMessage = null;
             SystemFingerprint = "";
@@ -453,12 +448,13 @@ public class OpenAIEndpoint : IServerEndpoint
             }
         }
     }
-    public string SystemFingerprint { get; private set; }
 
-    private int _usageInputToken = 0;
-    private int _usageOutputToken = 0;
+    public string SystemFingerprint { get; private set; } = "";
+
+    private int _usageInputToken;
+    private int _usageOutputToken;
     private readonly ServerEndpointOptions _options;
-    private readonly ChatClient client;
+    private readonly ChatClient _client;
     private AsyncCollectionResult<StreamingChatCompletionUpdate>? _streamingResponse;
     private readonly StringBuilder _responseSb = new();
     private string? _errorMessage;
@@ -976,8 +972,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
         }
     }
 
-    private int _inputTokens = 0;
-    private int _outputTokens = 0;
+    private int _inputTokens;
+    private int _outputTokens;
     private readonly HttpClient _httpClient;
     private string? _errorMessage;
     private HttpResponseMessage? _httpResponse;
