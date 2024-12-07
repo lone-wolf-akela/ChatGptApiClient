@@ -333,6 +333,15 @@ public partial class ChatWindow
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         ((ChatWindowViewModel)DataContext).State.Config.RefreshTheme();
+
+        CommandManager.AddPreviewExecutedHandler(TxtInput, TxtInput_onPreviewExecuted);
+        CommandManager.AddPreviewCanExecuteHandler(TxtInput, TxtInput_onPreviewCanExecute);
+    }
+
+    private void Window_Unloaded(object sender, RoutedEventArgs e)
+    {
+        CommandManager.RemovePreviewExecutedHandler(TxtInput, TxtInput_onPreviewExecuted);
+        CommandManager.RemovePreviewCanExecuteHandler(TxtInput, TxtInput_onPreviewCanExecute);
     }
 
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -435,10 +444,63 @@ public partial class ChatWindow
         }
     }
 
-    private bool tabMsgTabItemIsDragging;
-    private Point tabMsgTabItemDragInitialMousePosition;
-    private TabItem? tabMsgTabItemDragSource;
-    private TranslateTransform? tabMsgTabItemTranslateTransform;
+    // from https://stackoverflow.com/questions/13736626/allowing-pasting-data-into-a-wpf-textbox
+    private void TxtInput_onPreviewCanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+        if (Equals(e.Command, ApplicationCommands.Paste))
+        {
+            e.CanExecute = true;
+            e.Handled = true;
+        }
+    }
+
+    private async void TxtInput_onPreviewExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (!Equals(e.Command, ApplicationCommands.Paste))
+        {
+            return;
+        }
+
+        if (Clipboard.ContainsImage())
+        {
+            var image = Clipboard.GetImage();
+            if (image is null)
+            {
+                return;
+            }
+            var tmpName = Path.GetTempFileName();
+            await using (var fs = File.Create(tmpName))
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(image));
+                encoder.Save(fs);
+            }
+
+            var imageName = Path.ChangeExtension(tmpName, "png");
+            File.Move(tmpName, imageName);
+            Utils.TempFileCleaner.AddFile(imageName);
+
+            await ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(imageName);
+            e.Handled = true;
+        }
+        else if (Clipboard.ContainsFileDropList())
+        {
+            var files = Clipboard.GetFileDropList();
+            foreach (var file in files)
+            {
+                if (file is not null)
+                {
+                    await ((ChatWindowViewModel)DataContext).AddSingleFileAttachment(file);
+                }
+            }
+            e.Handled = true;
+        }
+    }
+
+    private bool _tabMsgTabItemIsDragging;
+    private Point _tabMsgTabItemDragInitialMousePosition;
+    private TabItem? _tabMsgTabItemDragSource;
+    private TranslateTransform? _tabMsgTabItemTranslateTransform;
     private void TabMsg_TabItem_MouseMove(object sender, MouseEventArgs e)
     {
         if (e.Source is not TabItem tabItem)
@@ -446,32 +508,32 @@ public partial class ChatWindow
             return;
         }
 
-        if (!tabMsgTabItemIsDragging && Mouse.PrimaryDevice.LeftButton == MouseButtonState.Pressed)
+        if (!_tabMsgTabItemIsDragging && Mouse.PrimaryDevice.LeftButton == MouseButtonState.Pressed)
         {
-            tabMsgTabItemDragInitialMousePosition = e.GetPosition(null);
-            tabMsgTabItemDragSource = tabItem;
-            tabMsgTabItemIsDragging = true;
+            _tabMsgTabItemDragInitialMousePosition = e.GetPosition(null);
+            _tabMsgTabItemDragSource = tabItem;
+            _tabMsgTabItemIsDragging = true;
             tabItem.CaptureMouse();
         }
 
-        if (!tabMsgTabItemIsDragging)
+        if (!_tabMsgTabItemIsDragging)
         {
             return;
         }
         if (Mouse.PrimaryDevice.LeftButton != MouseButtonState.Pressed)
         {
             // stop following mouse
-            tabMsgTabItemDragSource!.ReleaseMouseCapture();
-            if (tabMsgTabItemDragSource.RenderTransform is TransformGroup tGroup)
+            _tabMsgTabItemDragSource!.ReleaseMouseCapture();
+            if (_tabMsgTabItemDragSource.RenderTransform is TransformGroup tGroup)
             {
-                tGroup.Children.Remove(tabMsgTabItemTranslateTransform);
-                tabMsgTabItemTranslateTransform = null;
+                tGroup.Children.Remove(_tabMsgTabItemTranslateTransform);
+                _tabMsgTabItemTranslateTransform = null;
             }
 
-            tabMsgTabItemIsDragging = false;
+            _tabMsgTabItemIsDragging = false;
 
             // find drag target
-            var tabControl = FindParent<TabControl>(tabMsgTabItemDragSource);
+            var tabControl = FindParent<TabControl>(_tabMsgTabItemDragSource);
             if (tabControl is null)
             {
                 return;
@@ -479,7 +541,7 @@ public partial class ChatWindow
             for (var targetTabItemIndex = 0; targetTabItemIndex < tabControl.Items.Count; targetTabItemIndex++)
             {
                 if (tabControl.ItemContainerGenerator.ContainerFromIndex(targetTabItemIndex) is not TabItem targetTabItem
-                    || targetTabItem == tabMsgTabItemDragSource)
+                    || targetTabItem == _tabMsgTabItemDragSource)
                 {
                     continue;
                 }
@@ -488,7 +550,7 @@ public partial class ChatWindow
                     continue;
                 }
                 var viewModel = (ChatWindowViewModel)DataContext;
-                var movedTab = (ChatWindowMessageTab)tabMsgTabItemDragSource.DataContext;
+                var movedTab = (ChatWindowMessageTab)_tabMsgTabItemDragSource.DataContext;
                 viewModel.MoveTabToIndex(movedTab.TabId, targetTabItemIndex);
                 viewModel.SelectTab(movedTab.TabId);
                 return;
@@ -496,35 +558,35 @@ public partial class ChatWindow
         }
         else
         {
-            var transformIsNotRegistered = tabMsgTabItemTranslateTransform is null
-                                           || tabMsgTabItemDragSource!.RenderTransform is not TransformGroup;
+            var transformIsNotRegistered = _tabMsgTabItemTranslateTransform is null
+                                           || _tabMsgTabItemDragSource!.RenderTransform is not TransformGroup;
 
-            tabMsgTabItemTranslateTransform ??= new TranslateTransform();
+            _tabMsgTabItemTranslateTransform ??= new TranslateTransform();
             var currentMousePosition = e.GetPosition(null);
-            tabMsgTabItemTranslateTransform.X = currentMousePosition.X - tabMsgTabItemDragInitialMousePosition.X;
-            tabMsgTabItemTranslateTransform.Y = currentMousePosition.Y - tabMsgTabItemDragInitialMousePosition.Y;
+            _tabMsgTabItemTranslateTransform.X = currentMousePosition.X - _tabMsgTabItemDragInitialMousePosition.X;
+            _tabMsgTabItemTranslateTransform.Y = currentMousePosition.Y - _tabMsgTabItemDragInitialMousePosition.Y;
 
             if (!transformIsNotRegistered)
             {
                 return;
             }
-            if (tabMsgTabItemDragSource!.RenderTransform is null)
+            if (_tabMsgTabItemDragSource!.RenderTransform is null)
             {
-                tabMsgTabItemDragSource.RenderTransform = new TransformGroup
+                _tabMsgTabItemDragSource.RenderTransform = new TransformGroup
                 {
-                    Children = { tabMsgTabItemTranslateTransform }
+                    Children = { _tabMsgTabItemTranslateTransform }
                 };
             }
-            else if (tabMsgTabItemDragSource.RenderTransform is not TransformGroup tGroup)
+            else if (_tabMsgTabItemDragSource.RenderTransform is not TransformGroup tGroup)
             {
-                tabMsgTabItemDragSource.RenderTransform = new TransformGroup
+                _tabMsgTabItemDragSource.RenderTransform = new TransformGroup
                 {
-                    Children = { tabMsgTabItemDragSource.RenderTransform, tabMsgTabItemTranslateTransform }
+                    Children = { _tabMsgTabItemDragSource.RenderTransform, _tabMsgTabItemTranslateTransform }
                 };
             }
             else
             {
-                tGroup.Children.Add(tabMsgTabItemTranslateTransform);
+                tGroup.Children.Add(_tabMsgTabItemTranslateTransform);
             }
         }
     }

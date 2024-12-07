@@ -243,6 +243,35 @@ public class EnumToCollectionConverter : MarkupExtension, IValueConverter
 
 public static partial class Utils
 {
+    public class TempFileCleanerClass
+    {
+        private readonly List<string> _files = [];
+        public void AddFile(string file)
+        {
+            _files.Add(file);
+        }
+        private void CleanFiles()
+        {
+            foreach (var file in _files)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+        public TempFileCleanerClass()
+        {
+            Application.Current.Exit += (sender, args) => CleanFiles();
+        }
+    }
+
+    public static TempFileCleanerClass TempFileCleaner { get; } = new();
+
     public static Geometry CreateRoundedRectangleGeometry(double width, double height, CornerRadius radius,
         Thickness thickness)
     {

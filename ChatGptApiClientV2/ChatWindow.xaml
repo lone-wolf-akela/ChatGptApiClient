@@ -32,7 +32,7 @@
            DragEnter="Window_DragEnter"
            DragLeave="Window_DragLeave"
            DragOver="Window_DragOver"
-           Loaded="Window_Loaded">
+           Loaded="Window_Loaded" Unloaded="Window_Unloaded">
     <d:Window.DataContext>
         <local:ChatWindowViewModel />
     </d:Window.DataContext>

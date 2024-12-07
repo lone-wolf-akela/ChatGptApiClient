@@ -58,33 +58,7 @@ public partial class ImageDisplayer
     {
         BtnPanel.Visibility = Visibility.Collapsed;
     }
-    private class TempFileCleanerClass
-    {
-        private readonly List<string> files = [];
-        public void AddFile(string file)
-        {
-            files.Add(file);
-        }
-        private void CleanFiles()
-        {
-            foreach (var file in files)
-            {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch
-                {
-                    // ignored
-                }
-            }
-        }
-        public TempFileCleanerClass()
-        {
-            Application.Current.Exit += (sender, args) => CleanFiles();
-        }
-    }
-    private static readonly TempFileCleanerClass TempFileCleaner = new();
+
     private async void BtnOpenImageViewer_Click(object sender, RoutedEventArgs e)
     {
         var tmpName = Path.GetTempFileName();
@@ -97,7 +71,7 @@ public partial class ImageDisplayer
 
         var imageName = Path.ChangeExtension(tmpName, "png");
         File.Move(tmpName, imageName);
-        TempFileCleaner.AddFile(imageName);
+        Utils.TempFileCleaner.AddFile(imageName);
         Process.Start(new ProcessStartInfo(imageName) { UseShellExecute = true });
     }
 }
