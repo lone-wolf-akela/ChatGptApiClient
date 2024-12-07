@@ -215,14 +215,14 @@ public class ToolCallType : ICloneable
 
 public class MessageConverter : JsonConverter<IMessage>
 {
-    private bool canWrite = true;
-    private bool canRead = true;
-    public override bool CanWrite => canWrite;
-    public override bool CanRead => canRead;
+    private bool _canWrite = true;
+    private bool _canRead = true;
+    public override bool CanWrite => _canWrite;
+    public override bool CanRead => _canRead;
 
     public override void WriteJson(JsonWriter writer, IMessage? value, JsonSerializer serializer)
     {
-        canWrite = false;
+        _canWrite = false;
 
         if (value is null)
         {
@@ -249,13 +249,13 @@ public class MessageConverter : JsonConverter<IMessage>
             }
         }
 
-        canWrite = true;
+        _canWrite = true;
     }
 
     public override IMessage ReadJson(JsonReader reader, Type objectType, IMessage? existingValue,
         bool hasExistingValue, JsonSerializer serializer)
     {
-        canRead = false;
+        _canRead = false;
         var jobj = JObject.Load(reader);
         var role = jobj["role"]?.ToObject<RoleType>();
 
@@ -267,7 +267,7 @@ public class MessageConverter : JsonConverter<IMessage>
             RoleType.Tool => jobj.ToObject<ToolMessage>(serializer) ?? throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
-        canRead = true;
+        _canRead = true;
         return result;
     }
 }
@@ -284,14 +284,14 @@ public interface IMessage : ICloneable
 
     public class ContentConverter : JsonConverter<IContent>
     {
-        private bool canWrite = true;
-        private bool canRead = true;
-        public override bool CanWrite => canWrite;
-        public override bool CanRead => canRead;
+        private bool _canWrite = true;
+        private bool _canRead = true;
+        public override bool CanWrite => _canWrite;
+        public override bool CanRead => _canRead;
 
         public override void WriteJson(JsonWriter writer, IContent? value, JsonSerializer serializer)
         {
-            canWrite = false;
+            _canWrite = false;
             if (value is null)
             {
                 writer.WriteNull();
@@ -311,13 +311,13 @@ public interface IMessage : ICloneable
                 }
             }
 
-            canWrite = true;
+            _canWrite = true;
         }
 
         public override IContent ReadJson(JsonReader reader, Type objectType, IContent? existingValue,
             bool hasExistingValue, JsonSerializer serializer)
         {
-            canRead = false;
+            _canRead = false;
             var jobj = JObject.Load(reader);
             var type = jobj["type"]?.ToObject<ContentCategory>();
             IContent result = type switch
@@ -328,7 +328,7 @@ public interface IMessage : ICloneable
                                             throw new JsonSerializationException(),
                 _ => throw new JsonSerializationException()
             };
-            canRead = true;
+            _canRead = true;
             return result;
         }
     }
@@ -480,6 +480,9 @@ public interface IMessage : ICloneable
 
     public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer);
     public DateTime DateTime { get; set; }
+    public bool ContainsServerUsageStats { get; }
+    public int ServerInputTokenNum { get; }
+    public int ServerOutputTokenNum { get; }
 }
 
 public class SystemMessage : IMessage
@@ -500,20 +503,23 @@ public class SystemMessage : IMessage
         };
     }
     public DateTime DateTime { get; set; } = DateTime.Now;
+    public bool ContainsServerUsageStats => false;
+    public int ServerInputTokenNum => -1;
+    public int ServerOutputTokenNum => -1;
 }
 
 public class UserMessage : IMessage
 {
     public class AttachmentInfoConverter : JsonConverter<IAttachmentInfo>
     {
-        private bool canWrite = true;
-        private bool canRead = true;
-        public override bool CanWrite => canWrite;
-        public override bool CanRead => canRead;
+        private bool _canWrite = true;
+        private bool _canRead = true;
+        public override bool CanWrite => _canWrite;
+        public override bool CanRead => _canRead;
 
         public override void WriteJson(JsonWriter writer, IAttachmentInfo? value, JsonSerializer serializer)
         {
-            canWrite = false;
+            _canWrite = false;
             if (value is null)
             {
                 writer.WriteNull();
@@ -533,13 +539,13 @@ public class UserMessage : IMessage
                 }
             }
 
-            canWrite = true;
+            _canWrite = true;
         }
 
         public override IAttachmentInfo ReadJson(JsonReader reader, Type objectType, IAttachmentInfo? existingValue,
             bool hasExistingValue, JsonSerializer serializer)
         {
-            canRead = false;
+            _canRead = false;
             var jobj = JObject.Load(reader);
             var type = jobj["type"]?.ToObject<IAttachmentInfo.AttachmentType>();
             IAttachmentInfo result = type switch
@@ -550,7 +556,7 @@ public class UserMessage : IMessage
                                                         throw new JsonSerializationException(),
                 _ => throw new JsonSerializationException()
             };
-            canRead = true;
+            _canRead = true;
             return result;
         }
     }
@@ -608,6 +614,9 @@ public class UserMessage : IMessage
     public string? Name { get; set; }
     public bool Hidden => false;
     public DateTime DateTime { get; set; } = DateTime.Now;
+    public bool ContainsServerUsageStats => false;
+    public int ServerInputTokenNum => -1;
+    public int ServerOutputTokenNum => -1;
 
     public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
     {
@@ -669,6 +678,9 @@ public class AssistantMessage : IMessage
     public List<ToolCallType>? ToolCalls { get; set; }
     public bool Hidden => false;
     public DateTime DateTime { get; set; } = DateTime.Now;
+    public bool ContainsServerUsageStats => true;
+    public int ServerInputTokenNum { get; set; }
+    public int ServerOutputTokenNum { get; set; }
     public ModelInfo.ProviderEnum Provider { get; set; }
 
     public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer)
@@ -724,6 +736,9 @@ public class ToolMessage : IMessage
 
     public bool Hidden { get; set; }
     public DateTime DateTime { get; set; } = DateTime.Now;
+    public bool ContainsServerUsageStats => false;
+    public int ServerInputTokenNum => -1;
+    public int ServerOutputTokenNum => -1;
     public int CountToken(ModelVersionInfo.TokenizerEnum tokenizer) => ((IMessage)this).CountTokenBase(tokenizer);
 
     public object Clone()
@@ -756,16 +771,15 @@ public class ChatCompletionRequest
     }
 
     public List<IMessage> Messages { get; set; } = [];
-    private string? title;
 
     public string? Title
     {
-        set => title = value;
+        set;
         get
         {
-            if (title is not null)
+            if (field is not null)
             {
-                return title;
+                return field;
             }
 
             var firstUserMessage = Messages.FirstOrDefault(m => m.Role == RoleType.User);

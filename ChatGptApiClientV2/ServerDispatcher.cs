@@ -20,10 +20,12 @@ using System;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -143,31 +145,31 @@ public class OpenAIEndpoint : IServerEndpoint
 {
     public OpenAIEndpoint(ServerEndpointOptions o)
     {
-        options = o;
+        _options = o;
 
         var defaultTimeout = TimeSpan.FromMinutes(10);
 
-        switch (options.Service)
+        switch (_options.Service)
         {
             case ServerEndpointOptions.ServiceType.OpenAI:
             {
                 var opt = new OpenAIClientOptions { NetworkTimeout = defaultTimeout };
-                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
-                client = openai.GetChatClient(options.Model);
+                var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
+                client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Custom:
             {
-                var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
-                client = openai.GetChatClient(options.Model);
+                var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };
+                var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
+                client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
-                var opt = new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint), NetworkTimeout = defaultTimeout };
-                var openai = new OpenAIClient(new ApiKeyCredential(options.Key), opt);
-                client = openai.GetChatClient(options.Model);
+                var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };
+                var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
+                client = openai.GetChatClient(_options.Model);
                 break;
             }
             case ServerEndpointOptions.ServiceType.Claude:
@@ -182,7 +184,7 @@ public class OpenAIEndpoint : IServerEndpoint
     private IEnumerable<ChatTool> GetToolDefinitions()
     {
         var lst =
-            from tool in options.Tools ?? []
+            from tool in _options.Tools ?? []
             select ChatTool.CreateFunctionTool(
                 tool.Function.Name,
                 tool.Function.Description,
@@ -284,32 +286,32 @@ public class OpenAIEndpoint : IServerEndpoint
         {
             var chatCompletionsOptions = new ChatCompletionOptions
             {
-                MaxOutputTokenCount = options.MaxTokens,
-                PresencePenalty = options.PresencePenalty,
+                MaxOutputTokenCount = _options.MaxTokens,
+                PresencePenalty = _options.PresencePenalty,
 #pragma warning disable OPENAI001
-                Seed = options.Seed,
+                Seed = _options.Seed,
 #pragma warning restore OPENAI001
-                Temperature = options.Temperature,
-                TopP = options.TopP,
-                EndUserId = options.UserId
+                Temperature = _options.Temperature,
+                TopP = _options.TopP,
+                EndUserId = _options.UserId
             };
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
-            if (options.StopSequences is not null)
+            if (_options.StopSequences is not null)
             {
-                chatCompletionsOptions.StopSequences.AddRange(options.StopSequences);
+                chatCompletionsOptions.StopSequences.AddRange(_options.StopSequences);
             }
 
-            streamingResponse = client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
-            responseSb.Clear();
-            errorMessage = null;
-            systemFingerprint = "";
-            toolCallIdsByIndex.Clear();
-            funcNamesByIndex.Clear();
-            funcArgsByIndex.Clear();
+            _streamingResponse = client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
+            _responseSb.Clear();
+            _errorMessage = null;
+            SystemFingerprint = "";
+            _toolCallIdsByIndex.Clear();
+            _funcNamesByIndex.Clear();
+            _funcArgsByIndex.Clear();
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            _errorMessage = e.Message;
         }
         return Task.CompletedTask;
     }
@@ -317,17 +319,17 @@ public class OpenAIEndpoint : IServerEndpoint
     public async IAsyncEnumerable<string> Streaming(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (errorMessage is not null)
+        if (_errorMessage is not null)
         {
             yield break;
         }
 
-        if (streamingResponse is null)
+        if (_streamingResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
 
-        var enumerator = streamingResponse.GetAsyncEnumerator(cancellationToken);
+        var enumerator = _streamingResponse.GetAsyncEnumerator(cancellationToken);
 
         try
         {
@@ -343,7 +345,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 }
                 catch (Exception e)
                 {
-                    errorMessage = e.Message;
+                    _errorMessage = e.Message;
                     break;
                 }
 
@@ -355,28 +357,28 @@ public class OpenAIEndpoint : IServerEndpoint
                 var chatUpdate = enumerator.Current;
                 if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && !chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
                 {
-                    systemFingerprint = chatUpdate.SystemFingerprint;
+                    SystemFingerprint = chatUpdate.SystemFingerprint;
                 }
 
-                foreach(var toolCallUpdate in chatUpdate.ToolCallUpdates)
+                foreach (var toolCallUpdate in chatUpdate.ToolCallUpdates)
                 {
                     if (!string.IsNullOrEmpty(toolCallUpdate.ToolCallId))
                     {
-                        toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.ToolCallId;
+                        _toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.ToolCallId;
                     }
 
                     if (!string.IsNullOrEmpty(toolCallUpdate.FunctionName))
                     {
-                        funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
+                        _funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
                     }
 
                     if (!toolCallUpdate.FunctionArgumentsUpdate.ToMemory().IsEmpty &&
                         !string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
                     {
-                        if (!funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
+                        if (!_funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
                         {
                             arg = new StringBuilder();
-                            funcArgsByIndex[toolCallUpdate.Index] = arg;
+                            _funcArgsByIndex[toolCallUpdate.Index] = arg;
                         }
 
                         arg.Append(toolCallUpdate.FunctionArgumentsUpdate);
@@ -385,13 +387,19 @@ public class OpenAIEndpoint : IServerEndpoint
 
                 foreach(var part in chatUpdate.ContentUpdate)
                 {
-                    responseSb.Append(part.Text);
+                    _responseSb.Append(part.Text);
                     yield return part.Text;
                 }
 
                 if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
                 {
-                    responseSb.Append(chatUpdate.SystemFingerprint["stopping_word ".Length..]);
+                    _responseSb.Append(chatUpdate.SystemFingerprint["stopping_word ".Length..]);
+                }
+
+                if (chatUpdate.Usage is not null)
+                {
+                    _usageInputToken = chatUpdate.Usage.InputTokenCount;
+                    _usageOutputToken = chatUpdate.Usage.OutputTokenCount;
                 }
             }
         }
@@ -401,26 +409,26 @@ public class OpenAIEndpoint : IServerEndpoint
         }
     }
 
-    public string SystemFingerprint => systemFingerprint;
-
     public AssistantMessage ResponseMessage
     {
         get
         {
-            if (!string.IsNullOrEmpty(errorMessage))
+            if (!string.IsNullOrEmpty(_errorMessage))
             {
-                responseSb.AppendLine();
-                responseSb.AppendLine(errorMessage);
+                _responseSb.AppendLine();
+                _responseSb.AppendLine(_errorMessage);
             }
             var response = new AssistantMessage
             {
                 Content =
                 [
-                    new IMessage.TextContent { Text = responseSb.ToString() }
+                    new IMessage.TextContent { Text = _responseSb.ToString() }
                 ],
                 ToolCalls = ToolCalls.ToList(),
-                Provider = options.Service == ServerEndpointOptions.ServiceType.OtherOpenAICompat ? 
-                    ModelInfo.ProviderEnum.OtherOpenAICompat : ModelInfo.ProviderEnum.OpenAI
+                Provider = _options.Service == ServerEndpointOptions.ServiceType.OtherOpenAICompat ? 
+                    ModelInfo.ProviderEnum.OtherOpenAICompat : ModelInfo.ProviderEnum.OpenAI,
+                ServerInputTokenNum = _usageInputToken,
+                ServerOutputTokenNum = _usageOutputToken
             };
             return response;
         }
@@ -430,31 +438,33 @@ public class OpenAIEndpoint : IServerEndpoint
     {
         get
         {
-            foreach (var (index, id) in toolCallIdsByIndex)
+            foreach (var (index, id) in _toolCallIdsByIndex)
             {
                 var toolcall = new ToolCallType
                 {
                     Id = id,
                     Function = new ToolCallType.FunctionType
                     {
-                        Name = funcNamesByIndex[index],
-                        Arguments = funcArgsByIndex[index].ToString()
+                        Name = _funcNamesByIndex[index],
+                        Arguments = _funcArgsByIndex[index].ToString()
                     }
                 };
                 yield return toolcall;
             }
         }
     }
+    public string SystemFingerprint { get; private set; }
 
-    private readonly ServerEndpointOptions options;
+    private int _usageInputToken = 0;
+    private int _usageOutputToken = 0;
+    private readonly ServerEndpointOptions _options;
     private readonly ChatClient client;
-    private AsyncCollectionResult<StreamingChatCompletionUpdate>? streamingResponse;
-    private readonly StringBuilder responseSb = new();
-    private string? errorMessage;
-    private string systemFingerprint = "";
-    private readonly Dictionary<int, string> toolCallIdsByIndex = [];
-    private readonly Dictionary<int, string> funcNamesByIndex = [];
-    private readonly Dictionary<int, StringBuilder> funcArgsByIndex = [];
+    private AsyncCollectionResult<StreamingChatCompletionUpdate>? _streamingResponse;
+    private readonly StringBuilder _responseSb = new();
+    private string? _errorMessage;
+    private readonly Dictionary<int, string> _toolCallIdsByIndex = [];
+    private readonly Dictionary<int, string> _funcNamesByIndex = [];
+    private readonly Dictionary<int, StringBuilder> _funcArgsByIndex = [];
 }
 
 public partial class ClaudeEndpoint : IServerEndpoint
@@ -464,9 +474,9 @@ public partial class ClaudeEndpoint : IServerEndpoint
 
     public ClaudeEndpoint(ServerEndpointOptions o)
     {
-        options = o;
+        _options = o;
 
-        if (options.Service is not ServerEndpointOptions.ServiceType.Claude)
+        if (_options.Service is not ServerEndpointOptions.ServiceType.Claude)
         {
             throw new ArgumentException("Invalid service type");
         }
@@ -475,20 +485,20 @@ public partial class ClaudeEndpoint : IServerEndpoint
         {
             AutomaticDecompression = System.Net.DecompressionMethods.All
         };
-        httpClient = new HttpClient(httpClientHandler);
-        httpClient.DefaultRequestHeaders.Add("x-api-key", options.Key);
-        httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
+        _httpClient = new HttpClient(httpClientHandler);
+        _httpClient.DefaultRequestHeaders.Add("x-api-key", _options.Key);
+        _httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
 
         if (!string.IsNullOrWhiteSpace(ApiBeta))
         {
-            httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
+            _httpClient.DefaultRequestHeaders.Add("anthropic-beta", ApiBeta);
         }
     }
 
     private IEnumerable<Claude.Tool> GetToolDefinitions()
     {
         var tools =
-            from tool in options.Tools ?? []
+            from tool in _options.Tools ?? []
             select new Claude.Tool
             {
                 Name = tool.Function.Name,
@@ -634,16 +644,16 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var tools = GetToolDefinitions().ToList();
             var createMsg = new Claude.CreateMessage
             {
-                Model = options.Model,
+                Model = _options.Model,
                 Messages = NormalizeMessages(messages),
-                MaxTokens = options.MaxTokens ?? 4096,
+                MaxTokens = _options.MaxTokens ?? 4096,
                 System = systemMessage,
-                Temperature = options.Temperature,
+                Temperature = _options.Temperature,
                 Tools = tools.Count != 0 ? tools : null,
-                TopP = options.TopP,
+                TopP = _options.TopP,
                 Stream = true,
-                Metadata = options.UserId is null ? null : new Claude.Metadata { UserId = options.UserId },
-                StopSequences = options.StopSequences
+                Metadata = _options.UserId is null ? null : new Claude.Metadata { UserId = _options.UserId },
+                StopSequences = _options.StopSequences
             };
 
             var postStr = createMsg.ToJson();
@@ -651,31 +661,33 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
-                RequestUri = new Uri(Url.Combine(options.Endpoint, "messages")),
+                RequestUri = new Uri(Url.Combine(_options.Endpoint, "messages")),
                 Content = postContent
             };
-            httpResponse =
-                await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            errorMessage = null;
+            _httpResponse =
+                await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            _errorMessage = null;
 
-            indexToContentBlockStart.Clear();
-            indexToContentBlockDeltas.Clear();
+            _indexToContentBlockStart.Clear();
+            _indexToContentBlockDeltas.Clear();
+            _inputTokens = 0;
+            _outputTokens = 0;
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            _errorMessage = e.Message;
         } 
     }
 
     public async IAsyncEnumerable<string> Streaming(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (errorMessage is not null)
+        if (_errorMessage is not null)
         {
             yield break;
         }
 
-        if (httpResponse is null)
+        if (_httpResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
@@ -690,8 +702,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
         };
 
         await using var responseStream =
-            await httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        if (!httpResponse.IsSuccessStatusCode)
+            await _httpResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        if (!_httpResponse.IsSuccessStatusCode)
         {
             try
             {
@@ -699,11 +711,11 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 var responseStr = await errorReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 var error = JsonConvert.DeserializeObject<Claude.ErrorResponse>(responseStr, settings)
                             ?? throw new JsonSerializationException(responseStr);
-                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                _errorMessage = $"{error.Error.Type}: {error.Error.Message}";
             }
             catch (Exception e)
             {
-                errorMessage = e.Message;
+                _errorMessage = e.Message;
             }
 
             yield break;
@@ -756,18 +768,18 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
             catch (JsonSerializationException exception)
             {
-                errorMessage = $"Error: Invalid chat response: {exception.Message}";
+                _errorMessage = $"Error: Invalid chat response: {exception.Message}";
                 yield break;
             }
 
-            if (responseChunk is Claude.StreamingMessageStart /*msgStart*/)
+            if (responseChunk is Claude.StreamingMessageStart msgStart)
             {
-                // not used
-                // messageStart = msgStart;
+                _inputTokens += msgStart.Message.Usage.InputTokens;
+                _outputTokens += msgStart.Message.Usage.OutputTokens;
             }
             else if (responseChunk is Claude.StreamingContentBlockStart contentStart)
             {
-                indexToContentBlockStart[contentStart.Index] = contentStart;
+                _indexToContentBlockStart[contentStart.Index] = contentStart;
                 if (contentStart.ContentBlock is Claude.StreamingContentBlockText textContent)
                 {
                     yield return textContent.Text;
@@ -779,10 +791,10 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
             else if (responseChunk is Claude.StreamingContentBlockDelta contentDelta)
             {
-                if (!indexToContentBlockDeltas.TryGetValue(contentDelta.Index, out var deltaList))
-                {
+                if (!_indexToContentBlockDeltas.TryGetValue(contentDelta.Index, out var deltaList))
+                { 
                     deltaList = [];
-                    indexToContentBlockDeltas[contentDelta.Index] = deltaList;
+                    _indexToContentBlockDeltas[contentDelta.Index] = deltaList;
                 }
 
                 deltaList.Add(contentDelta);
@@ -795,10 +807,10 @@ public partial class ClaudeEndpoint : IServerEndpoint
             {
                 // do nothing
             }
-            else if (responseChunk is Claude.StreamingMessageDelta /*msgDelta*/)
+            else if (responseChunk is Claude.StreamingMessageDelta msgDelta)
             {
-                // not used
-                // messageDeltas.Add(msgDelta);
+                _inputTokens += msgDelta.Usage.InputTokens;
+                _outputTokens += msgDelta.Usage.OutputTokens;
             }
             else if (responseChunk is Claude.StreamingMessageStop)
             {
@@ -806,12 +818,12 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
             else if (responseChunk is Claude.StreamingError error)
             {
-                errorMessage = $"{error.Error.Type}: {error.Error.Message}";
+                _errorMessage = $"{error.Error.Type}: {error.Error.Message}";
                 yield break;
             }
             else
             {
-                errorMessage = $"Error: Invalid chat response: {chatResponse}";
+                _errorMessage = $"Error: Invalid chat response: {chatResponse}";
                 yield break;
             }
         }
@@ -884,19 +896,19 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var assistantTextContent = new List<IMessage.TextContent>();
             StringBuilder msgBuilder = new();
 
-            var contentIndex = indexToContentBlockStart.Keys.ToList();
+            var contentIndex = _indexToContentBlockStart.Keys.ToList();
             contentIndex.Sort();
             foreach (var index in contentIndex)
             {
                 msgBuilder.Clear();
-                var start = indexToContentBlockStart[index].ContentBlock;
+                var start = _indexToContentBlockStart[index].ContentBlock;
                 if (start is not Claude.StreamingContentBlockText textContentStart)
                 {
                     continue;
                 }
 
                 msgBuilder.Append(textContentStart.Text);
-                foreach (var delta in indexToContentBlockDeltas[index])
+                foreach (var delta in _indexToContentBlockDeltas[index])
                 {
                     if (delta.Delta is not Claude.StreamingContentBlockTextDelta textContentDelta)
                     {
@@ -910,16 +922,18 @@ public partial class ClaudeEndpoint : IServerEndpoint
                     { Text = NormalizeChinesePunctuation(msgBuilder.ToString()) });
             }
 
-            if (errorMessage is not null)
+            if (_errorMessage is not null)
             {
-                assistantTextContent.Add(new IMessage.TextContent { Text = errorMessage });
+                assistantTextContent.Add(new IMessage.TextContent { Text = _errorMessage });
             }
 
             var response = new AssistantMessage
             {
                 Content = assistantTextContent,
                 ToolCalls = ToolCalls.ToList(),
-                Provider = ModelInfo.ProviderEnum.Anthropic
+                Provider = ModelInfo.ProviderEnum.Anthropic,
+                ServerInputTokenNum = _inputTokens,
+                ServerOutputTokenNum = _outputTokens
             };
             return response;
         }
@@ -930,17 +944,17 @@ public partial class ClaudeEndpoint : IServerEndpoint
         {
             StringBuilder argsBuilder = new();
 
-            var contentIndex = indexToContentBlockStart.Keys.ToList();
+            var contentIndex = _indexToContentBlockStart.Keys.ToList();
             contentIndex.Sort();
             foreach (var index in contentIndex)
             {
                 argsBuilder.Clear();
-                var start = indexToContentBlockStart[index].ContentBlock;
+                var start = _indexToContentBlockStart[index].ContentBlock;
                 if (start is not Claude.StreamingContentBlockToolUse toolUseStart)
                 {
                     continue;
                 }
-                foreach (var delta in indexToContentBlockDeltas[index])
+                foreach (var delta in _indexToContentBlockDeltas[index])
                 {
                     if (delta.Delta is not Claude.StreamingContentBlockInputJsonDelta inputJsonDelta)
                     {
@@ -962,10 +976,12 @@ public partial class ClaudeEndpoint : IServerEndpoint
         }
     }
 
-    private readonly HttpClient httpClient;
-    private string? errorMessage;
-    private HttpResponseMessage? httpResponse;
-    private readonly ServerEndpointOptions options;
-    private readonly Dictionary<int, Claude.StreamingContentBlockStart> indexToContentBlockStart = [];
-    private readonly Dictionary<int, List<Claude.StreamingContentBlockDelta>> indexToContentBlockDeltas = [];
+    private int _inputTokens = 0;
+    private int _outputTokens = 0;
+    private readonly HttpClient _httpClient;
+    private string? _errorMessage;
+    private HttpResponseMessage? _httpResponse;
+    private readonly ServerEndpointOptions _options;
+    private readonly Dictionary<int, Claude.StreamingContentBlockStart> _indexToContentBlockStart = [];
+    private readonly Dictionary<int, List<Claude.StreamingContentBlockDelta>> _indexToContentBlockDeltas = [];
 }

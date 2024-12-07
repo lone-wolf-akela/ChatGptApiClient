@@ -32,14 +32,14 @@ public enum StreamingResponseType
 
 public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
 {
-    private bool canWrite = true;
-    private bool canRead = true;
-    public override bool CanWrite => canWrite;
-    public override bool CanRead => canRead;
+    private bool _canWrite = true;
+    private bool _canRead = true;
+    public override bool CanWrite => _canWrite;
+    public override bool CanRead => _canRead;
 
     public override void WriteJson(JsonWriter writer, IStreamingResponse? value, JsonSerializer serializer)
     {
-        canWrite = false;
+        _canWrite = false;
         if (value is null)
         {
             writer.WriteNull();
@@ -77,13 +77,13 @@ public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
             }
         }
 
-        canWrite = true;
+        _canWrite = true;
     }
 
     public override IStreamingResponse ReadJson(JsonReader reader, Type objectType, IStreamingResponse? existingValue,
         bool hasExistingValue, JsonSerializer serializer)
     {
-        canRead = false;
+        _canRead = false;
         var jobj = JObject.Load(reader);
         var type = jobj["type"]?.ToObject<StreamingResponseType>();
         IStreamingResponse result = type switch
@@ -106,7 +106,7 @@ public class StreamingResponseConverter : JsonConverter<IStreamingResponse>
                                            throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
-        canRead = true;
+        _canRead = true;
         return result;
     }
 }
@@ -132,14 +132,14 @@ public enum StreamingContentBlockType
 
 public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlock>
 {
-    private bool canWrite = true;
-    private bool canRead = true;
-    public override bool CanWrite => canWrite;
-    public override bool CanRead => canRead;
+    private bool _canWrite = true;
+    private bool _canRead = true;
+    public override bool CanWrite => _canWrite;
+    public override bool CanRead => _canRead;
 
     public override void WriteJson(JsonWriter writer, IStreamingContentBlock? value, JsonSerializer serializer)
     {
-        canWrite = false;
+        _canWrite = false;
         if (value is null)
         {
             writer.WriteNull();
@@ -159,13 +159,13 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
             }
         }
 
-        canWrite = true;
+        _canWrite = true;
     }
 
     public override IStreamingContentBlock ReadJson(JsonReader reader, Type objectType,
         IStreamingContentBlock? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        canRead = false;
+        _canRead = false;
         var jobj = JObject.Load(reader);
         var type = jobj["type"]?.ToObject<StreamingContentBlockType>();
         IStreamingContentBlock result = type switch
@@ -176,7 +176,7 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
                                                  throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
-        canRead = true;
+        _canRead = true;
         return result;
     }
 }
@@ -216,15 +216,15 @@ public enum StreamingContentBlockDeltaContentType
 
 public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreamingContentBlockDeltaContent>
 {
-    private bool canWrite = true;
-    private bool canRead = true;
-    public override bool CanWrite => canWrite;
-    public override bool CanRead => canRead;
+    private bool _canWrite = true;
+    private bool _canRead = true;
+    public override bool CanWrite => _canWrite;
+    public override bool CanRead => _canRead;
 
     public override void WriteJson(JsonWriter writer, IStreamingContentBlockDeltaContent? value,
         JsonSerializer serializer)
     {
-        canWrite = false;
+        _canWrite = false;
         if (value is null)
         {
             writer.WriteNull();
@@ -244,13 +244,13 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
             }
         }
 
-        canWrite = true;
+        _canWrite = true;
     }
 
     public override IStreamingContentBlockDeltaContent ReadJson(JsonReader reader, Type objectType,
         IStreamingContentBlockDeltaContent? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        canRead = false;
+        _canRead = false;
         var jobj = JObject.Load(reader);
         var type = jobj["type"]?.ToObject<StreamingContentBlockDeltaContentType>();
         IStreamingContentBlockDeltaContent result = type switch
@@ -261,7 +261,7 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
                 jobj.ToObject<StreamingContentBlockInputJsonDelta>(serializer) ?? throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
-        canRead = true;
+        _canRead = true;
         return result;
     }
 }

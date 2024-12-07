@@ -295,12 +295,14 @@ public partial class ChatWindowMessage : ObservableObject
     public ModelInfo.ProviderEnum? Provider { get; init; }
     public DateTime? DateTime { private get; init; }
     public string FormattedDateTime =>
-        IsStreaming ? "生成中..." :
         DateTime is null ? "" :
         // if is the same day as today, only show time
         DateTime.Value.Date == System.DateTime.Now.Date ? DateTime.Value.ToString("HH:mm:ss") :
         // else, also show date
         DateTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
+    public bool ContainsServerUsageStats { get; init; }
+    public int ServerInputTokenNum { get; init; }
+    public int ServerOutputTokenNum { get; init; }
 
     private readonly Block _loadingBar;
 
@@ -776,7 +778,10 @@ public partial class ChatWindowMessageTab : ObservableObject
                 Role = msg.Role,
                 Provider = msg is AssistantMessage aMsg ? aMsg.Provider : null,
                 SourceMessage = msg,
-                DateTime = msg.DateTime
+                DateTime = msg.DateTime,
+                ContainsServerUsageStats = msg.ContainsServerUsageStats,
+                ServerInputTokenNum = msg.ServerInputTokenNum,
+                ServerOutputTokenNum = msg.ServerOutputTokenNum
             };
             foreach (var content in msg.Content)
             {
