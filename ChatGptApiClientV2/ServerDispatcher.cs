@@ -27,6 +27,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using Flurl;
 using HandyControl.Tools.Extension;
 using Newtonsoft.Json;
@@ -61,6 +62,8 @@ public class ServerEndpointOptions
     public IEnumerable<ToolType>? Tools { get; set; }
     public string? UserId { get; set; }
     public IEnumerable<string>? StopSequences { get; set; }
+
+    public bool IsO1 { get; set; } = false;
 }
 
 public interface IServerEndpoint
@@ -225,21 +228,33 @@ public class OpenAIEndpoint : IServerEndpoint
             var chatCompletionsOptions = new ChatCompletionOptions
             {
                 MaxOutputTokenCount = _options.MaxTokens,
-                PresencePenalty = _options.PresencePenalty,
 #pragma warning disable OPENAI001
                 Seed = _options.Seed,
 #pragma warning restore OPENAI001
-                Temperature = _options.Temperature,
-                TopP = _options.TopP,
                 EndUserId = _options.UserId
             };
+
+            if (!_options.IsO1)
+            {
+                chatCompletionsOptions.TopP = _options.TopP;
+                chatCompletionsOptions.PresencePenalty = _options.PresencePenalty;
+                chatCompletionsOptions.Temperature = _options.Temperature;
+            }
+
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
             if (_options.StopSequences is not null)
             {
                 chatCompletionsOptions.StopSequences.AddRange(_options.StopSequences);
             }
 
-            _streamingResponse = _client.CompleteChatStreamingAsync(GetChatRequestMessages(session.Messages), chatCompletionsOptions, cancellationToken);
+            var messages = GetChatRequestMessages(session.Messages);
+
+            if (_options.IsO1)
+            {
+                messages = from m in messages where m is not SystemChatMessage select m;
+            }
+
+            _streamingResponse = _client.CompleteChatStreamingAsync(messages, chatCompletionsOptions, cancellationToken);
             _responseSb.Clear();
             _errorMessage = null;
             SystemFingerprint = "";

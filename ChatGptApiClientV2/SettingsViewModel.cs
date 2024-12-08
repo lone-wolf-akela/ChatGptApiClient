@@ -22,6 +22,8 @@ using System.Diagnostics;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
 
 namespace ChatGptApiClientV2;
 
@@ -69,6 +71,18 @@ public partial class SettingsViewModel : ObservableObject
 
         Config.StopSequences.Add(TextAddStopSequence);
         TextAddStopSequence = "";
+    }
+
+    [RelayCommand]
+    private void BtnAddThirdPartyModel()
+    {
+        Config.AddThirdPartyModel();
+    }
+
+    [RelayCommand]
+    private void BtnRemoveThirdPartyModel(IList models)
+    {
+        Config.RemoveThirdPartyModels(models.Cast<Config.ThirdPartyModelInfo>());
     }
 
     // ReSharper disable once UnusedMember.Global

@@ -242,15 +242,15 @@ public partial class SystemState : ObservableObject
         ChatCompletionRequest? loadedSession = null,
         bool saveSession = true)
     {
-        string? productName = Config.SelectedModelType?.Provider switch
+        var productName = Config.SelectedModelType?.Provider switch
         {
             ModelInfo.ProviderEnum.OpenAI => "ChatGPT",
             ModelInfo.ProviderEnum.Anthropic => "Claude",
-            ModelInfo.ProviderEnum.OtherOpenAICompat => Config.SelectedModel?.Name,
+            ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelDisplayName,
             _ => throw new InvalidOperationException()
         };
 
-        string providerName = Config.SelectedModelType?.Provider switch
+        var providerName = Config.SelectedModelType?.Provider switch
         {
             ModelInfo.ProviderEnum.OpenAI => "OpenAI",
             ModelInfo.ProviderEnum.Anthropic => "Anthropic",
@@ -376,7 +376,8 @@ public partial class SystemState : ObservableObject
             Temperature = temperature,
             TopP = Config.TopP,
             UserId = Config.UserAdvertisingId,
-            StopSequences = Config.StopSequences
+            StopSequences = Config.StopSequences,
+            IsO1 = selectedModel.IsO1
         };
 
         if (serverOptions.MaxTokens is null && selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI && selectedModel.Name.Contains("vision"))

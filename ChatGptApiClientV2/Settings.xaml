@@ -38,6 +38,7 @@
                     HorizontalAlignment="Right"
                     Width="100"
                     Height="50"
+                    Margin="0,0,10,0"
                     Command="hc:ControlCommands.CloseWindow"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}}" />
             <TabControl TabStripPlacement="Top"
@@ -47,53 +48,52 @@
                         BorderThickness="0">
                 <TabItem Header="UI选项">
                     <Grid Margin="0,10,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="10"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="10"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Row="0" Grid.Column="0" Content="主题" VerticalAlignment="Center" HorizontalAlignment="Left" />
-                        <hc:ButtonGroup Grid.Row="0" Grid.Column="1" Style="{StaticResource ButtonGroupSolidDynamicColor}" VerticalAlignment="Center">
-                            <RadioButton Content="跟随系统"
-                                         IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}" />
-                            <RadioButton Content="浅色"
-                                         IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}" />
-                            <RadioButton Content="深色"
-                                         IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}" />
-                        </hc:ButtonGroup>
-                        <Label Grid.Row="2" Grid.Column="0" Content="主题颜色" HorizontalAlignment="Left" />
-                        <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统"
-                                          IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}"
-                                          Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0" />
-                            <StackPanel Orientation="Horizontal"
-                                        IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}">
-                                <TextBox Width="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}" />
-                                <Button Background="{Binding Config.CustomThemeColor}"
+                        <hc:Divider Grid.Column="1" Orientation="Vertical"/>
+                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="100" HorizontalContentAlignment="Left" Content="主题"/>
+                                <hc:ButtonGroup Style="{StaticResource ButtonGroupSolidDynamicColor}">
+                                    <RadioButton Content="跟随系统"
+                                                 IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.System}}" />
+                                    <RadioButton Content="浅色"
+                                                 IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Light}}" />
+                                    <RadioButton Content="深色"
+                                                 IsChecked="{Binding Config.Theme, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:ThemeType.Dark}}" />
+                                </hc:ButtonGroup>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="100" Content="UI 缩放" HorizontalContentAlignment="Left" />
+                                <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtUiScale"
+                                         Text="{Binding Path=Config.UiScale,StringFormat=N2}"
+                                         InputScope="Number" VerticalAlignment="Center" />
+                                <Slider x:Name="SlidUiScale" Minimum="-1" Maximum="1" LargeChange="0.1"
+                                        Value="{Binding Path=Config.UiScale, Mode=TwoWay, Converter={local:Log2DoubleConverter}}" Margin="0,0,5,0"
+                                        VerticalAlignment="Center" />
+                            </DockPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="100" Content="主题颜色" HorizontalContentAlignment="Left" />
+                                <ToggleButton x:Name="TgglColorSystem" DockPanel.Dock="Left" Content="跟随系统"
+                                              IsChecked="{Binding Config.EnableCustomThemeColor, Converter={StaticResource Boolean2BooleanReConverter}}"
+                                              Style="{StaticResource ToggleButtonSwitch}" Margin="0,0,25,0" />
+                                <Button DockPanel.Dock="Right"
+                                        Background="{Binding Config.CustomThemeColor}"
                                         hc:BorderElement.CornerRadius="0"
-                                        VerticalAlignment="Stretch"
                                         Click="BtnShowColorPicker_Click"
                                         CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                        IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}"
                                         Width="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource Self}}"
                                         Margin="0,0,5,0" />
-                            </StackPanel>
+                                <TextBox MinWidth="100" Margin="0,0,5,0" Text="{Binding Config.CustomThemeColor}"
+                                         IsEnabled="{Binding IsChecked, ElementName=TgglColorSystem, Converter={StaticResource Boolean2BooleanReConverter}}"/>
+                            </DockPanel>
                         </StackPanel>
-                        <Label Grid.Row="4" Grid.Column="0" Content="UI 缩放" HorizontalAlignment="Left" />
-                        <DockPanel Grid.Row="4" Grid.Column="1" VerticalAlignment="Center">
-                            <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtUiScale"
-                                     Text="{Binding Path=Config.UiScale,StringFormat=N2}"
-                                     InputScope="Number" VerticalAlignment="Center" />
-                            <Slider x:Name="SlidUiScale" Minimum="-1" Maximum="1" LargeChange="0.1"
-                                    Value="{Binding Path=Config.UiScale, Mode=TwoWay, Converter={local:Log2DoubleConverter}}" Margin="0,0,5,0"
-                                    VerticalAlignment="Center" />
-                        </DockPanel>
                     </Grid>
                 </TabItem>
                 <TabItem Header="模型参数">
@@ -293,64 +293,104 @@
                     </Grid>
                 </TabItem>
                 <TabItem Header="第三方聊天服务">
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
-                        <hc:Divider Grid.Column="3" Margin="0" Orientation="Vertical" />
-                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="服务端口 URL"
-                   HorizontalContentAlignment="Left" Width="100" />
-                                <TextBox TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     Text="{Binding Config.OtherOpenAICompatServiceURL, UpdateSourceTrigger=PropertyChanged}" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="模型知识截止日期"
-                   HorizontalContentAlignment="Left" Width="100" />
-                                <DatePicker SelectedDate="{Binding Config.OtherOpenAICompatModelKnowledgeCutoff}"
-                        CalendarStyle="{StaticResource CalendarSolidStyle}"
-                        ToolTip="用于自动填充初始提示词" />
-                            </DockPanel>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" Margin="0,0,5,0">
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="模型名称"
-                   HorizontalContentAlignment="Left" Width="100" />
-                                <TextBox TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     Text="{Binding Config.OtherOpenAICompatModelName, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="用于自动填充初始提示词" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="允许使用工具"
-                   HorizontalContentAlignment="Left" Width="100" />
-                                <CheckBox IsChecked="{Binding Path=Config.OtherOpenAICompatModelEnableToolUse}"/>
-                            </DockPanel>
-                        </StackPanel>
-                        <StackPanel Grid.Column="4" Margin="0,0,5,0">
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="模型提供商"
-                   HorizontalContentAlignment="Left" Width="100" />
-                                <TextBox TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     Text="{Binding Config.OtherOpenAICompatModelProviderName, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="用于自动填充初始提示词" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="模型 API KEY"
-                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <hc:PasswordBox UnsafePassword="{Binding Path=Config.OtherOpenAICompatModelAPIKey, Mode=TwoWay}"
-                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Grid>
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Bottom" Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ButtonDefault}">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                    <Setter Property="MinHeight" Value="35"/>
+                                </Style>
+                            </Grid.Resources>
+                            <Button Grid.Column="0" Content="增加行"
+                                    Command="{Binding BtnAddThirdPartyModelCommand}"/>
+                            <Button Grid.Column="2" Content="删除选中行"
+                                    Command="{Binding BtnRemoveThirdPartyModelCommand}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=TblThirdPartyModels}"
+                                    IsEnabled="{Binding SelectedItems.Count, ElementName=TblThirdPartyModels}"/>
+                        </Grid>
+                        <DataGrid x:Name="TblThirdPartyModels"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserSortColumns="False"
+                                  HeadersVisibility="All"
+                                  AutoGenerateColumns="False"
+                                  VerticalAlignment="Stretch"
+                                  ScrollViewer.CanContentScroll="True" 
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  Margin="0,10,0,0"
+                                  RowHeaderWidth="60" 
+                                  ItemsSource="{Binding Config.ThirdPartyModels}">
+                            <DataGrid.Resources>
+                                <Style x:Key="CenteredCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.RowHeaderTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                </DataTemplate>
+                            </DataGrid.RowHeaderTemplate>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="显示名称" MinWidth="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="用于界面显示和自动填充初始提示词"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="服务端口 URL" MinWidth="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding ServiceURL, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="后台名称" MinWidth="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="用于传递给服务器" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="提供商" MinWidth="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Provider, UpdateSourceTrigger=PropertyChanged}"
+                                                     ToolTip="用于自动填充初始提示词" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="知识截止日期" MinWidth="150">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DatePicker CalendarStyle="{StaticResource CalendarSolidStyle}"
+                                                        SelectedDate="{Binding KnowledgeCutoff, UpdateSourceTrigger=PropertyChanged}"
+                                                        ToolTip="用于自动填充初始提示词" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridCheckBoxColumn Header="允许使用工具" Binding="{Binding EnableToolUse}"
+                                                        CellStyle="{StaticResource CenteredCellStyle}"/>
+                                <DataGridTemplateColumn Header="API KEY" MinWidth="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <hc:PasswordBox UnsafePassword="{Binding Path=APIKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </TabItem>
                 <TabItem Header="插件设置">
                     <Grid Margin="0,10,0,0">

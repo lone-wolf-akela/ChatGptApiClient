@@ -20,6 +20,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.IO;
@@ -113,7 +114,6 @@ public partial class Config : ObservableValidator
     partial void OnServiceProviderChanged(ServiceProviderType value)
     {
         ValidateProperty(ServiceURL, nameof(ServiceURL));
-        UpdateModelOptionList();
         UpdateModelVersionList();
         SaveConfig();
     }
@@ -136,50 +136,6 @@ public partial class Config : ObservableValidator
         }
     }
 
-    [ObservableProperty] [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
-    public partial string OtherOpenAICompatServiceURL { get; set; }
-    partial void OnOtherOpenAICompatServiceURLChanged(string value) => SaveConfig();
-
-    [ObservableProperty]
-    public partial bool OtherOpenAICompatModelEnableToolUse { get; set; }
-
-    partial void OnOtherOpenAICompatModelEnableToolUseChanged(bool value)
-    {
-        UpdateModelOptionList();
-        UpdateModelVersionList();
-        SaveConfig();
-    }
-
-    [ObservableProperty]
-    public partial string OtherOpenAICompatModelName { get; set; }
-
-    partial void OnOtherOpenAICompatModelNameChanged(string value)
-    {
-        UpdateModelOptionList();
-        UpdateModelVersionList();
-        SaveConfig();
-    }
-
-    [ObservableProperty]
-    public partial string OtherOpenAICompatModelProviderName { get; set; }
-
-    partial void OnOtherOpenAICompatModelProviderNameChanged(string value)
-    {
-        UpdateModelOptionList();
-        UpdateModelVersionList();
-        SaveConfig();
-    }
-
-    [ObservableProperty]
-    public partial DateTime OtherOpenAICompatModelKnowledgeCutoff { get; set; }
-
-    partial void OnOtherOpenAICompatModelKnowledgeCutoffChanged(DateTime value)
-    {
-        UpdateModelOptionList();
-        UpdateModelVersionList();
-        SaveConfig();
-    }
-
     public enum AnthropicServiceProviderType
     {
         [Description("Artonelico Anthropic 代理")]
@@ -198,7 +154,6 @@ public partial class Config : ObservableValidator
     partial void OnAnthropicServiceProviderChanged(AnthropicServiceProviderType value)
     {
         ValidateProperty(AnthropicServiceURL, nameof(AnthropicServiceURL));
-        UpdateModelOptionList();
         UpdateModelVersionList();
         SaveConfig();
     }
@@ -251,10 +206,6 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     public partial string AnthropicAPIKey { get; set; }
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
-
-    [ObservableProperty]
-    public partial string OtherOpenAICompatModelAPIKey { get; set; }
-    partial void OnOtherOpenAICompatModelAPIKeyChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
     [ObservableProperty]
@@ -324,18 +275,7 @@ public partial class Config : ObservableValidator
         ModelOptions.Clear();
         foreach (var model in ModelInfo.ModelList)
         {
-            if (model.Provider == ModelInfo.ProviderEnum.OpenAI)
-            {
-                ModelOptions.Add(model);
-            }
-        }
-
-        foreach (var model in ModelInfo.ModelList)
-        {
-            if (model.Provider != ModelInfo.ProviderEnum.OpenAI)
-            {
-                ModelOptions.Add(model);
-            }
+            ModelOptions.Add(model);
         }
 
         ModelOptions.SortStable((a, b) => a.DisplayPriority.CompareTo(b.DisplayPriority));
@@ -367,6 +307,35 @@ public partial class Config : ObservableValidator
         SelectedModelChangedEvent?.Invoke();
     }
 
+    [JsonIgnore]
+    private ThirdPartyModelInfo SelectedThirdPartyModel
+    {
+        get
+        {
+            if (SelectedModelType is null ||
+                SelectedModelType.Name != "ThirdParty" ||
+                SelectedModelVersionIndex < 0 ||
+                SelectedModelVersionIndex >= ThirdPartyModels.Count)
+            {
+                throw new InvalidOperationException();
+            }
+
+            return ThirdPartyModels[SelectedModelVersionIndex];
+        }
+    }
+
+    [JsonIgnore]
+    public string OtherOpenAICompatModelProviderName => SelectedThirdPartyModel.Provider;
+
+    [JsonIgnore]
+    public string OtherOpenAICompatServiceURL => SelectedThirdPartyModel.ServiceURL;
+
+    [JsonIgnore]
+    public string OtherOpenAICompatModelAPIKey => SelectedThirdPartyModel.APIKey;
+
+    [JsonIgnore]
+    public string OtherOpenAICompatModelDisplayName => SelectedThirdPartyModel.DisplayName;
+
     private void UpdateModelVersionList()
     {
         ModelVersionOptions.Clear();
@@ -376,21 +345,32 @@ public partial class Config : ObservableValidator
             return;
         }
 
-        var models = from model in ModelVersionInfo.VersionList
-            where model.ModelType == SelectedModelType.Name
-            select model;
-        foreach (var model in models)
+        if (SelectedModelType.Name == "ThirdParty")
         {
-            if (model.ModelType == "Local")
+            foreach (var model in ThirdPartyModels)
             {
-                model.KnowledgeCutoff = OtherOpenAICompatModelKnowledgeCutoff;
-                model.FunctionCallSupported = OtherOpenAICompatModelEnableToolUse;
-                model.Name = OtherOpenAICompatModelName;
-                model.Description = OtherOpenAICompatModelName;
+                var info = new ModelVersionInfo
+                {
+                    Description = model.DisplayName,
+                    FunctionCallSupported = model.EnableToolUse,
+                    KnowledgeCutoff = model.KnowledgeCutoff,
+                    ModelType = "ThirdParty",
+                    Name = model.Name,
+                    Tokenizer = ModelVersionInfo.TokenizerEnum.Cl100KBase
+                };
+                ModelVersionOptions.Add(info);
             }
-            ModelVersionOptions.Add(model);
         }
-
+        else
+        {
+            var models = from model in ModelVersionInfo.VersionList
+                where model.ModelType == SelectedModelType.Name
+                select model;
+            foreach (var model in models)
+            {
+                ModelVersionOptions.Add(model);
+            }
+        }
         SelectedModelVersionIndex = 0;
     }
 
@@ -439,6 +419,73 @@ public partial class Config : ObservableValidator
     public partial Utils.PythonEnv? PythonEnv { get; set; }
     partial void OnPythonEnvChanged(Utils.PythonEnv? value) => SaveConfig();
 
+    public partial class ThirdPartyModelInfo : ObservableValidator
+    {
+        [JsonIgnore] public Config? Parent { get; set; }
+
+        [ObservableProperty]
+        [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+        public partial string ServiceURL { get; set; } = "http://127.0.0.1:8080";
+
+        partial void OnServiceURLChanged(string value)
+        {
+            ValidateProperty(value, nameof(ServiceURL));
+            Parent?.ThirdPartyModelsChanged();
+        }
+
+        [ObservableProperty]
+        public partial string Name { get; set; } = "LLaMA";
+        partial void OnNameChanged(string value) => Parent?.ThirdPartyModelsChanged();
+
+        [ObservableProperty]
+        public partial string DisplayName { get; set; } = "LLaMA";
+        partial void OnDisplayNameChanged(string value) =>Parent?.ThirdPartyModelsChanged();
+
+        [ObservableProperty]
+        public partial string Provider { get; set; } = "Meta AI";
+        partial void OnProviderChanged(string value) => Parent?.ThirdPartyModelsChanged();
+
+        [ObservableProperty]
+        public partial DateTime KnowledgeCutoff { get; set; } = new (2023, 1, 1);
+        partial void OnKnowledgeCutoffChanged(DateTime value) => Parent?.ThirdPartyModelsChanged();
+
+        [ObservableProperty]
+        public partial bool EnableToolUse { get; set; } = false;
+        partial void OnEnableToolUseChanged(bool value) => Parent?.ThirdPartyModelsChanged();
+
+        [ObservableProperty]
+        public partial string APIKey { get; set; } = "";
+        partial void OnAPIKeyChanged(string value) => Parent?.ThirdPartyModelsChanged();
+    }
+
+
+
+    public ObservableCollection<ThirdPartyModelInfo> ThirdPartyModels { get; } = [];
+
+    public void AddThirdPartyModel()
+    {
+        ThirdPartyModels.Add(new ThirdPartyModelInfo { Parent = this });
+    }
+
+    public void RemoveThirdPartyModels(IEnumerable<ThirdPartyModelInfo> models)
+    {
+        // clone the list to avoid modification while iterating
+        var clonedModels = models.ToList();
+        foreach (var model in clonedModels)
+        {
+            ThirdPartyModels.Remove(model);
+        }
+    }
+
+    private void ThirdPartyModelsCollectionChanged(object? sender,
+        System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => ThirdPartyModelsChanged();
+
+    private void ThirdPartyModelsChanged()
+    {
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
     public Config()
     {
         Theme = ThemeType.System;
@@ -451,16 +498,10 @@ public partial class Config : ObservableValidator
         UserNickName = "";
         ServiceProvider = ServiceProviderType.ArtonelicoOpenAIProxy;
         ServiceURL = "";
-        OtherOpenAICompatServiceURL = "http://127.0.0.1:8080";
-        OtherOpenAICompatModelEnableToolUse = false;
-        OtherOpenAICompatModelKnowledgeCutoff = new DateTime(2023, 1, 1);
-        OtherOpenAICompatModelName = "LLaMA";
-        OtherOpenAICompatModelProviderName = "Meta AI";
         AnthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
         AnthropicServiceURL = "";
         API_KEY = "";
         AnthropicAPIKey = "";
-        OtherOpenAICompatModelAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
         BingSearchAPIKey = "";
@@ -479,6 +520,7 @@ public partial class Config : ObservableValidator
         PythonEnv = null;
 
         StopSequences.CollectionChanged += StopSequencesCollectionChanged;
+        ThirdPartyModels.CollectionChanged += ThirdPartyModelsCollectionChanged;
 
         UpdateModelOptionList();
         UpdateModelVersionList();
@@ -532,7 +574,15 @@ public partial class Config : ObservableValidator
                 TypeNameHandling = TypeNameHandling.Auto
             };
             var parsedConfig = JsonConvert.DeserializeObject<Config>(savedConfig, settings);
-            return parsedConfig ?? new Config();
+            if (parsedConfig is null)
+            {
+                return new Config();
+            }
+            foreach (var model in parsedConfig.ThirdPartyModels)
+            {
+                model.Parent = parsedConfig;
+            }
+            return parsedConfig;
         }
         catch (JsonSerializationException exception)
         {
