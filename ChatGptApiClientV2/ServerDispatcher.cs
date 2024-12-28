@@ -46,6 +46,7 @@ public class ServerEndpointOptions
     {
         OpenAI,
         Claude,
+        DeepSeek,
         OtherOpenAICompat,
         Custom
     }
@@ -99,13 +100,8 @@ public class OpenAIEndpoint : IServerEndpoint
                 _client = openai.GetChatClient(_options.Model);
                 break;
             }
+            case ServerEndpointOptions.ServiceType.DeepSeek:
             case ServerEndpointOptions.ServiceType.Custom:
-            {
-                var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };
-                var openai = new OpenAIClient(new ApiKeyCredential(_options.Key), opt);
-                _client = openai.GetChatClient(_options.Model);
-                break;
-            }
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
                 var opt = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint), NetworkTimeout = defaultTimeout };

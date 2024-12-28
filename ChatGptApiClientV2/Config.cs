@@ -176,6 +176,43 @@ public partial class Config : ObservableValidator
         }
     }
 
+    public enum DeepSeekServiceProviderType
+    {
+        [Description("DeepSeek 官方接口")] DeepSeek,
+        [Description("其他")] Others
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DeepSeekServiceURL))]
+    [NotifyPropertyChangedFor(nameof(DeepSeekServiceURLEditable))]
+    [NotifyPropertyChangedFor(nameof(ModelOptions))]
+    [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
+    public partial DeepSeekServiceProviderType DeepSeekServiceProvider { get; set; }
+
+    partial void OnDeepSeekServiceProviderChanged(DeepSeekServiceProviderType value)
+    {
+        ValidateProperty(DeepSeekServiceURL, nameof(DeepSeekServiceURL));
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
+    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+    public string DeepSeekServiceURL
+    {
+        get => DeepSeekServiceProvider switch
+        {
+            DeepSeekServiceProviderType.DeepSeek => "https://api.deepseek.com/v1",
+            _ => field
+        };
+        set
+        {
+            if (SetProperty(ref field, value, true))
+            {
+                SaveConfig();
+            }
+        }
+    }
+
     [JsonIgnore]
     public string DalleImageGenServiceURL => Url.Combine(ServiceURL, "images/generations");
 
@@ -197,6 +234,14 @@ public partial class Config : ObservableValidator
         _ => throw new InvalidOperationException()
     };
 
+    [JsonIgnore]
+    public bool DeepSeekServiceURLEditable => DeepSeekServiceProvider switch
+    {
+        DeepSeekServiceProviderType.DeepSeek => false,
+        DeepSeekServiceProviderType.Others => true,
+        _ => throw new InvalidOperationException()
+    };
+
     [ObservableProperty]
     // ReSharper disable once InconsistentNaming
     public partial string API_KEY { get; set; }
@@ -206,6 +251,10 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     public partial string AnthropicAPIKey { get; set; }
     partial void OnAnthropicAPIKeyChanged(string value) => SaveConfig();
+
+    [ObservableProperty]
+    public partial string DeepSeekAPIKey { get; set; }
+    partial void OnDeepSeekAPIKeyChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
     [ObservableProperty]
@@ -500,8 +549,11 @@ public partial class Config : ObservableValidator
         ServiceURL = "";
         AnthropicServiceProvider = AnthropicServiceProviderType.ArtonelicAnthropicProxy;
         AnthropicServiceURL = "";
+        DeepSeekServiceProvider = DeepSeekServiceProviderType.DeepSeek;
+        DeepSeekServiceURL = "";
         API_KEY = "";
         AnthropicAPIKey = "";
+        DeepSeekAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
         BingSearchAPIKey = "";

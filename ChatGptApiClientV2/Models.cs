@@ -33,6 +33,7 @@ public class ModelInfo
     {
         [EnumMember(Value = "openai")] OpenAI,
         [EnumMember(Value = "anthropic")] Anthropic,
+        [EnumMember(Value = "deepseek")] DeepSeek,
         [EnumMember(Value = "other_oai_compat")] OtherOpenAICompat
     }
     public string Name { get; init; } = "";
@@ -72,6 +73,11 @@ public class ModelInfo
         {
             Name = "claude-3-haiku", Description = "claude-3 Haiku (200k tokens)", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 230
+        },
+        new()
+        {
+            Name = "deepseek", Description = "DeepSeek", Provider = ProviderEnum.DeepSeek,
+            DisplayPriority = 250
         },
         new()
         {
@@ -329,6 +335,12 @@ public class ModelVersionInfo
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
             Tokenizer = TokenizerEnum.O200KBase,
             IsO1 = true
+        },
+        new()
+        {
+            ModelType = "deepseek", Name= "deepseek-chat", Description = "DeepSeek Chat",
+            KnowledgeCutoff = new DateTime(2024, 1, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase
         }
     ];
 }

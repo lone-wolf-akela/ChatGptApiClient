@@ -246,6 +246,7 @@ public partial class SystemState : ObservableObject
         {
             ModelInfo.ProviderEnum.OpenAI => "ChatGPT",
             ModelInfo.ProviderEnum.Anthropic => "Claude",
+            ModelInfo.ProviderEnum.DeepSeek => "DeepSeek Chat",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelDisplayName,
             _ => throw new InvalidOperationException()
         };
@@ -254,6 +255,7 @@ public partial class SystemState : ObservableObject
         {
             ModelInfo.ProviderEnum.OpenAI => "OpenAI",
             ModelInfo.ProviderEnum.Anthropic => "Anthropic",
+            ModelInfo.ProviderEnum.DeepSeek => "DeepSeek",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelProviderName,
             _ => throw new InvalidOperationException()
         };
@@ -261,7 +263,7 @@ public partial class SystemState : ObservableObject
         loadedSession ??= BuildFromInitPrompts(
             InitialPrompts?.SelectedOption?.Messages,
             Config.SelectedModel?.KnowledgeCutoff ?? DateTime.Now,
-            productName ?? "Assistant",
+            productName,
             providerName
         );
 
@@ -343,6 +345,15 @@ public partial class SystemState : ObservableObject
                 temperature = Config.Temperature;
                 break;
             }
+            case ModelInfo.ProviderEnum.DeepSeek:
+                {
+                    service = ServerEndpointOptions.ServiceType.DeepSeek;
+                    endpointUrl = Config.DeepSeekServiceURL;
+                    apiKey = Config.DeepSeekAPIKey;
+                    maxTokens = Config.MaxTokens == 0 ? 8192 : Config.MaxTokens;
+                    temperature = Config.Temperature;
+                    break;
+                }
             case ModelInfo.ProviderEnum.OtherOpenAICompat:
             {
                 service = ServerEndpointOptions.ServiceType.OtherOpenAICompat;
@@ -353,6 +364,7 @@ public partial class SystemState : ObservableObject
                 apiKey = !string.IsNullOrEmpty(Config.OtherOpenAICompatModelAPIKey) ? Config.OtherOpenAICompatModelAPIKey : "SomeKey";
                 break;
             }
+            case ModelInfo.ProviderEnum.Anthropic:
             default:
             {
                 service = ServerEndpointOptions.ServiceType.Claude;
