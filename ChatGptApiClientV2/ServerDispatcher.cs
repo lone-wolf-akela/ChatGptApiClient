@@ -374,8 +374,14 @@ public class OpenAIEndpoint : IServerEndpoint
                     new IMessage.TextContent { Text = _responseSb.ToString() }
                 ],
                 ToolCalls = ToolCalls.ToList(),
-                Provider = _options.Service == ServerEndpointOptions.ServiceType.OtherOpenAICompat ? 
-                    ModelInfo.ProviderEnum.OtherOpenAICompat : ModelInfo.ProviderEnum.OpenAI,
+                Provider = _options.Service switch
+                {
+                    ServerEndpointOptions.ServiceType.OtherOpenAICompat => ModelInfo.ProviderEnum.OtherOpenAICompat,
+                    ServerEndpointOptions.ServiceType.OpenAI => ModelInfo.ProviderEnum.OpenAI,
+                    ServerEndpointOptions.ServiceType.DeepSeek => ModelInfo.ProviderEnum.DeepSeek,
+                    ServerEndpointOptions.ServiceType.Claude => ModelInfo.ProviderEnum.Anthropic,
+                    _ => ModelInfo.ProviderEnum.OpenAI
+                },
                 ServerInputTokenNum = _usageInputToken,
                 ServerOutputTokenNum = _usageOutputToken
             };
