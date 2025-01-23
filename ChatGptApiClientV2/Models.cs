@@ -341,6 +341,12 @@ public class ModelVersionInfo
             ModelType = "deepseek", Name= "deepseek-chat", Description = "DeepSeek Chat",
             KnowledgeCutoff = new DateTime(2024, 1, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase
+        },
+        new()
+        {
+            ModelType = "deepseek", Name= "deepseek-reasoner", Description = "DeepSeek Reasoner",
+            KnowledgeCutoff = new DateTime(2024, 1, 1), FunctionCallSupported = false,
+            Tokenizer = TokenizerEnum.Cl100KBase
         }
     ];
 }

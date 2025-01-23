@@ -33,6 +33,10 @@
            DragLeave="Window_DragLeave"
            DragOver="Window_DragOver"
            Loaded="Window_Loaded" Unloaded="Window_Unloaded">
+    <Window.Resources>
+        <!-- see https://stackoverflow.com/questions/4805351/use-ivalueconverter-with-dynamicresource -->
+        <hc:BindingProxy x:Key="CornerRadiusProxy" Value="{DynamicResource DefaultCornerRadius}" />
+    </Window.Resources>
     <d:Window.DataContext>
         <local:ChatWindowViewModel />
     </d:Window.DataContext>
@@ -674,13 +678,38 @@
                                                             </DockPanel>
                                                             <hc:SimplePanel
                                                                 Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityReConverter}}">
-                                                                <FlowDocumentScrollViewer Style="{x:Null}"
-                                                                    Document="{Binding Path=RenderedMessage}"
-                                                                    IsToolBarVisible="False"
-                                                                    VerticalScrollBarVisibility="Hidden"
-                                                                    Margin="0,5,0,0"
-                                                                    PreviewMouseWheel="ScrollToParentProcecssor">
-                                                                </FlowDocumentScrollViewer>
+                                                                <StackPanel Margin="0,5,0,0">
+                                                                    <Expander HorizontalAlignment="Stretch" Margin="15,20,15,0"
+                                                                              IsExpanded="{Binding IsReasoningTextExpanded}"
+                                                                              Visibility="{Binding HasReasoningText, Converter={StaticResource Boolean2VisibilityConverter}}">
+                                                                        <Expander.Header>
+                                                                            <TextBlock>
+                                                                                <Run Text="&#xea91;" FontFamily="/font/#Segoe Fluent Icons" BaselineAlignment="Center" />
+                                                                                <Run Text=" 思考……"/>
+                                                                            </TextBlock>
+                                                                        </Expander.Header>
+                                                                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                                                            CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}"
+                                                                            Background="{DynamicResource RegionBrush}"
+                                                                            BorderThickness="1">
+                                                                            <TextBox Text="{Binding ReasoningText}"
+                                                                                Margin="5,5,5,5"
+                                                                                FontSize="14"
+                                                                                IsReadOnly="True"
+                                                                                TextWrapping="Wrap"
+                                                                                VerticalScrollBarVisibility="Auto"
+                                                                                HorizontalScrollBarVisibility="Hidden"
+                                                                                BorderThickness="0"
+                                                                                Background="Transparent" />
+                                                                        </Border>
+                                                                    </Expander>
+                                                                    <FlowDocumentScrollViewer Style="{x:Null}"
+                                                                        Document="{Binding Path=RenderedMessage}"
+                                                                        IsToolBarVisible="False"
+                                                                        VerticalScrollBarVisibility="Hidden"
+                                                                        PreviewMouseWheel="ScrollToParentProcecssor">
+                                                                    </FlowDocumentScrollViewer>
+                                                                </StackPanel>
                                                                 <StackPanel Margin="18,5,0,0" Orientation="Horizontal" VerticalAlignment="Top">
                                                                     <StackPanel.Resources>
                                                                         <Style TargetType="TextBlock">

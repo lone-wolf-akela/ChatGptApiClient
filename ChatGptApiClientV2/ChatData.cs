@@ -673,6 +673,7 @@ public class UserMessage : IMessage
 public class AssistantMessage : IMessage
 {
     public IEnumerable<IMessage.IContent> Content { get; set; } = new List<IMessage.TextContent>();
+    public string? ResoningContent { get; set; }
     public RoleType Role => RoleType.Assistant;
     public string? Name { get; set; }
     public List<ToolCallType>? ToolCalls { get; set; }

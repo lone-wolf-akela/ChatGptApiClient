@@ -246,7 +246,7 @@ public partial class SystemState : ObservableObject
         {
             ModelInfo.ProviderEnum.OpenAI => "ChatGPT",
             ModelInfo.ProviderEnum.Anthropic => "Claude",
-            ModelInfo.ProviderEnum.DeepSeek => "DeepSeek Chat",
+            ModelInfo.ProviderEnum.DeepSeek => Config.SelectedModel?.Description ?? "DeepSeek Chat",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelDisplayName,
             _ => throw new InvalidOperationException()
         };

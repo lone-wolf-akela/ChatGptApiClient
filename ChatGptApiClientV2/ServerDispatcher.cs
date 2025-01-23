@@ -36,6 +36,7 @@ using Newtonsoft.Json.Serialization;
 using OpenAI;
 using OpenAI.Chat;
 using static ChatGptApiClientV2.ChatCompletionRequest;
+using ReflectionMagic;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ChatGptApiClientV2;
@@ -251,7 +252,9 @@ public class OpenAIEndpoint : IServerEndpoint
             }
 
             _streamingResponse = _client.CompleteChatStreamingAsync(messages, chatCompletionsOptions, cancellationToken);
+            _lastResponseIsReasoning = false;
             _responseSb.Clear();
+            _reasoningSb.Clear();
             _errorMessage = null;
             SystemFingerprint = "";
             _toolCallIdsByIndex.Clear();
@@ -334,8 +337,38 @@ public class OpenAIEndpoint : IServerEndpoint
                     }
                 }
 
-                foreach(var part in chatUpdate.ContentUpdate)
+                var dynChatUpdate = chatUpdate.AsDynamic();
+                if (dynChatUpdate.Choices.Count > 0)
                 {
+                    IDictionary<string, BinaryData>
+                        rawData = dynChatUpdate.Choices[0].Delta.SerializedAdditionalRawData;
+                    if (rawData.TryGetValue("reasoning_content", out var reasoningContent))
+                    {
+                        var reasoningString = reasoningContent.ToString();
+                        if (!string.IsNullOrEmpty(reasoningString) && reasoningString != "null")
+                        {
+                            reasoningString = JsonConvert.DeserializeObject<string>(reasoningString);
+                            if (!string.IsNullOrEmpty(reasoningString))
+                            {
+                                if (!_lastResponseIsReasoning)
+                                {
+                                    yield return "思考……\n\n";
+                                }
+                                _lastResponseIsReasoning = true;
+                                _reasoningSb.Append(reasoningString);
+                                yield return reasoningString;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var part in chatUpdate.ContentUpdate)
+                {
+                    if (_lastResponseIsReasoning)
+                    {
+                        _lastResponseIsReasoning = false;
+                        yield return "\n================\n\n";
+                    }
                     _responseSb.Append(part.Text);
                     yield return part.Text;
                 }
@@ -373,6 +406,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 [
                     new IMessage.TextContent { Text = _responseSb.ToString() }
                 ],
+                ResoningContent = _reasoningSb.ToString(),
                 ToolCalls = ToolCalls.ToList(),
                 Provider = _options.Service switch
                 {
@@ -411,12 +445,15 @@ public class OpenAIEndpoint : IServerEndpoint
 
     public string SystemFingerprint { get; private set; } = "";
 
+    private bool _lastResponseIsReasoning;
+
     private int _usageInputToken;
     private int _usageOutputToken;
     private readonly ServerEndpointOptions _options;
     private readonly ChatClient _client;
     private AsyncCollectionResult<StreamingChatCompletionUpdate>? _streamingResponse;
     private readonly StringBuilder _responseSb = new();
+    private readonly StringBuilder _reasoningSb = new();
     private string? _errorMessage;
     private readonly Dictionary<int, string> _toolCallIdsByIndex = [];
     private readonly Dictionary<int, string> _funcNamesByIndex = [];

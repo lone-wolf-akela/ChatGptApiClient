@@ -532,6 +532,12 @@ public partial class ChatWindowMessage : ObservableObject
         OnPropertyChanged(nameof(RenderedMessage));
     }
 
+    public string? ReasoningText { get; init; }
+    public bool HasReasoningText => !string.IsNullOrEmpty(ReasoningText);
+
+    [ObservableProperty]
+    public partial bool IsReasoningTextExpanded { get; set; } = true;
+
     public string PlainText
     {
         get
@@ -778,12 +784,13 @@ public partial class ChatWindowMessageTab : ObservableObject
             var chatMsg = new ChatWindowMessage
             {
                 Role = msg.Role,
-                Provider = msg is AssistantMessage aMsg ? aMsg.Provider : null,
+                Provider = msg is AssistantMessage aMsg0 ? aMsg0.Provider : null,
                 SourceMessage = msg,
                 DateTime = msg.DateTime,
                 ContainsServerUsageStats = msg.ContainsServerUsageStats,
                 ServerInputTokenNum = msg.ServerInputTokenNum,
-                ServerOutputTokenNum = msg.ServerOutputTokenNum
+                ServerOutputTokenNum = msg.ServerOutputTokenNum,
+                ReasoningText = msg is AssistantMessage aMsg1 ? aMsg1.ResoningContent : null
             };
             foreach (var content in msg.Content)
             {
