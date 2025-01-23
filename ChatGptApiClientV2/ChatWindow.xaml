@@ -679,7 +679,9 @@
                                                             <hc:SimplePanel
                                                                 Visibility="{Binding IsInEditingMode, Converter={StaticResource Boolean2VisibilityReConverter}}">
                                                                 <StackPanel Margin="0,5,0,0">
-                                                                    <Expander HorizontalAlignment="Stretch" Margin="15,20,15,0"
+                                                                    <Rectangle HorizontalAlignment="Stretch" Height="20" Fill="Transparent"
+                                                                               Visibility="{Binding HasReasoningText, Converter={StaticResource Boolean2VisibilityConverter}}"/>
+                                                                    <Expander HorizontalAlignment="Stretch" Margin="15,0,15,0"
                                                                               IsExpanded="{Binding IsReasoningTextExpanded}"
                                                                               Visibility="{Binding HasReasoningText, Converter={StaticResource Boolean2VisibilityConverter}}">
                                                                         <Expander.Header>
