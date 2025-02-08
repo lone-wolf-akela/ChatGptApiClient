@@ -400,13 +400,26 @@ public class OpenAIEndpoint : IServerEndpoint
                 _responseSb.AppendLine();
                 _responseSb.AppendLine(_errorMessage);
             }
+
+            var resoningContent = _reasoningSb.ToString();
+            var responseContent = _responseSb.ToString();
+            if (string.IsNullOrEmpty(resoningContent) && 
+                responseContent.StartsWith("<think>") && 
+                responseContent.Contains("</think>"))
+            {
+                // extract reasoning content from response content
+                var thinkEndIndex = responseContent.IndexOf("</think>", StringComparison.InvariantCulture);
+                resoningContent = responseContent["<think>".Length..thinkEndIndex].Trim().Trim('\r', '\n').Trim();
+                responseContent = responseContent[(thinkEndIndex + "</think>".Length)..].Trim().Trim('\r', '\n').Trim();
+            }
+
             var response = new AssistantMessage
             {
                 Content =
                 [
-                    new IMessage.TextContent { Text = _responseSb.ToString() }
+                    new IMessage.TextContent { Text = responseContent }
                 ],
-                ResoningContent = _reasoningSb.ToString(),
+                ResoningContent = resoningContent,
                 ToolCalls = ToolCalls.ToList(),
                 Provider = _options.Service switch
                 {
