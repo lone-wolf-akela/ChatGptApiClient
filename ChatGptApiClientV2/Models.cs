@@ -127,6 +127,8 @@ public class ModelVersionInfo
     }
     public string ModelType { get; init; } = "";
     public string Name { get; set; } = "";
+    public string? SiliconFlowName { get; set; }
+    public string? NvidiaName { get; set; }
     public string Description { get; set; } = "";
     public DateTime KnowledgeCutoff { get; set; } = DateTime.MinValue;
     public bool FunctionCallSupported { get; set; }
@@ -340,13 +342,16 @@ public class ModelVersionInfo
         {
             ModelType = "deepseek", Name= "deepseek-chat", Description = "DeepSeek Chat",
             KnowledgeCutoff = new DateTime(2024, 1, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            SiliconFlowName = "deepseek-ai/DeepSeek-V3"
         },
         new()
         {
             ModelType = "deepseek", Name= "deepseek-reasoner", Description = "DeepSeek Reasoner",
             KnowledgeCutoff = new DateTime(2024, 1, 1), FunctionCallSupported = false,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            SiliconFlowName = "deepseek-ai/DeepSeek-R1",
+            NvidiaName = "deepseek-ai/deepseek-r1"
         }
     ];
 }

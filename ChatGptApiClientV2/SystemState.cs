@@ -317,6 +317,11 @@ public partial class SystemState : ObservableObject
         SetStreamProgressEvent?.Invoke(progress, text, sessionId);
     }
 
+    enum AlternativeModelName
+    {
+        Default, SiliconFlow, Nvidia
+    }
+
     private async Task Send(Guid sessionId, CancellationToken cancellationToken = default)
     {
         var selectedModelType = Config.SelectedModelType ??
@@ -330,6 +335,9 @@ public partial class SystemState : ObservableObject
         string apiKey;
         int? maxTokens;
         float temperature;
+
+        var alternativeModelName = AlternativeModelName.Default;
+
         switch (selectedModelType.Provider)
         {
             case ModelInfo.ProviderEnum.OpenAI:
@@ -349,9 +357,17 @@ public partial class SystemState : ObservableObject
                 {
                     service = ServerEndpointOptions.ServiceType.DeepSeek;
                     endpointUrl = Config.DeepSeekServiceURL;
-                    apiKey = Config.DeepSeekAPIKey;
+                    apiKey = Config.SelectedDeepSeekAPIKey;
                     maxTokens = Config.MaxTokens == 0 ? 8192 : Config.MaxTokens;
                     temperature = Config.Temperature;
+
+                    alternativeModelName = Config.DeepSeekServiceProvider switch
+                    {
+                        Config.DeepSeekServiceProviderType.SiliconFlow => AlternativeModelName.SiliconFlow,
+                        Config.DeepSeekServiceProviderType.Nvidia => AlternativeModelName.Nvidia,
+                        _ => AlternativeModelName.Default
+                    };
+
                     break;
                 }
             case ModelInfo.ProviderEnum.OtherOpenAICompat:
@@ -376,12 +392,26 @@ public partial class SystemState : ObservableObject
             }
         }
 
+        switch (alternativeModelName)
+        {
+            case AlternativeModelName.SiliconFlow when selectedModel.SiliconFlowName is null:
+                throw new InvalidOperationException("The selected model is not available on SiliconFlow.");
+            case AlternativeModelName.Nvidia when selectedModel.NvidiaName is null:
+                throw new InvalidOperationException("The selected model is not available on Nvidia.");
+        }
+
         var serverOptions = new ServerEndpointOptions
         {
             Service = service,
             Endpoint = endpointUrl,
             Key = apiKey,
-            Model = selectedModel.Name,
+            Model = alternativeModelName switch
+            {
+                AlternativeModelName.Default => selectedModel.Name,
+                AlternativeModelName.SiliconFlow => selectedModel.SiliconFlowName!,
+                AlternativeModelName.Nvidia => selectedModel.NvidiaName!,
+                _ => throw new InvalidOperationException()
+            },
             MaxTokens = maxTokens,
             PresencePenalty = Config.PresencePenalty,
             Seed = Config.Seed,

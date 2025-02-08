@@ -322,10 +322,55 @@
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="5,0,0,0">
                                 <DockPanel Margin="0,0,0,5">
+                                    <DockPanel.Style>
+                                        <Style TargetType="DockPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.DeepSeek}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Others}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DockPanel.Style>
                                     <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek API KEY"
-                                               VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                                     <hc:PasswordBox UnsafePassword="{Binding Path=Config.DeepSeekAPIKey, Mode=TwoWay}"
                                                         IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,5">
+                                    <DockPanel.Style>
+                                        <Style TargetType="DockPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.SiliconFlow}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DockPanel.Style>
+                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="硅基流动 API KEY"
+                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                    <hc:PasswordBox UnsafePassword="{Binding Path=Config.SiliconFlowAPIKey, Mode=TwoWay}"
+                                                    IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,5">
+                                    <DockPanel.Style>
+                                        <Style TargetType="DockPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Nvidia}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DockPanel.Style>
+                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="NVIDIA NIM API KEY"
+                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                    <hc:PasswordBox UnsafePassword="{Binding Path=Config.NvidiaAPIKey, Mode=TwoWay}"
+                                                    IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                                 </DockPanel>
                             </StackPanel>
                         </Grid>

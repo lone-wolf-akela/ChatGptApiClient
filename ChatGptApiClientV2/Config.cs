@@ -179,6 +179,8 @@ public partial class Config : ObservableValidator
     public enum DeepSeekServiceProviderType
     {
         [Description("DeepSeek 官方接口")] DeepSeek,
+        [Description("硅基流动")] SiliconFlow,
+        [Description("NVIDIA NIM")] Nvidia,
         [Description("其他")] Others
     }
 
@@ -202,6 +204,8 @@ public partial class Config : ObservableValidator
         get => DeepSeekServiceProvider switch
         {
             DeepSeekServiceProviderType.DeepSeek => "https://api.deepseek.com/v1",
+            DeepSeekServiceProviderType.SiliconFlow => "https://api.siliconflow.cn/v1/",
+            DeepSeekServiceProviderType.Nvidia => "https://integrate.api.nvidia.com/v1",
             _ => field
         };
         set
@@ -238,6 +242,8 @@ public partial class Config : ObservableValidator
     public bool DeepSeekServiceURLEditable => DeepSeekServiceProvider switch
     {
         DeepSeekServiceProviderType.DeepSeek => false,
+        DeepSeekServiceProviderType.SiliconFlow => false,
+        DeepSeekServiceProviderType.Nvidia => false,
         DeepSeekServiceProviderType.Others => true,
         _ => throw new InvalidOperationException()
     };
@@ -255,6 +261,23 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     public partial string DeepSeekAPIKey { get; set; }
     partial void OnDeepSeekAPIKeyChanged(string value) => SaveConfig();
+
+    [ObservableProperty]
+    public partial string SiliconFlowAPIKey { get; set; }
+    partial void OnSiliconFlowAPIKeyChanged(string value) => SaveConfig();
+
+    [ObservableProperty]
+    public partial string NvidiaAPIKey { get; set; }
+    partial void OnNvidiaAPIKeyChanged(string value) => SaveConfig();
+
+    public string SelectedDeepSeekAPIKey => DeepSeekServiceProvider switch
+    {
+        DeepSeekServiceProviderType.DeepSeek => DeepSeekAPIKey,
+        DeepSeekServiceProviderType.SiliconFlow => SiliconFlowAPIKey,
+        DeepSeekServiceProviderType.Nvidia => NvidiaAPIKey,
+        DeepSeekServiceProviderType.Others => DeepSeekAPIKey,
+        _ => throw new InvalidOperationException()
+    };
 
     /* Google Search Plugin Config */
     [ObservableProperty]
@@ -554,6 +577,8 @@ public partial class Config : ObservableValidator
         API_KEY = "";
         AnthropicAPIKey = "";
         DeepSeekAPIKey = "";
+        SiliconFlowAPIKey = "";
+        NvidiaAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
         BingSearchAPIKey = "";
