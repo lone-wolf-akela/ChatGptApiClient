@@ -293,87 +293,124 @@
                     </Grid>
                 </TabItem>
                 <TabItem Header="DeepSeek 聊天服务">
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
-                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek 服务源"
-                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <ComboBox
-                                        ItemsSource="{Binding Path=Config.DeepSeekServiceProvider, Converter={local:EnumToCollectionConverter}}"
-                                        SelectedValuePath="Value"
-                                        DisplayMemberPath="Description"
-                                        SelectedValue="{Binding Path=Config.DeepSeekServiceProvider, Mode=TwoWay}" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,5">
-                                <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek Service URL"
-                                           HorizontalContentAlignment="Left" Width="100" />
-                                <TextBox x:Name="TxtbxDeepSeekServiceurl"
-                                             TextWrapping="Wrap"
-                                             VerticalAlignment="Center"
-                                             IsEnabled="{Binding Path=Config.DeepSeekServiceURLEditable}"
-                                             Text="{Binding Config.DeepSeekServiceURL, UpdateSourceTrigger=PropertyChanged}" />
-                            </DockPanel>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Margin="5,10,5,0">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock>
+                                - DeepSeek 官方 API 接口注册：
+                                <Hyperlink NavigateUri="https://platform.deepseek.com" RequestNavigate="Hyperlink_OnRequestNavigate">
+                                    https://platform.deepseek.com
+                                </Hyperlink>
+                            </TextBlock>
+                            <TextBlock>
+                                - 硅基流动注册：
+                                <Hyperlink NavigateUri="https://cloud.siliconflow.cn" RequestNavigate="Hyperlink_OnRequestNavigate">
+                                    https://cloud.siliconflow.cn
+                                </Hyperlink>
+                                （注意：Pro版模型只能使用付费充值余额，不能使用免费赠送余额）
+                            </TextBlock>
+                            <TextBlock>
+                                - NVIDIA NIM 注册：
+                                <Hyperlink NavigateUri="https://build.nvidia.com/deepseek-ai/deepseek-r1" RequestNavigate="Hyperlink_OnRequestNavigate">
+                                    https://build.nvidia.com/deepseek-ai/deepseek-r1
+                                </Hyperlink>
+                                （右上角选 Login，输入邮箱地址注册登录，成功后点击页面右上“Build with this NIM”，选“Hosted API”，点“Generate API Key”得到密钥）
+                            </TextBlock>
+                        </StackPanel>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
+                            <StackPanel Grid.Column="0" Margin="0,0,5,0">
                                 <DockPanel Margin="0,0,0,5">
-                                    <DockPanel.Style>
-                                        <Style TargetType="DockPanel">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.DeepSeek}">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Others}">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DockPanel.Style>
-                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek API KEY"
-                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                    <hc:PasswordBox UnsafePassword="{Binding Path=Config.DeepSeekAPIKey, Mode=TwoWay}"
+                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek 服务源"
+                                               VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                    <ComboBox
+                                            ItemsSource="{Binding Path=Config.DeepSeekServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                            SelectedValuePath="Value"
+                                            DisplayMemberPath="Description"
+                                            SelectedValue="{Binding Path=Config.DeepSeekServiceProvider, Mode=TwoWay}" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,5">
+                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek Service URL"
+                                               HorizontalContentAlignment="Left" Width="100" />
+                                    <TextBox x:Name="TxtbxDeepSeekServiceurl"
+                                                 TextWrapping="Wrap"
+                                                 VerticalAlignment="Center"
+                                                 IsEnabled="{Binding Path=Config.DeepSeekServiceURLEditable}"
+                                                 Text="{Binding Config.DeepSeekServiceURL, UpdateSourceTrigger=PropertyChanged}" />
+                                </DockPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Margin="5,0,0,0">
+                                    <DockPanel Margin="0,0,0,5">
+                                        <DockPanel.Style>
+                                            <Style TargetType="DockPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.DeepSeek}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Others}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DockPanel.Style>
+                                        <Label DockPanel.Dock="Left" MinWidth="150" Content="DeepSeek API KEY"
+                                               VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                        <hc:PasswordBox UnsafePassword="{Binding Path=Config.DeepSeekAPIKey, Mode=TwoWay}"
+                                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <StackPanel>
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.SiliconFlow}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <DockPanel Margin="0,0,0,5">
+                                            <Label DockPanel.Dock="Left" MinWidth="150" Content="硅基流动 API KEY"
+                                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                            <hc:PasswordBox UnsafePassword="{Binding Path=Config.SiliconFlowAPIKey, Mode=TwoWay}"
+                                                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <StackPanel Margin="0,0,0,5" Orientation="Horizontal">
+                                            <Label DockPanel.Dock="Left" MinWidth="150" Content="使用硅基流动Pro版模型"
+                                                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                            <ToggleButton DockPanel.Dock="Left" Style="{StaticResource ToggleButtonSwitch}"
+                                                          IsChecked="{Binding Config.SiliconFlowUseProModel}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <DockPanel Margin="0,0,0,5">
+                                        <DockPanel.Style>
+                                            <Style TargetType="DockPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Nvidia}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DockPanel.Style>
+                                        <Label DockPanel.Dock="Left" MinWidth="150" Content="NVIDIA NIM API KEY"
+                                               VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                        <hc:PasswordBox UnsafePassword="{Binding Path=Config.NvidiaAPIKey, Mode=TwoWay}"
                                                         IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                                </DockPanel>
-                                <DockPanel Margin="0,0,0,5">
-                                    <DockPanel.Style>
-                                        <Style TargetType="DockPanel">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.SiliconFlow}">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DockPanel.Style>
-                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="硅基流动 API KEY"
-                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                    <hc:PasswordBox UnsafePassword="{Binding Path=Config.SiliconFlowAPIKey, Mode=TwoWay}"
-                                                    IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                                </DockPanel>
-                                <DockPanel Margin="0,0,0,5">
-                                    <DockPanel.Style>
-                                        <Style TargetType="DockPanel">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Config.DeepSeekServiceProvider}" Value="{x:Static local:Config+DeepSeekServiceProviderType.Nvidia}">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DockPanel.Style>
-                                    <Label DockPanel.Dock="Left" MinWidth="150" Content="NVIDIA NIM API KEY"
-                                           VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                    <hc:PasswordBox UnsafePassword="{Binding Path=Config.NvidiaAPIKey, Mode=TwoWay}"
-                                                    IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
-                                </DockPanel>
-                            </StackPanel>
-                        </Grid>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DockPanel>
                     </TabItem>
                 <TabItem Header="第三方聊天服务">
                     <DockPanel>

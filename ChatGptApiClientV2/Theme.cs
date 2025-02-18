@@ -1,4 +1,4 @@
-﻿/*
+/*
     ChatGPT Client V2: A GUI client for the OpenAI ChatGPT API (and also Anthropic Claude API) based on WPF.
     Copyright (C) 2024 Lone Wolf Akela
 
@@ -72,6 +72,9 @@ public static class ThemeUpdater
         Application.Current.Resources["SolidRegionBrush"] = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20));
         Application.Current.Resources["SolidSecondaryRegionBrush"] =
             new SolidColorBrush(Color.FromRgb(0x34, 0x34, 0x34));
+        Application.Current.Resources["LightRegionBrush"] = new SolidColorBrush(Color.FromArgb(0xb3, 0xff, 0xff, 0xff));
+        Application.Current.Resources["LightSecondaryRegionBrush"] =
+            new SolidColorBrush(Color.FromArgb(0x80, 0xf9, 0xf9, 0xf9));
         ForAllHandyControlWindows(TryEnableMica);
         ForAllWindows(MicaHelper.ApplyDarkMode);
     }
@@ -84,6 +87,10 @@ public static class ThemeUpdater
         Application.Current.Resources["SolidRegionBrush"] = new SolidColorBrush(Color.FromRgb(0xfa, 0xfa, 0xfa));
         Application.Current.Resources["SolidSecondaryRegionBrush"] =
             new SolidColorBrush(Color.FromRgb(0xf0, 0xf0, 0xf0));
+        Application.Current.Resources["LightRegionBrush"] = new SolidColorBrush(Color.FromArgb(0xb3, 0xff, 0xff, 0xff));
+        Application.Current.Resources["LightSecondaryRegionBrush"] =
+            new SolidColorBrush(Color.FromArgb(0x80, 0xf9, 0xf9, 0xf9));
+        Application.Current.Resources["LightBorderBrush"] = new SolidColorBrush(Color.FromRgb(0xe0, 0xe0, 0xe0));
         ForAllHandyControlWindows(TryEnableMica);
         ForAllWindows(MicaHelper.RemoveDarkMode);
     }

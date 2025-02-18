@@ -22,6 +22,8 @@ using HandyControl.Tools;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Interop;
+using System.Windows.Navigation;
+using System.Diagnostics;
 
 namespace ChatGptApiClientV2;
 
@@ -103,5 +105,11 @@ public partial class Settings
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         ((SettingsViewModel)DataContext).Config.RefreshTheme();
+    }
+
+    private void Hyperlink_OnRequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
     }
 }

@@ -37,9 +37,59 @@ using OpenAI;
 using OpenAI.Chat;
 using static ChatGptApiClientV2.ChatCompletionRequest;
 using ReflectionMagic;
+using HarmonyLib;
+using System.Reflection;
+using System.Text.Json;
+using System.ClientModel.Primitives;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ChatGptApiClientV2;
+
+// Some 3rd party API provider will return "finish_reason" as an empty string "", which cause
+// error with openai sdk, as it expects a null instead. we need to patch it here
+public static class Patcher
+{
+    [ModuleInitializer]
+    public static void Patch()
+    {
+        var harmony = new Harmony("Lone Wolf Patch");
+        var assembly = Assembly.GetExecutingAssembly();
+        harmony.PatchAll(assembly);
+    }
+}
+[HarmonyPatch(typeof(StreamingChatCompletionUpdate), "DeserializeStreamingChatCompletionUpdate")]
+class Patch
+{
+    static void Prefix(ref JsonElement element, ref ModelReaderWriterOptions options)
+    {
+        using var doc = JsonDocument.Parse(element.GetRawText());
+        var root = doc.RootElement.Clone();
+        var jsonObject = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(root.GetRawText());
+        if (jsonObject is null || !jsonObject.TryGetValue("choices", out var choicesObj))
+        {
+            return;
+        }
+        if (choicesObj is JsonElement { ValueKind: JsonValueKind.Array } choicesElement)
+        {
+            var choicesList = new List<Dictionary<string, object>>();
+            foreach (var choiceElement in choicesElement.EnumerateArray())
+            {
+                var choiceDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(choiceElement.GetRawText());
+                if (choiceDict != null &&
+                    choiceDict.TryGetValue("finish_reason", out var finishReason) &&
+                    finishReason is JsonElement { ValueKind: JsonValueKind.String } finishReasonStr &&
+                    string.IsNullOrEmpty(finishReasonStr.GetString()))
+                {
+                    choiceDict.Remove("finish_reason");
+                }
+                choicesList.Add(choiceDict!);
+            }
+            jsonObject["choices"] = choicesList;
+        }
+        var modifiedJson = System.Text.Json.JsonSerializer.SerializeToElement(jsonObject);
+        element = modifiedJson;
+    }
+}
 
 public class ServerEndpointOptions
 {

@@ -682,6 +682,9 @@
                                                                     <Rectangle HorizontalAlignment="Stretch" Height="20" Fill="Transparent"
                                                                                Visibility="{Binding HasReasoningText, Converter={StaticResource Boolean2VisibilityConverter}}"/>
                                                                     <Expander HorizontalAlignment="Stretch" Margin="15,0,15,0"
+                                                                              Foreground="Black"
+                                                                              BorderBrush="{DynamicResource LightBorderBrush}"
+                                                                              Background="{DynamicResource LightSecondaryRegionBrush}"
                                                                               IsExpanded="{Binding IsReasoningTextExpanded}"
                                                                               Visibility="{Binding HasReasoningText, Converter={StaticResource Boolean2VisibilityConverter}}">
                                                                         <Expander.Header>
@@ -690,11 +693,12 @@
                                                                                 <Run Text=" 思考……"/>
                                                                             </TextBlock>
                                                                         </Expander.Header>
-                                                                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                                                        <Border BorderBrush="{DynamicResource LightBorderBrush}"
                                                                             CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}"
-                                                                            Background="{DynamicResource RegionBrush}"
+                                                                            Background="{DynamicResource LightRegionBrush}"
                                                                             BorderThickness="1">
                                                                             <TextBox Text="{Binding ReasoningText}"
+                                                                                Foreground="Black"
                                                                                 Margin="5,5,5,5"
                                                                                 FontSize="14"
                                                                                 IsReadOnly="True"

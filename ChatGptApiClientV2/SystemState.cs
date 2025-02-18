@@ -408,7 +408,9 @@ public partial class SystemState : ObservableObject
             Model = alternativeModelName switch
             {
                 AlternativeModelName.Default => selectedModel.Name,
-                AlternativeModelName.SiliconFlow => selectedModel.SiliconFlowName!,
+                AlternativeModelName.SiliconFlow => Config.SiliconFlowUseProModel
+                    ? $"Pro/{selectedModel.SiliconFlowName!}"
+                    : selectedModel.SiliconFlowName!,
                 AlternativeModelName.Nvidia => selectedModel.NvidiaName!,
                 _ => throw new InvalidOperationException()
             },

@@ -31,6 +31,9 @@
         <hc:BindingProxy x:Key="CornerRadiusProxy" Value="{DynamicResource DefaultCornerRadius}" />
     </UserControl.Resources>
     <Expander HorizontalAlignment="Left" MinWidth="{Binding MinWidth}" IsExpanded="{Binding IsExpanded}"
+              Foreground="Black"
+              BorderBrush="{DynamicResource LightBorderBrush}"
+              Background="{DynamicResource LightSecondaryRegionBrush}"
               d:IsExpanded="True">
         <Expander.Header>
             <TextBlock>
@@ -51,14 +54,14 @@
                 </Run>
             </TextBlock>
         </Expander.Header>
-        <Border BorderBrush="{DynamicResource BorderBrush}"
+        <Border BorderBrush="{DynamicResource LightBorderBrush}"
                 CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}"
                 Background="{DynamicResource RegionBrush}"
                 BorderThickness="1">
             <Grid MouseEnter="ImageGrid_MouseEnter"
                   MouseLeave="ImageGrid_MouseLeave">
                 <Border x:Name="ImageMask"
-                        Background="White"
+                        Background="{DynamicResource DefaultBrush}"
                         CornerRadius="{Binding Value, Source={StaticResource CornerRadiusProxy}, Converter={local:BottomCornerRadiusConverter}}" />
                 <Image Source="{Binding ImageSource}"
                        Stretch="Uniform"

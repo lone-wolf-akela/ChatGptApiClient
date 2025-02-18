@@ -267,6 +267,11 @@ public partial class Config : ObservableValidator
     partial void OnSiliconFlowAPIKeyChanged(string value) => SaveConfig();
 
     [ObservableProperty]
+    public partial bool SiliconFlowUseProModel { get; set; }
+
+    partial void OnSiliconFlowUseProModelChanged(bool value) => SaveConfig();
+
+    [ObservableProperty]
     public partial string NvidiaAPIKey { get; set; }
     partial void OnNvidiaAPIKeyChanged(string value) => SaveConfig();
 
@@ -578,6 +583,7 @@ public partial class Config : ObservableValidator
         AnthropicAPIKey = "";
         DeepSeekAPIKey = "";
         SiliconFlowAPIKey = "";
+        SiliconFlowUseProModel = false;
         NvidiaAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
