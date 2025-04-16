@@ -338,6 +338,14 @@ public partial class Config : ObservableValidator
     public partial bool UploadHiresImage { get; set; }
     partial void OnUploadHiresImageChanged(bool value) => SaveConfig();
 
+    [ObservableProperty]
+    public partial bool EnableThinking { get; set; }
+    partial void OnEnableThinkingChanged(bool value) => SaveConfig();
+
+    [ObservableProperty]
+    public partial int ThinkingLength { get; set; }
+    partial void OnThinkingLengthChanged(int value) => SaveConfig();
+
     [JsonIgnore] public ObservableCollection<ModelInfo> ModelOptions { get; } = [];
 
     private void UpdateModelOptionList()
@@ -592,6 +600,8 @@ public partial class Config : ObservableValidator
         UploadHiresImage = false;
         PythonDllPath = "";
         PythonEnv = null;
+        EnableThinking = false;
+        ThinkingLength = 4096;
 
         StopSequences.CollectionChanged += StopSequencesCollectionChanged;
         ThirdPartyModels.CollectionChanged += ThirdPartyModelsCollectionChanged;

@@ -127,7 +127,8 @@ public class StreamingMessageStart : IStreamingResponse
 public enum StreamingContentBlockType
 {
     [EnumMember(Value = "text")] Text,
-    [EnumMember(Value = "tool_use")] ToolUse
+    [EnumMember(Value = "tool_use")] ToolUse,
+    [EnumMember(Value = "thinking")] Thinking
 }
 
 public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlock>
@@ -154,6 +155,9 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
                 case StreamingContentBlockType.ToolUse:
                     serializer.Serialize(writer, (StreamingContentBlockToolUse)value);
                     break;
+                case StreamingContentBlockType.Thinking:
+                    serializer.Serialize(writer, (StreamingContentBlockThinking)value);
+                    break;
                 default:
                     throw new JsonSerializationException();
             }
@@ -174,6 +178,8 @@ public class StreamingContentBlockConverter : JsonConverter<IStreamingContentBlo
                                               throw new JsonSerializationException(),
             StreamingContentBlockType.ToolUse => jobj.ToObject<StreamingContentBlockToolUse>(serializer) ??
                                                  throw new JsonSerializationException(),
+            StreamingContentBlockType.Thinking => jobj.ToObject<StreamingContentBlockThinking>(serializer) ??
+                                                  throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
         _canRead = true;
@@ -200,6 +206,12 @@ public class StreamingContentBlockToolUse : IStreamingContentBlock
     public string Name { get; set; } = "";
 }
 
+public class StreamingContentBlockThinking : IStreamingContentBlock
+{
+    public StreamingContentBlockType Type => StreamingContentBlockType.Thinking;
+    public string Thinking { get; set; } = "";
+}
+
 public class StreamingContentBlockStart : IStreamingResponse
 {
     public StreamingResponseType Type => StreamingResponseType.ContentBlockStart;
@@ -211,7 +223,9 @@ public class StreamingContentBlockStart : IStreamingResponse
 public enum StreamingContentBlockDeltaContentType
 {
     [EnumMember(Value = "text_delta")] TextDelta,
-    [EnumMember(Value = "input_json_delta")] InputJsonDelta
+    [EnumMember(Value = "input_json_delta")] InputJsonDelta,
+    [EnumMember(Value = "thinking_delta")] ThinkingDelta,
+    [EnumMember(Value = "signature_delta")] SignatureDelta
 }
 
 public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreamingContentBlockDeltaContent>
@@ -239,6 +253,12 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
                 case StreamingContentBlockDeltaContentType.InputJsonDelta:
                     serializer.Serialize(writer, (StreamingContentBlockInputJsonDelta)value);
                     break;
+                case StreamingContentBlockDeltaContentType.ThinkingDelta:
+                    serializer.Serialize(writer, (StreamingContentBlockThinkingDelta)value);
+                    break;
+                case StreamingContentBlockDeltaContentType.SignatureDelta:
+                    serializer.Serialize(writer, (StreamingContentBlockSignatureDelta)value);
+                    break;
                 default:
                     throw new JsonSerializationException();
             }
@@ -259,6 +279,10 @@ public class StreamingContentBlockDeltaContentConverter : JsonConverter<IStreami
                 jobj.ToObject<StreamingContentBlockTextDelta>(serializer) ?? throw new JsonSerializationException(),
             StreamingContentBlockDeltaContentType.InputJsonDelta =>
                 jobj.ToObject<StreamingContentBlockInputJsonDelta>(serializer) ?? throw new JsonSerializationException(),
+            StreamingContentBlockDeltaContentType.ThinkingDelta =>
+                jobj.ToObject<StreamingContentBlockThinkingDelta>(serializer) ?? throw new JsonSerializationException(),
+            StreamingContentBlockDeltaContentType.SignatureDelta =>
+                jobj.ToObject<StreamingContentBlockSignatureDelta>(serializer) ?? throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
         _canRead = true;
@@ -282,6 +306,18 @@ public class StreamingContentBlockInputJsonDelta : IStreamingContentBlockDeltaCo
 {
     public StreamingContentBlockDeltaContentType Type => StreamingContentBlockDeltaContentType.InputJsonDelta;
     public string PartialJson { get; set; } = "";
+}
+
+public class StreamingContentBlockThinkingDelta : IStreamingContentBlockDeltaContent
+{
+    public StreamingContentBlockDeltaContentType Type => StreamingContentBlockDeltaContentType.ThinkingDelta;
+    public string Thinking { get; set; } = "";
+}
+
+public class StreamingContentBlockSignatureDelta : IStreamingContentBlockDeltaContent
+{
+    public StreamingContentBlockDeltaContentType Type => StreamingContentBlockDeltaContentType.SignatureDelta;
+    public string Signature { get; set; } = "";
 }
 
 public class StreamingContentBlockDelta : IStreamingResponse

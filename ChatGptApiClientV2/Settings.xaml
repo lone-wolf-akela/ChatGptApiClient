@@ -143,6 +143,8 @@
 
                         <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" VerticalAlignment="Center"
            HorizontalAlignment="Left" />
+                        <Label Grid.Row="0" Grid.Column="4" Content="思考长度" VerticalAlignment="Center"
+                               HorizontalAlignment="Left" />
                         <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" VerticalAlignment="Center"
            HorizontalAlignment="Left" />
                         <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center"
@@ -154,7 +156,14 @@
 
                         <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname"
              Text="{Binding Config.UserNickName, UpdateSourceTrigger=PropertyChanged}" />
-
+                        <DockPanel Grid.Row="0" Grid.Column="5" ToolTip="仅对 Claude 模型生效">
+                            <TextBox Width="70" DockPanel.Dock="Right" x:Name="TxtThinkingLength"
+                                     Text="{Binding ElementName=SlidThinkingLength,Path=Value,StringFormat=N0}"
+                                     InputScope="Number" VerticalAlignment="Center" />
+                            <Slider x:Name="SlidThinkingLength" Minimum="1024" Maximum="64000" LargeChange="1000" SmallChange="100"
+                                    Value="{Binding Path=Config.ThinkingLength, Mode=TwoWay}" Margin="0,0,5,0"
+                                    VerticalAlignment="Center" />
+                        </DockPanel>
                         <DockPanel Grid.Row="0" Grid.Column="9">
                             <TextBox Width="70" x:Name="TxtMaxTokens" DockPanel.Dock="Right"
                  Text="{Binding ElementName=SlidMaxTokens,Path=Value,StringFormat=N0}"

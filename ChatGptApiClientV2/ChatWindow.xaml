@@ -95,7 +95,7 @@
             <StackPanel Orientation="Horizontal">
                 <StackPanel Margin="0,0,5,0" Orientation="Horizontal">
                     <Label Content="模型" />
-                    <ComboBox x:Name="CbxModel" Width="175" ItemsSource="{Binding State.Config.ModelOptions}"
+                    <ComboBox x:Name="CbxModel" Width="150" ItemsSource="{Binding State.Config.ModelOptions}"
                               SelectedIndex="{Binding State.Config.SelectedModelIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -106,7 +106,7 @@
                 </StackPanel>
                 <StackPanel Margin="0,0,0,0" Orientation="Horizontal">
                     <Label Content="版本" />
-                    <ComboBox x:Name="CbxModelVersion" Width="175"
+                    <ComboBox x:Name="CbxModelVersion" Width="150"
                               ItemsSource="{Binding State.Config.ModelVersionOptions}"
                               SelectedIndex="{Binding State.Config.SelectedModelVersionIndex, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
@@ -214,7 +214,7 @@
                     </StackPanel>
                 </ToggleButton>
                 <hc:Divider Orientation="Vertical" Margin="10,0,0,0" />
-                <Label Content="Markdown 渲染" />
+                <Label Content="Markdown" />
                 <hc:ButtonGroup Style="{StaticResource ButtonGroupSolidDynamicColor}">
                     <RadioButton Content="不启用"
                                  IsChecked="{Binding State.Config.EnableMarkdown, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:Config+MarkdownRenderMode.Disabled}}"
@@ -226,6 +226,13 @@
                                  IsChecked="{Binding State.Config.EnableMarkdown, Converter={local:ComparisonConverter}, ConverterParameter={x:Static local:Config+MarkdownRenderMode.EnabledForAllMessages}}"
                                  Command="{Binding SwitchMarkdownRenderingCommand}" />
                 </hc:ButtonGroup>
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding State.Config.SelectedModel.OptionalThinkingAbility, FallbackValue=Hidden, Converter={StaticResource Boolean2VisibilityConverter}}">
+                    <hc:Divider Orientation="Vertical" Margin="10,0,0,0" />
+                    <Label Content="思考" />
+                    <ToggleButton IsChecked="{Binding State.Config.EnableThinking}"
+                                  Style="{StaticResource ToggleButtonSwitch}"/>
+                </StackPanel>
             </StackPanel>
         </DockPanel>
         <GridSplitter Grid.Row="2" Height="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -647,6 +654,7 @@
                                                                     <ListBox.ItemTemplate>
                                                                         <DataTemplate>
                                                                             <TextBox Text="{Binding Text, Mode=TwoWay}"
+                                                                                Foreground="Black"
                                                                                 VerticalContentAlignment="Top"
                                                                                 TextWrapping="WrapWithOverflow"
                                                                                 AcceptsReturn="True"

@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -195,6 +196,19 @@ public class Metadata
     public string UserId { get; set; } = "";
 }
 
+[JsonConverter(typeof(StringEnumConverter))]
+public enum ThinkingType
+{
+    [EnumMember(Value = "enabled")] Enabled,
+    [EnumMember(Value = "disabled")] Disabled
+}
+
+public class ExtendedThinking
+{
+    public ThinkingType Type { get; set; } = ThinkingType.Disabled;
+    public int? BudgetTokens { get; set; }
+}
+
 /// <summary>
 /// <para> Create a Message. </para>
 /// <para> Send a structured list of input messages with text and/or image content, and 
@@ -251,8 +265,6 @@ public class CreateMessage
     /// </summary>
     public string? System { get; set; }
 
-    private float? temperature;
-
     /// <summary>
     /// <para> Amount of randomness injected into the response. </para>
     /// <para> Defaults to 1.0. Ranges from 0.0 to 1.0. Use temperature closer to 0.0 
@@ -261,9 +273,17 @@ public class CreateMessage
     /// </summary>
     public float? Temperature
     {
-        get => temperature;
-        set => temperature = value.HasValue ? Math.Clamp(value.Value, 0.0f, 1.0f) : null;
+        get;
+        set => field = value.HasValue ? Math.Clamp(value.Value, 0.0f, 1.0f) : null;
     }
+
+    /// <summary>
+    /// <para> Configuration for enabling Claude's extended thinking. </para>
+    /// <para> When enabled, responses include <c>thinking</c> content blocks showing Claude's
+    /// thinking process before the final answer. Requires a minimum budget of 1,024 tokens and
+    /// counts towards your <c>max_tokens</c> limit. </para>
+    /// </summary>
+    public ExtendedThinking? Thinking { get; set; }
 
     /// <summary>
     /// [beta] Definitions of tools that the model may use

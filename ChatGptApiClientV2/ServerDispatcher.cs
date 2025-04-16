@@ -41,6 +41,7 @@ using HarmonyLib;
 using System.Reflection;
 using System.Text.Json;
 using System.ClientModel.Primitives;
+using ChatGptApiClientV2.Claude;
 
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ChatGptApiClientV2;
@@ -113,9 +114,12 @@ public class ServerEndpointOptions
     public IEnumerable<ToolType>? Tools { get; set; }
     public string? UserId { get; set; }
     public IEnumerable<string>? StopSequences { get; set; }
+    public bool EnableThinking { get; set; }
+    public int ThinkingLength { get; set; }
 
-    public bool SystemPromptNotSupported { get; set; } = false;
-    public bool TemperatureSettingNotSupported { get; set; } = false;
+    public bool SystemPromptNotSupported { get; set; }
+    public bool TemperatureSettingNotSupported { get; set; }
+    public bool NeedChinesePunctuationNormalization { get; set; }
 }
 
 public interface IServerEndpoint
@@ -696,11 +700,15 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
 
             var tools = GetToolDefinitions().ToList();
+            if (_options.MaxTokens is null)
+            {
+                throw new ArgumentException("Anthropic model must have max_tokens setting");
+            }
             var createMsg = new Claude.CreateMessage
             {
                 Model = _options.Model,
                 Messages = NormalizeMessages(messages),
-                MaxTokens = _options.MaxTokens ?? 4096,
+                MaxTokens = _options.MaxTokens.Value,
                 System = systemMessage,
                 Temperature = _options.Temperature,
                 Tools = tools.Count != 0 ? tools : null,
@@ -709,6 +717,17 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 Metadata = _options.UserId is null ? null : new Claude.Metadata { UserId = _options.UserId },
                 StopSequences = _options.StopSequences
             };
+
+            if (_options.EnableThinking)
+            {
+                createMsg.Thinking = new ExtendedThinking
+                {
+                    BudgetTokens = Math.Clamp(_options.ThinkingLength, 1024, _options.MaxTokens.Value - 1000),
+                    Type = ThinkingType.Enabled
+                };
+                createMsg.Temperature = 1;
+                createMsg.TopP = null;
+            }
 
             var postStr = createMsg.ToJson();
             var postContent = new StringContent(postStr, Encoding.UTF8, "application/json");
@@ -726,6 +745,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
             _indexToContentBlockDeltas.Clear();
             _inputTokens = 0;
             _outputTokens = 0;
+
+            _lastResponseIsReasoning = false;
         }
         catch (Exception e)
         {
@@ -826,6 +847,64 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 yield break;
             }
 
+            {
+                string? thinking = null;
+                if (responseChunk is Claude.StreamingContentBlockStart
+                    {
+                        ContentBlock: Claude.StreamingContentBlockThinking thinkingContent
+                    })
+                {
+                    thinking = thinkingContent.Thinking;
+                }
+                else if (responseChunk is Claude.StreamingContentBlockDelta
+                         {
+                             Delta: Claude.StreamingContentBlockThinkingDelta thinkingDelta
+                         })
+                {
+                    thinking = thinkingDelta.Thinking;
+                }
+
+                if (!string.IsNullOrEmpty(thinking))
+                {
+                    if (!_lastResponseIsReasoning)
+                    {
+                        yield return "思考……\n\n";
+                    }
+
+                    yield return thinking;
+                    _lastResponseIsReasoning = true;
+                }
+            }
+
+            {
+                string? response = null;
+                if (responseChunk is Claude.StreamingContentBlockStart
+                    {
+                        ContentBlock: Claude.StreamingContentBlockText textContent
+                    })
+                {
+                    response = textContent.Text;
+                }
+                else if (responseChunk is Claude.StreamingContentBlockDelta
+                         {
+                             Delta: Claude.StreamingContentBlockTextDelta textDelta
+                         })
+                {
+                    response = textDelta.Text;
+                }
+
+                if (!string.IsNullOrEmpty(response))
+                {
+                    if (_lastResponseIsReasoning)
+                    {
+                        yield return "\n================\n\n";
+                    }
+
+                    yield return response;
+                    _lastResponseIsReasoning = false;
+                }
+            }
+
             if (responseChunk is Claude.StreamingMessageStart msgStart)
             {
                 _inputTokens += msgStart.Message.Usage.InputTokens;
@@ -834,10 +913,6 @@ public partial class ClaudeEndpoint : IServerEndpoint
             else if (responseChunk is Claude.StreamingContentBlockStart contentStart)
             {
                 _indexToContentBlockStart[contentStart.Index] = contentStart;
-                if (contentStart.ContentBlock is Claude.StreamingContentBlockText textContent)
-                {
-                    yield return textContent.Text;
-                }
             }
             else if (responseChunk is Claude.StreamingPing)
             {
@@ -852,10 +927,6 @@ public partial class ClaudeEndpoint : IServerEndpoint
                 }
 
                 deltaList.Add(contentDelta);
-                if (contentDelta.Delta is Claude.StreamingContentBlockTextDelta delta)
-                {
-                    yield return delta.Text;
-                }
             }
             else if (responseChunk is Claude.StreamingContentBlockStop)
             {
@@ -948,6 +1019,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
         get
         {
             var assistantTextContent = new List<IMessage.TextContent>();
+            var reasoningContent = new List<string>();
             StringBuilder msgBuilder = new();
 
             var contentIndex = _indexToContentBlockStart.Keys.ToList();
@@ -956,24 +1028,50 @@ public partial class ClaudeEndpoint : IServerEndpoint
             {
                 msgBuilder.Clear();
                 var start = _indexToContentBlockStart[index].ContentBlock;
-                if (start is not Claude.StreamingContentBlockText textContentStart)
+                if (start is Claude.StreamingContentBlockText textContentStart)
                 {
-                    continue;
-                }
-
-                msgBuilder.Append(textContentStart.Text);
-                foreach (var delta in _indexToContentBlockDeltas[index])
-                {
-                    if (delta.Delta is not Claude.StreamingContentBlockTextDelta textContentDelta)
+                    msgBuilder.Append(textContentStart.Text);
+                    foreach (var delta in _indexToContentBlockDeltas[index])
                     {
-                        throw new InvalidOperationException("Invalid delta type");
+                        if (delta.Delta is not Claude.StreamingContentBlockTextDelta textContentDelta)
+                        {
+                            throw new InvalidOperationException("Invalid delta type");
+                        }
+
+                        msgBuilder.Append(textContentDelta.Text);
                     }
 
-                    msgBuilder.Append(textContentDelta.Text);
+                    var text = msgBuilder.ToString();
+                    if (_options.NeedChinesePunctuationNormalization)
+                    {
+                        text = NormalizeChinesePunctuation(text);
+                    }
+                    assistantTextContent.Add(new IMessage.TextContent { Text = text });
                 }
+                else if (start is Claude.StreamingContentBlockThinking thinkingContentStart)
+                {
+                    msgBuilder.Append(thinkingContentStart.Thinking);
+                    foreach (var delta in _indexToContentBlockDeltas[index])
+                    {
+                        if (delta.Delta is Claude.StreamingContentBlockSignatureDelta)
+                        {
+                            continue;
+                        }
+                        if (delta.Delta is not Claude.StreamingContentBlockThinkingDelta thinkingContentDelta)
+                        {
+                            throw new InvalidOperationException("Invalid delta type");
+                        }
 
-                assistantTextContent.Add(new IMessage.TextContent
-                    { Text = NormalizeChinesePunctuation(msgBuilder.ToString()) });
+                        msgBuilder.Append(thinkingContentDelta.Thinking);
+                    }
+
+                    var thinking = msgBuilder.ToString();
+                    if (_options.NeedChinesePunctuationNormalization)
+                    {
+                        thinking = NormalizeChinesePunctuation(thinking);
+                    }
+                    reasoningContent.Add(thinking);
+                }
             }
 
             if (_errorMessage is not null)
@@ -984,6 +1082,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var response = new AssistantMessage
             {
                 Content = assistantTextContent,
+                ResoningContent = string.Concat(reasoningContent),
                 ToolCalls = ToolCalls.ToList(),
                 Provider = ModelInfo.ProviderEnum.Anthropic,
                 ServerInputTokenNum = _inputTokens,
@@ -1029,6 +1128,8 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
         }
     }
+
+    private bool _lastResponseIsReasoning;
 
     private int _inputTokens;
     private int _outputTokens;

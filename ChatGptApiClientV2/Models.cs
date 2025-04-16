@@ -71,6 +71,11 @@ public class ModelInfo
         },
         new()
         {
+            Name = "claude-3.7-sonnet", Description = "claude-3.7 Sonnet", Provider = ProviderEnum.Anthropic,
+            DisplayPriority = 180
+        },
+        new()
+        {
             Name = "claude-3.5-sonnet", Description = "claude-3.5 Sonnet", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 200
         },
@@ -78,11 +83,6 @@ public class ModelInfo
         {
             Name = "claude-3-opus", Description = "claude-3 Opus", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 210
-        },
-        new()
-        {
-            Name = "claude-3-sonnet", Description = "claude-3 Sonnet", Provider = ProviderEnum.Anthropic,
-            DisplayPriority = 220
         },
         new()
         {
@@ -153,8 +153,11 @@ public class ModelVersionInfo
     public bool FunctionCallSupported { get; set; }
     public TokenizerEnum Tokenizer { get; init; }
 
-    public bool SystemPromptNotSupported { get; init; } = false;
-    public bool TemperatureSettingNotSupported { get; init; } = false;
+    public bool SystemPromptNotSupported { get; init; }
+    public bool TemperatureSettingNotSupported { get; init; }
+    public int? MaxOutput { get; init; }
+    public bool NeedChinesePunctuationNormalization { get; init; }
+    public bool OptionalThinkingAbility { get; init; }
 
     public static readonly ImmutableArray<ModelVersionInfo> VersionList =
     [
@@ -231,43 +234,57 @@ public class ModelVersionInfo
         {
             ModelType = "claude-3-haiku", Name = "claude-3-haiku-20240307", Description = "2024-03-07",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
-        },
-        new()
-        {
-            ModelType = "claude-3-sonnet", Name = "claude-3-sonnet-20240229", Description = "2024-02-29",
-            KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 4096, NeedChinesePunctuationNormalization = true
         },
         new()
         {
             ModelType = "claude-3-opus", Name = "claude-3-opus-latest", Description = "最新 (2024-02-29)",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 4096, NeedChinesePunctuationNormalization = true
         },
         new()
         {
             ModelType = "claude-3-opus", Name = "claude-3-opus-20240229", Description = "2024-02-29",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 4096, NeedChinesePunctuationNormalization = true
         },
         new()
         {
             ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-latest", Description = "最新 (2024-10-22)",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 8192, NeedChinesePunctuationNormalization = true
         },
         new()
         {
             ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20241022", Description = "2024-10-22",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 8192, NeedChinesePunctuationNormalization = true
         },
         new()
         {
             ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20240620", Description = "2024-06-20",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 8192, NeedChinesePunctuationNormalization = true
+        },
+        new()
+        {
+            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-latest", Description = "最新 (2025-02-19)",
+            KnowledgeCutoff = new DateTime(2024, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 64000, OptionalThinkingAbility = true
+        },
+        new()
+        {
+            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-20250219", Description = "2025-02-19",
+            KnowledgeCutoff = new DateTime(2024, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 64000, OptionalThinkingAbility = true
         },
         new()
         {

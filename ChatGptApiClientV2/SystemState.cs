@@ -352,22 +352,22 @@ public partial class SystemState : ObservableObject
                 break;
             }
             case ModelInfo.ProviderEnum.DeepSeek:
+            {
+                service = ServerEndpointOptions.ServiceType.DeepSeek;
+                endpointUrl = Config.DeepSeekServiceURL;
+                apiKey = Config.SelectedDeepSeekAPIKey;
+                maxTokens = Config.MaxTokens == 0 ? 8192 : Config.MaxTokens;
+                temperature = Config.Temperature;
+
+                alternativeModelName = Config.DeepSeekServiceProvider switch
                 {
-                    service = ServerEndpointOptions.ServiceType.DeepSeek;
-                    endpointUrl = Config.DeepSeekServiceURL;
-                    apiKey = Config.SelectedDeepSeekAPIKey;
-                    maxTokens = Config.MaxTokens == 0 ? 8192 : Config.MaxTokens;
-                    temperature = Config.Temperature;
+                    Config.DeepSeekServiceProviderType.SiliconFlow => AlternativeModelName.SiliconFlow,
+                    Config.DeepSeekServiceProviderType.Nvidia => AlternativeModelName.Nvidia,
+                    _ => AlternativeModelName.Default
+                };
 
-                    alternativeModelName = Config.DeepSeekServiceProvider switch
-                    {
-                        Config.DeepSeekServiceProviderType.SiliconFlow => AlternativeModelName.SiliconFlow,
-                        Config.DeepSeekServiceProviderType.Nvidia => AlternativeModelName.Nvidia,
-                        _ => AlternativeModelName.Default
-                    };
-
-                    break;
-                }
+                break;
+            }
             case ModelInfo.ProviderEnum.OtherOpenAICompat:
             {
                 service = ServerEndpointOptions.ServiceType.OtherOpenAICompat;
@@ -384,7 +384,14 @@ public partial class SystemState : ObservableObject
                 service = ServerEndpointOptions.ServiceType.Claude;
                 endpointUrl = Config.AnthropicServiceURL;
                 apiKey = Config.AnthropicAPIKey;
-                maxTokens = Config.MaxTokens == 0 ? 4096 : Config.MaxTokens;
+
+                if (selectedModel.MaxOutput is null)
+                {
+                    throw new InvalidOperationException("The selected Anthropic model has no Max Output config.");
+                }
+
+                maxTokens = Config.MaxTokens == 0 ? selectedModel.MaxOutput 
+                                                  : Math.Min(Config.MaxTokens, selectedModel.MaxOutput.Value);
                 temperature = Config.Temperature / 2.0f; // while openai use 0~2 as temperature range, anthropic use 0~1
                 break;
             }
@@ -419,7 +426,10 @@ public partial class SystemState : ObservableObject
             UserId = Config.UserAdvertisingId,
             StopSequences = Config.StopSequences,
             SystemPromptNotSupported = selectedModel.SystemPromptNotSupported,
-            TemperatureSettingNotSupported = selectedModel.TemperatureSettingNotSupported
+            TemperatureSettingNotSupported = selectedModel.TemperatureSettingNotSupported,
+            NeedChinesePunctuationNormalization = selectedModel.NeedChinesePunctuationNormalization,
+            EnableThinking = selectedModel.OptionalThinkingAbility && Config.EnableThinking,
+            ThinkingLength = Config.ThinkingLength
         };
 
         if (serverOptions.MaxTokens is null && selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI && selectedModel.Name.Contains("vision"))
