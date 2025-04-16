@@ -115,7 +115,8 @@ public class ServerEndpointOptions
     public string? UserId { get; set; }
     public IEnumerable<string>? StopSequences { get; set; }
 
-    public bool IsO1 { get; set; } = false;
+    public bool SystemPromptNotSupported { get; set; } = false;
+    public bool TemperatureSettingNotSupported { get; set; } = false;
 }
 
 public interface IServerEndpoint
@@ -281,7 +282,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 EndUserId = _options.UserId
             };
 
-            if (!_options.IsO1)
+            if (!_options.TemperatureSettingNotSupported)
             {
                 chatCompletionsOptions.TopP = _options.TopP;
                 chatCompletionsOptions.PresencePenalty = _options.PresencePenalty;
@@ -296,7 +297,7 @@ public class OpenAIEndpoint : IServerEndpoint
 
             var messages = GetChatRequestMessages(session.Messages);
 
-            if (_options.IsO1)
+            if (_options.SystemPromptNotSupported)
             {
                 messages = from m in messages where m is not SystemChatMessage select m;
             }

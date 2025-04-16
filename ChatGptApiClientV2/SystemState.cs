@@ -104,7 +104,7 @@ public partial class InitialPrompts : ObservableObject
     {
         const string prompt1 =
             """
-            You are {ProductName}, a large language model trained by {ModelProvider}. Answer as concisely as possible.
+            You are {ProductName}, a large language model trained by {ModelProvider}.
 
             Knowledge cutoff: {Cutoff}
 
@@ -421,7 +421,8 @@ public partial class SystemState : ObservableObject
             TopP = Config.TopP,
             UserId = Config.UserAdvertisingId,
             StopSequences = Config.StopSequences,
-            IsO1 = selectedModel.IsO1
+            SystemPromptNotSupported = selectedModel.SystemPromptNotSupported,
+            TemperatureSettingNotSupported = selectedModel.TemperatureSettingNotSupported
         };
 
         if (serverOptions.MaxTokens is null && selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI && selectedModel.Name.Contains("vision"))
