@@ -282,8 +282,6 @@ public partial class SystemState : ObservableObject
         return loadedSession;
     }
 
-    private static readonly Random Random = new();
-
     public delegate void NewMessageHandler(RoleType role, Guid sessionId, ModelInfo.ProviderEnum? provider);
 
     public delegate void StreamTextHandler(string text, Guid sessionId);
@@ -416,7 +414,6 @@ public partial class SystemState : ObservableObject
             },
             MaxTokens = maxTokens,
             PresencePenalty = Config.PresencePenalty,
-            Seed = Config.Seed,
             Temperature = temperature,
             TopP = Config.TopP,
             UserId = Config.UserAdvertisingId,
@@ -825,11 +822,6 @@ public partial class SystemState : ObservableObject
         SessionDict.TryAdd(sessionId, null);
         SessionDict[sessionId] ??= await ResetSession(sessionId);
         var selectedSession = SessionDict[sessionId];
-
-        if (Config.UseRandomSeed)
-        {
-            Config.Seed = Random.Next();
-        }
 
         if (text is not null)
         {

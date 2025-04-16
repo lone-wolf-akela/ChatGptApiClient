@@ -323,13 +323,6 @@ public partial class Config : ObservableValidator
     public partial int MaxTokens { get; set; }
     partial void OnMaxTokensChanged(int value) => SaveConfig();
 
-    [ObservableProperty]
-    public partial int Seed { get; set; }
-    partial void OnSeedChanged(int value) => SaveConfig();
-
-    [ObservableProperty]
-    public partial bool UseRandomSeed { get; set; }
-    partial void OnUseRandomSeedChanged(bool value) => SaveConfig();
     public enum MarkdownRenderMode
     {
         Disabled,
@@ -593,11 +586,9 @@ public partial class Config : ObservableValidator
         TopP = 1.0f;
         PresencePenalty = 0.0f;
         MaxTokens = 0;
-        Seed = 0;
         EnableMarkdown = MarkdownRenderMode.EnabledForAssistantMessages;
         SelectedModelIndex = 0;
         SelectedModelVersionIndex = 0;
-        UseRandomSeed = true;
         UploadHiresImage = false;
         PythonDllPath = "";
         PythonEnv = null;

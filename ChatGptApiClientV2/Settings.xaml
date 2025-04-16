@@ -143,8 +143,6 @@
 
                         <Label Grid.Row="0" Grid.Column="0" Content="你的昵称" VerticalAlignment="Center"
            HorizontalAlignment="Left" />
-                        <Label Grid.Row="0" Grid.Column="4" Content="种子" VerticalAlignment="Center"
-           HorizontalAlignment="Left" />
                         <Label Grid.Row="0" Grid.Column="8" Content="回复长度上限" VerticalAlignment="Center"
            HorizontalAlignment="Left" />
                         <Label Grid.Row="2" Grid.Column="0" Content="温度" VerticalAlignment="Center"
@@ -157,14 +155,6 @@
                         <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtNickname"
              Text="{Binding Config.UserNickName, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <DockPanel Grid.Row="0" Grid.Column="5">
-                            <CheckBox DockPanel.Dock="Right" Width="70" Content="随机"
-                  IsChecked="{Binding Path=Config.UseRandomSeed, Mode=TwoWay}"
-                  VerticalAlignment="Center" />
-                            <TextBox x:Name="TxtSeed" TextWrapping="Wrap" Text="{Binding Path=Config.Seed, Mode=TwoWay}"
-                 IsEnabled="{Binding Path=Config.UseRandomSeed, Mode=OneWay, Converter={StaticResource Boolean2BooleanReConverter}}"
-                 InputScope="Number" Margin="0,0,5,0" VerticalAlignment="Center" />
-                        </DockPanel>
                         <DockPanel Grid.Row="0" Grid.Column="9">
                             <TextBox Width="70" x:Name="TxtMaxTokens" DockPanel.Dock="Right"
                  Text="{Binding ElementName=SlidMaxTokens,Path=Value,StringFormat=N0}"

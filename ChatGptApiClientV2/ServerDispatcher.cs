@@ -108,7 +108,6 @@ public class ServerEndpointOptions
     public string Model { get; set; } = "";
     public int? MaxTokens { get; set; }
     public float? PresencePenalty { get; set; }
-    public long? Seed { get; set; }
     public float? Temperature { get; set; }
     public float? TopP { get; set; }
     public IEnumerable<ToolType>? Tools { get; set; }
@@ -276,10 +275,8 @@ public class OpenAIEndpoint : IServerEndpoint
             var chatCompletionsOptions = new ChatCompletionOptions
             {
                 MaxOutputTokenCount = _options.MaxTokens,
-#pragma warning disable OPENAI001
-                Seed = _options.Seed,
-#pragma warning restore OPENAI001
-                EndUserId = _options.UserId
+                EndUserId = _options.UserId,
+                StoredOutputEnabled = false
             };
 
             if (!_options.TemperatureSettingNotSupported)
