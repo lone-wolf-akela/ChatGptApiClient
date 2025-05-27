@@ -334,7 +334,12 @@ public enum StopReason
     /// <summary>
     /// (no description from official document)
     /// </summary>
-    [EnumMember(Value = "tool_use")] ToolUse
+    [EnumMember(Value = "tool_use")] ToolUse,
+
+    /// <summary>
+    /// The model declines to generate for safety reasons, due to the increased intelligence of Claude 4 models
+    /// </summary>
+    [EnumMember(Value = "refusal")] Refusal
 }
 
 public class CreateMessageResponse

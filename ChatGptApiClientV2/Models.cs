@@ -34,6 +34,7 @@ public class ModelInfo
         [EnumMember(Value = "openai")] OpenAI,
         [EnumMember(Value = "anthropic")] Anthropic,
         [EnumMember(Value = "deepseek")] DeepSeek,
+        [EnumMember(Value = "google")] Google,
         [EnumMember(Value = "other_oai_compat")] OtherOpenAICompat
     }
     public string Name { get; init; } = "";
@@ -71,6 +72,16 @@ public class ModelInfo
         },
         new()
         {
+            Name = "claude-4-sonnet", Description = "claude-4 Sonnet", Provider = ProviderEnum.Anthropic,
+            DisplayPriority = 160
+        },
+        new()
+        {
+            Name = "claude-4-opus", Description = "claude-4 Opus", Provider = ProviderEnum.Anthropic,
+            DisplayPriority = 170
+        },
+        new()
+        {
             Name = "claude-3.7-sonnet", Description = "claude-3.7 Sonnet", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 180
         },
@@ -103,6 +114,16 @@ public class ModelInfo
         {
             Name = "oai-o1-mini", Description = "OpenAI o1 mini", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 270
+        },
+        new()
+        {
+            Name = "gemini-2.5-pro", Description = "Gemini 2.5 Pro", Provider = ProviderEnum.Google,
+            DisplayPriority = 280
+        },
+        new()
+        {
+            Name = "gemini-2.5-flash", Description = "Gemini 2.5 Flash", Provider = ProviderEnum.Google,
+            DisplayPriority = 290
         },
         /*new()
         {
@@ -155,6 +176,8 @@ public class ModelVersionInfo
 
     public bool SystemPromptNotSupported { get; init; }
     public bool TemperatureSettingNotSupported { get; init; }
+    public bool TopPSettingNotSupported { get; init; }
+    public bool PenaltySettingNotSupported { get; init; }
     public int? MaxOutput { get; init; }
     public bool NeedChinesePunctuationNormalization { get; init; }
     public bool OptionalThinkingAbility { get; init; }
@@ -239,24 +262,10 @@ public class ModelVersionInfo
         },
         new()
         {
-            ModelType = "claude-3-opus", Name = "claude-3-opus-latest", Description = "最新 (2024-02-29)",
-            KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase,
-            MaxOutput = 4096, NeedChinesePunctuationNormalization = true
-        },
-        new()
-        {
             ModelType = "claude-3-opus", Name = "claude-3-opus-20240229", Description = "2024-02-29",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 4096, NeedChinesePunctuationNormalization = true
-        },
-        new()
-        {
-            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-latest", Description = "最新 (2024-10-22)",
-            KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.Cl100KBase,
-            MaxOutput = 8192, NeedChinesePunctuationNormalization = true
         },
         new()
         {
@@ -274,17 +283,24 @@ public class ModelVersionInfo
         },
         new()
         {
-            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-latest", Description = "最新 (2025-02-19)",
+            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-20250219", Description = "2025-02-19",
             KnowledgeCutoff = new DateTime(2024, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 64000, OptionalThinkingAbility = true
         },
         new()
         {
-            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-20250219", Description = "2025-02-19",
-            KnowledgeCutoff = new DateTime(2024, 10, 1), FunctionCallSupported = true,
+            ModelType = "claude-4-sonnet", Name = "claude-sonnet-4-20250514", Description = "2025-05-14",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 64000, OptionalThinkingAbility = true
+        },
+        new()
+        {
+            ModelType = "claude-4-opus", Name = "claude-opus-4-20250514", Description = "2025-05-14",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 32000, OptionalThinkingAbility = true
         },
         new()
         {
@@ -359,21 +375,24 @@ public class ModelVersionInfo
             ModelType = "oai-o1", Name = "o1-preview-2024-09-12", Description = "旧预览版（2024-09-12）",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true
+            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true, PenaltySettingNotSupported = true
         },
         new()
         {
             ModelType = "oai-o1-mini", Name = "o1-mini", Description = "最新 (2024-09-12)",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
             Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true
+            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true, PenaltySettingNotSupported = true
         },
         new()
         {
             ModelType = "oai-o1-mini", Name = "o1-mini-2024-09-12", Description = "2024-09-12",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
             Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true
+            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true, PenaltySettingNotSupported = true
         },
         new()
         {
@@ -428,6 +447,21 @@ public class ModelVersionInfo
             ModelType = "gpt-4.1-nano", Name = "gpt-4.1-nano-2025-04-14", Description = "2025-04-14",
             KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
+        },
+
+        new()
+        {
+            ModelType = "gemini-2.5-pro", Name = "gemini-2.5-pro-preview-05-06", Description = "2025-05-06",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase,
+            MaxOutput = 65536, PenaltySettingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "gemini-2.5-flash", Name = "gemini-2.5-flash-preview-05-20", Description = "2025-05-20",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase,
+            MaxOutput = 65536, PenaltySettingNotSupported = true
         },
     ];
 }

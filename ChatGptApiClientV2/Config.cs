@@ -136,6 +136,54 @@ public partial class Config : ObservableValidator
         }
     }
 
+    public enum GoogleGeminiServiceProviderType
+    {
+        [Description("Artonelico Gemini 代理")] ArtonelicoGeminiProxy,
+        [Description("Google 官方接口（需科学上网）")] Google,
+        [Description("其他")] Others
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GoogleGeminiServiceURL))]
+    [NotifyPropertyChangedFor(nameof(GoogleGeminiServiceURLEditable))]
+    [NotifyPropertyChangedFor(nameof(ModelOptions))]
+    [NotifyPropertyChangedFor(nameof(SelectedModelIndex))]
+    public partial GoogleGeminiServiceProviderType GoogleGeminiServiceProvider { get; set; }
+
+    partial void OnGoogleGeminiServiceProviderChanged(GoogleGeminiServiceProviderType value)
+    {
+        ValidateProperty(GoogleGeminiServiceURL, nameof(GoogleGeminiServiceURL));
+        UpdateModelVersionList();
+        SaveConfig();
+    }
+
+    [Url(ErrorMessage = "必须为合法的 Http 或 Https 地址")]
+    public string GoogleGeminiServiceURL
+    {
+        get => GoogleGeminiServiceProvider switch
+        {
+            GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy => "https://www.artonelico.top/gemini-proxy/v1beta/openai",
+            GoogleGeminiServiceProviderType.Google => "https://generativelanguage.googleapis.com/v1beta/openai",
+            _ => field
+        };
+        set
+        {
+            if (SetProperty(ref field, value, true))
+            {
+                SaveConfig();
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool GoogleGeminiServiceURLEditable => GoogleGeminiServiceProvider switch
+    {
+        GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy => false,
+        GoogleGeminiServiceProviderType.Google => false,
+        GoogleGeminiServiceProviderType.Others => true,
+        _ => throw new InvalidOperationException()
+    };
+
     public enum AnthropicServiceProviderType
     {
         [Description("Artonelico Anthropic 代理")]
@@ -268,7 +316,6 @@ public partial class Config : ObservableValidator
 
     [ObservableProperty]
     public partial bool SiliconFlowUseProModel { get; set; }
-
     partial void OnSiliconFlowUseProModelChanged(bool value) => SaveConfig();
 
     [ObservableProperty]
@@ -283,6 +330,10 @@ public partial class Config : ObservableValidator
         DeepSeekServiceProviderType.Others => DeepSeekAPIKey,
         _ => throw new InvalidOperationException()
     };
+
+    [ObservableProperty]
+    public partial string GoogleGeminiAPIKey { get; set; }
+    partial void OnGoogleGeminiAPIKeyChanged(string value) => SaveConfig();
 
     /* Google Search Plugin Config */
     [ObservableProperty]
@@ -580,12 +631,15 @@ public partial class Config : ObservableValidator
         AnthropicServiceURL = "";
         DeepSeekServiceProvider = DeepSeekServiceProviderType.DeepSeek;
         DeepSeekServiceURL = "";
+        GoogleGeminiServiceProvider = GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy;
+        GoogleGeminiServiceURL = "";
         API_KEY = "";
         AnthropicAPIKey = "";
         DeepSeekAPIKey = "";
         SiliconFlowAPIKey = "";
         SiliconFlowUseProModel = false;
         NvidiaAPIKey = "";
+        GoogleGeminiAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
         BingSearchAPIKey = "";

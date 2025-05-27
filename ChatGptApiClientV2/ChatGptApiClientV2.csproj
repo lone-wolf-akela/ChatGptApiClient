@@ -25,6 +25,7 @@
         <None Remove="images\claude-ai-icon.svg" />
         <None Remove="images\deepseek-icon.svg" />
         <None Remove="images\DeepSeek.svg" />
+        <None Remove="images\gemini-icon.svg" />
         <None Remove="images\meta-ai-icon.svg" />
         <None Remove="images\set-up-svgrepo-com.svg" />
         <None Remove="images\system-settings-svgrepo-com.svg" />
@@ -64,6 +65,7 @@
         <Resource Include="images\chatgpt-icon.svg" />
         <Resource Include="images\claude-ai-icon.svg" />
         <Resource Include="images\deepseek-icon.svg" />
+        <Resource Include="images\gemini-icon.svg" />
         <Resource Include="images\meta-ai-icon.svg" />
         <Resource Include="images\set-up-svgrepo-com.svg" />
         <Resource Include="images\丹恒 思考.png" />

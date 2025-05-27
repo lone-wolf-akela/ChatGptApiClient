@@ -604,6 +604,7 @@ public partial class ChatWindowMessage : ObservableObject
     private const string ChatGPTIcon = "pack://application:,,,/images/chatgpt-icon.svg";
     private const string ClaudeIcon = "pack://application:,,,/images/claude-ai-icon.svg";
     private const string DeepSeekIcon = "pack://application:,,,/images/deepseek-icon.svg";
+    private const string GeminiIcon = "pack://application:,,,/images/gemini-icon.svg";
     private const string OtherModelIcon = "pack://application:,,,/images/meta-ai-icon.svg";
     private const string ToolIcon = "pack://application:,,,/images/set-up-svgrepo-com.svg";
 
@@ -614,6 +615,7 @@ public partial class ChatWindowMessage : ObservableObject
             ModelInfo.ProviderEnum.OpenAI => new Uri(ChatGPTIcon),
             ModelInfo.ProviderEnum.Anthropic => new Uri(ClaudeIcon),
             ModelInfo.ProviderEnum.DeepSeek => new Uri(DeepSeekIcon),
+            ModelInfo.ProviderEnum.Google => new Uri(GeminiIcon),
             ModelInfo.ProviderEnum.OtherOpenAICompat => new Uri(OtherModelIcon),
             _ => new Uri(ChatGPTIcon),
         },

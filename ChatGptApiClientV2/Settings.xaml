@@ -238,8 +238,7 @@
                             <DockPanel Margin="0,0,0,5">
                                 <Label DockPanel.Dock="Left" MinWidth="150" Content="OpenAI Service URL"
                                        VerticalAlignment="Center" HorizontalContentAlignment="Left" />
-                                <TextBox x:Name="TxtbxServiceurl"
-                                         TextWrapping="Wrap"
+                                <TextBox TextWrapping="Wrap"
                                          VerticalAlignment="Center"
                                          IsEnabled="{Binding Path=Config.ServiceURLEditable}"
                                          Text="{Binding Config.ServiceURL, UpdateSourceTrigger=PropertyChanged}" />
@@ -287,6 +286,41 @@
                                            VerticalAlignment="Center" HorizontalContentAlignment="Left" />
                                 <hc:PasswordBox UnsafePassword="{Binding Path=Config.AnthropicAPIKey, Mode=TwoWay}"
                                                     IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Google 聊天服务">
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <hc:Divider Grid.Column="1" Margin="0" Orientation="Vertical" />
+                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="150" Content="Gemini 服务源" VerticalAlignment="Center"
+                                       HorizontalContentAlignment="Left" />
+                                <ComboBox
+                                        ItemsSource="{Binding Path=Config.GoogleGeminiServiceProvider, Converter={local:EnumToCollectionConverter}}"
+                                        SelectedValuePath="Value"
+                                        DisplayMemberPath="Description"
+                                        SelectedValue="{Binding Path=Config.GoogleGeminiServiceProvider, Mode=TwoWay}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="150" Content="Gemini Service URL"
+                                       VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                <TextBox TextWrapping="Wrap"
+                                         VerticalAlignment="Center"
+                                         IsEnabled="{Binding Path=Config.GoogleGeminiServiceURLEditable}"
+                                         Text="{Binding Config.GoogleGeminiServiceURL, UpdateSourceTrigger=PropertyChanged}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,5">
+                                <Label DockPanel.Dock="Left" MinWidth="150" Content="Gemini API KEY"
+                   VerticalAlignment="Center" HorizontalContentAlignment="Left" />
+                                <hc:PasswordBox UnsafePassword="{Binding Path=Config.GoogleGeminiAPIKey, Mode=TwoWay}"
+                            IsSafeEnabled="False" ShowEyeButton="True" VerticalAlignment="Center" />
                             </DockPanel>
                         </StackPanel>
                     </Grid>

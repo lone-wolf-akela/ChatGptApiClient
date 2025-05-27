@@ -46,8 +46,11 @@ using ChatGptApiClientV2.Claude;
 // ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace ChatGptApiClientV2;
 
-// Some 3rd party API provider will return "finish_reason" as an empty string "", which cause
-// error with openai sdk, as it expects a null instead. we need to patch it here
+// Some 3rd party API provider (i.e. Nvidia) will return "finish_reason" as an empty string "",
+// and some others (i.e. Google) return "other" as the finish reason when the response is censored.
+// These are not valid according to OpenAI API spec, and will cause an error with openai sdk,
+// as it expects a null instead.
+// we need to patch it here
 public static class Patcher
 {
     [ModuleInitializer]
@@ -79,7 +82,7 @@ class Patch
                 if (choiceDict != null &&
                     choiceDict.TryGetValue("finish_reason", out var finishReason) &&
                     finishReason is JsonElement { ValueKind: JsonValueKind.String } finishReasonStr &&
-                    string.IsNullOrEmpty(finishReasonStr.GetString()))
+                    (string.IsNullOrEmpty(finishReasonStr.GetString()) || finishReasonStr.GetString() == "other"))
                 {
                     choiceDict.Remove("finish_reason");
                 }
@@ -99,6 +102,7 @@ public class ServerEndpointOptions
         OpenAI,
         Claude,
         DeepSeek,
+        Google,
         OtherOpenAICompat,
         Custom
     }
@@ -119,6 +123,8 @@ public class ServerEndpointOptions
 
     public bool SystemPromptNotSupported { get; set; }
     public bool TemperatureSettingNotSupported { get; set; }
+    public bool TopPSettingNotSupported { get; set; }
+    public bool PenaltySettingNotSupported { get; set; }
     public bool NeedChinesePunctuationNormalization { get; set; }
 }
 
@@ -156,6 +162,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 break;
             }
             case ServerEndpointOptions.ServiceType.DeepSeek:
+            case ServerEndpointOptions.ServiceType.Google:
             case ServerEndpointOptions.ServiceType.Custom:
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
             {
@@ -279,15 +286,27 @@ public class OpenAIEndpoint : IServerEndpoint
             var chatCompletionsOptions = new ChatCompletionOptions
             {
                 MaxOutputTokenCount = _options.MaxTokens,
-                EndUserId = _options.UserId,
-                StoredOutputEnabled = false
+                EndUserId = _options.UserId
             };
+
+            if (_options.Service != ServerEndpointOptions.ServiceType.Google)
+            {
+                chatCompletionsOptions.StoredOutputEnabled = false;
+            }
 
             if (!_options.TemperatureSettingNotSupported)
             {
-                chatCompletionsOptions.TopP = _options.TopP;
-                chatCompletionsOptions.PresencePenalty = _options.PresencePenalty;
                 chatCompletionsOptions.Temperature = _options.Temperature;
+            }
+
+            if (!_options.TopPSettingNotSupported)
+            {
+                chatCompletionsOptions.TopP = _options.TopP;
+            }
+
+            if (!_options.PenaltySettingNotSupported)
+            {
+                chatCompletionsOptions.PresencePenalty = _options.PresencePenalty;
             }
 
             chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
@@ -479,6 +498,7 @@ public class OpenAIEndpoint : IServerEndpoint
                     ServerEndpointOptions.ServiceType.OpenAI => ModelInfo.ProviderEnum.OpenAI,
                     ServerEndpointOptions.ServiceType.DeepSeek => ModelInfo.ProviderEnum.DeepSeek,
                     ServerEndpointOptions.ServiceType.Claude => ModelInfo.ProviderEnum.Anthropic,
+                    ServerEndpointOptions.ServiceType.Google => ModelInfo.ProviderEnum.Google,
                     _ => ModelInfo.ProviderEnum.OpenAI
                 },
                 ServerInputTokenNum = _usageInputToken,
@@ -528,7 +548,7 @@ public class OpenAIEndpoint : IServerEndpoint
 public partial class ClaudeEndpoint : IServerEndpoint
 {
     private const string ApiVersion = "2023-06-01";
-    private const string ApiBeta = "tools-2024-05-16";
+    private const string ApiBeta = "tools-2024-05-16,interleaved-thinking-2025-05-14";
 
     public ClaudeEndpoint(ServerEndpointOptions o)
     {

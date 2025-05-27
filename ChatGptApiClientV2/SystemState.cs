@@ -247,6 +247,7 @@ public partial class SystemState : ObservableObject
             ModelInfo.ProviderEnum.OpenAI => "ChatGPT",
             ModelInfo.ProviderEnum.Anthropic => "Claude",
             ModelInfo.ProviderEnum.DeepSeek => Config.SelectedModel?.Description ?? "DeepSeek Chat",
+            ModelInfo.ProviderEnum.Google => "Gemini",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelDisplayName,
             _ => throw new InvalidOperationException()
         };
@@ -256,6 +257,7 @@ public partial class SystemState : ObservableObject
             ModelInfo.ProviderEnum.OpenAI => "OpenAI",
             ModelInfo.ProviderEnum.Anthropic => "Anthropic",
             ModelInfo.ProviderEnum.DeepSeek => "DeepSeek",
+            ModelInfo.ProviderEnum.Google => "Google",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelProviderName,
             _ => throw new InvalidOperationException()
         };
@@ -368,6 +370,20 @@ public partial class SystemState : ObservableObject
 
                 break;
             }
+            case ModelInfo.ProviderEnum.Google:
+            {
+                service = ServerEndpointOptions.ServiceType.Google;
+                endpointUrl = Config.GoogleGeminiServiceURL;
+                apiKey = Config.GoogleGeminiAPIKey;
+                if (selectedModel.MaxOutput is null)
+                {
+                    throw new InvalidOperationException("The selected Gemini model has no Max Output config.");
+                }
+                maxTokens = Config.MaxTokens == 0 ? selectedModel.MaxOutput
+                                              : Math.Min(Config.MaxTokens, selectedModel.MaxOutput.Value);
+                temperature = Config.Temperature;
+                break;
+            }
             case ModelInfo.ProviderEnum.OtherOpenAICompat:
             {
                 service = ServerEndpointOptions.ServiceType.OtherOpenAICompat;
@@ -427,15 +443,12 @@ public partial class SystemState : ObservableObject
             StopSequences = Config.StopSequences,
             SystemPromptNotSupported = selectedModel.SystemPromptNotSupported,
             TemperatureSettingNotSupported = selectedModel.TemperatureSettingNotSupported,
+            TopPSettingNotSupported = selectedModel.TopPSettingNotSupported,
+            PenaltySettingNotSupported = selectedModel.PenaltySettingNotSupported,
             NeedChinesePunctuationNormalization = selectedModel.NeedChinesePunctuationNormalization,
             EnableThinking = selectedModel.OptionalThinkingAbility && Config.EnableThinking,
             ThinkingLength = Config.ThinkingLength
         };
-
-        if (serverOptions.MaxTokens is null && selectedModelType.Provider == ModelInfo.ProviderEnum.OpenAI && selectedModel.Name.Contains("vision"))
-        {
-            serverOptions.MaxTokens = 4096; // for gpt4-vision-preview: its default max token number is very low
-        }
 
         var enabledPlugins = (from plugin in Plugins
             where plugin.IsEnabled
