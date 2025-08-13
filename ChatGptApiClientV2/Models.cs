@@ -465,7 +465,7 @@ public class ModelVersionInfo
         },
         new()
         {
-            ModelType = "gemini-2.5", Name = "gemini-2.5-flash-lite", Description = "stable",
+            ModelType = "gemini-2.5", Name = "gemini-2.5-flash-lite", Description = "2.5 Flash Lite",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
