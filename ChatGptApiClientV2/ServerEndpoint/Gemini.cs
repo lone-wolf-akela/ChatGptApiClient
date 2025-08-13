@@ -246,8 +246,21 @@ public class GeminiEndpoint : IServerEndpoint
             throw new InvalidOperationException("Session not built");
         }
 
-        var response = await _client.GenerateContentAsync(_options.Model, _request, cancellationToken)
-            .ConfigureAwait(false);
+        GenerateContentResponse? response = null;
+        try
+        {
+            response = await _client.GenerateContentAsync(_options.Model, _request, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (ApiException e)
+        {
+            _errorMessage = $"{e.Message}\n{e.ResponseBody}";
+        }
+
+        if (_errorMessage is not null)
+        {
+            yield break;
+        }
 
         var usage = response?.UsageMetadata;
 
