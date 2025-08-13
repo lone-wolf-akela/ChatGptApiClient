@@ -84,6 +84,7 @@ public class ServerEndpointOptions
     public bool TopPSettingNotSupported { get; set; }
     public bool PenaltySettingNotSupported { get; set; }
     public bool NeedChinesePunctuationNormalization { get; set; }
+    public bool StreamingNotSupported { get; set; }
 }
 
 public interface IServerEndpoint

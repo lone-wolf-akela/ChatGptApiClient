@@ -47,63 +47,48 @@ public class ModelInfo
     [
         new()
         {
-            Name = "gpt-4.1", Description = "gpt-4.1", Provider = ProviderEnum.OpenAI,
+            Name = "gpt-5", Description = "GPT 5", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 20
+        },
+        new()
+        {
+            Name = "gpt-4.1", Description = "GPT 4.1", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 50
         },
         new()
         {
-            Name = "gpt-4.1-mini", Description = "gpt-4.1 mini", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 80
-        },
-        new()
-        {
-            Name = "gpt-4.1-nano", Description = "gpt-4.1 nano", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 80
-        },
-        new()
-        {
-            Name = "gpt-4o", Description = "gpt-4o", Provider = ProviderEnum.OpenAI,
+            Name = "gpt-4o", Description = "GPT 4o", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 100
         },
         new()
         {
-            Name = "gpt-4o-mini", Description = "gpt-4o mini", Provider = ProviderEnum.OpenAI,
+            Name = "gpt-4o-mini", Description = "GPT 4o mini", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 150
         },
         new()
         {
-            Name = "claude-4-sonnet", Description = "claude-4 Sonnet", Provider = ProviderEnum.Anthropic,
+            Name = "claude-4", Description = "Claude 4", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 160
         },
         new()
         {
-            Name = "claude-4.1-opus", Description = "claude-4.1 Opus", Provider = ProviderEnum.Anthropic,
+            Name = "claude-4.1", Description = "Claude 4.1", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 165
         },
         new()
         {
-            Name = "claude-4-opus", Description = "claude-4 Opus", Provider = ProviderEnum.Anthropic,
-            DisplayPriority = 170
-        },
-        new()
-        {
-            Name = "claude-3.7-sonnet", Description = "claude-3.7 Sonnet", Provider = ProviderEnum.Anthropic,
+            Name = "claude-3.7", Description = "Claude 3.7", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 180
         },
         new()
         {
-            Name = "claude-3.5-sonnet", Description = "claude-3.5 Sonnet", Provider = ProviderEnum.Anthropic,
+            Name = "claude-3.5", Description = "Claude 3.5", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 200
         },
         new()
         {
-            Name = "claude-3-opus", Description = "claude-3 Opus", Provider = ProviderEnum.Anthropic,
+            Name = "claude-3", Description = "Claude 3", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 210
-        },
-        new()
-        {
-            Name = "claude-3-haiku", Description = "claude-3 Haiku", Provider = ProviderEnum.Anthropic,
-            DisplayPriority = 230
         },
         new()
         {
@@ -112,28 +97,8 @@ public class ModelInfo
         },
         new()
         {
-            Name = "oai-o1", Description = "OpenAI o1", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 260
-        },
-        new()
-        {
-            Name = "oai-o1-mini", Description = "OpenAI o1 mini", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 270
-        },
-        new()
-        {
-            Name = "gemini-2.5-pro", Description = "Gemini 2.5 Pro", Provider = ProviderEnum.Google,
+            Name = "gemini-2.5", Description = "Gemini 2.5", Provider = ProviderEnum.Google,
             DisplayPriority = 280
-        },
-        new()
-        {
-            Name = "gemini-2.5-flash", Description = "Gemini 2.5 Flash", Provider = ProviderEnum.Google,
-            DisplayPriority = 290
-        },
-        new()
-        {
-            Name = "gemini-2.5-flash-lite", Description = "Gemini 2.5 Flash-Lite", Provider = ProviderEnum.Google,
-            DisplayPriority = 295
         },
         /*new()
         {
@@ -147,22 +112,32 @@ public class ModelInfo
         },
         new()
         {
-            Name = "gpt-4-128k", Description = "gpt-4 turbo", Provider = ProviderEnum.OpenAI,
+            Name = "oai-o4", Description = "OpenAI o4", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 310
+        },
+        new()
+        {
+            Name = "oai-o3", Description = "OpenAI o3", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 320
+        },
+        new()
+        {
+            Name = "oai-o1", Description = "OpenAI o1", Provider = ProviderEnum.OpenAI,
+            DisplayPriority = 330
+        },
+        new()
+        {
+            Name = "gpt-4-128k", Description = "GPT 4 turbo", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 350
         },
         new()
         {
-            Name = "gpt-3.5-16k", Description = "gpt-3.5 turbo", Provider = ProviderEnum.OpenAI,
+            Name = "gpt-3.5-16k", Description = "GPT 3.5 turbo", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 400
         },
         new()
         {
-            Name = "gpt-4.5", Description = "gpt-4.5 (已弃用)", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 10000
-        },
-        new()
-        {
-            Name = "gpt-4-8k", Description = "gpt-4 (已弃用)", Provider = ProviderEnum.OpenAI,
+            Name = "gpt-4-8k", Description = "GPT 4 (已弃用)", Provider = ProviderEnum.OpenAI,
             DisplayPriority = 10100
         }
     ];
@@ -188,6 +163,7 @@ public class ModelVersionInfo
     public bool TemperatureSettingNotSupported { get; init; }
     public bool TopPSettingNotSupported { get; init; }
     public bool PenaltySettingNotSupported { get; init; }
+    public bool StreamingNotSupported { get; init; }
     public int? MaxOutput { get; init; }
     public bool NeedChinesePunctuationNormalization { get; init; }
     public bool OptionalThinkingAbility { get; init; }
@@ -265,56 +241,56 @@ public class ModelVersionInfo
 
         new()
         {
-            ModelType = "claude-3-haiku", Name = "claude-3-haiku-20240307", Description = "2024-03-07",
+            ModelType = "claude-3", Name = "claude-3-haiku-20240307", Description = "Haiku",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 4096, NeedChinesePunctuationNormalization = true
         },
         new()
         {
-            ModelType = "claude-3-opus", Name = "claude-3-opus-20240229", Description = "2024-02-29",
+            ModelType = "claude-3", Name = "claude-3-opus-20240229", Description = "Opus",
             KnowledgeCutoff = new DateTime(2023, 8, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 4096, NeedChinesePunctuationNormalization = true
         },
         new()
         {
-            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20241022", Description = "2024-10-22",
+            ModelType = "claude-3.5", Name = "claude-3-5-sonnet-20241022", Description = "Sonnet-20241022",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 8192, NeedChinesePunctuationNormalization = true
         },
         new()
         {
-            ModelType = "claude-3.5-sonnet", Name = "claude-3-5-sonnet-20240620", Description = "2024-06-20",
+            ModelType = "claude-3.5", Name = "claude-3-5-sonnet-20240620", Description = "Sonnet-20240620",
             KnowledgeCutoff = new DateTime(2024, 4, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 8192, NeedChinesePunctuationNormalization = true
         },
         new()
         {
-            ModelType = "claude-3.7-sonnet", Name = "claude-3-7-sonnet-20250219", Description = "2025-02-19",
+            ModelType = "claude-3.7", Name = "claude-3-7-sonnet-20250219", Description = "Sonnet",
             KnowledgeCutoff = new DateTime(2024, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 64000, OptionalThinkingAbility = true
         },
         new()
         {
-            ModelType = "claude-4-sonnet", Name = "claude-sonnet-4-20250514", Description = "2025-05-14",
+            ModelType = "claude-4", Name = "claude-sonnet-4-20250514", Description = "Sonnet",
             KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 64000, OptionalThinkingAbility = true
         },
         new()
         {
-            ModelType = "claude-4-opus", Name = "claude-opus-4-20250514", Description = "2025-05-14",
+            ModelType = "claude-4", Name = "claude-opus-4-20250514", Description = "Opus",
             KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 32000, OptionalThinkingAbility = true
         },
         new()
         {
-            ModelType = "claude-4.1-opus", Name = "claude-opus-4-1-20250805", Description = "2025-08-05",
+            ModelType = "claude-4.1", Name = "claude-opus-4-1-20250805", Description = "Opus",
             KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 32000, OptionalThinkingAbility = true
@@ -363,41 +339,15 @@ public class ModelVersionInfo
         },
         new()
         {
-            ModelType = "gpt-4.5", Name = "gpt-4.5-preview", Description = "最新 (2025-02-27)",
-            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase
-        },
-        new()
-        {
-            ModelType = "gpt-4.5", Name = "gpt-4.5-preview-2025-02-27", Description = "2025-02-27",
-            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase
-        },
-        /*new()
-        {
-            ModelType = "oai-o1", Name = "o1", Description = "最新 (2024-12-17)",
+            ModelType = "oai-o1", Name = "o1", Description = "o1",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true
-        },
-        new()
-        {
-            ModelType = "oai-o1", Name = "o1-2024-12-17", Description = "2024-12-17",
-            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true
-        },*/
-        new()
-        {
-            ModelType = "oai-o1", Name = "o1-preview-2024-09-12", Description = "旧预览版（2024-09-12）",
-            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
+            TemperatureSettingNotSupported = true,
             TopPSettingNotSupported = true, PenaltySettingNotSupported = true
         },
         new()
         {
-            ModelType = "oai-o1-mini", Name = "o1-mini", Description = "最新 (2024-09-12)",
+            ModelType = "oai-o1", Name = "o1-mini", Description = "o1 mini",
             KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
             Tokenizer = TokenizerEnum.O200KBase,
             SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
@@ -405,10 +355,27 @@ public class ModelVersionInfo
         },
         new()
         {
-            ModelType = "oai-o1-mini", Name = "o1-mini-2024-09-12", Description = "2024-09-12",
-            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = false,
+            ModelType = "oai-o3", Name = "o3", Description = "o3",
+            KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase,
-            SystemPromptNotSupported = true, TemperatureSettingNotSupported = true,
+            TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true, PenaltySettingNotSupported = true,
+            StreamingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "oai-o3", Name = "o3-mini", Description = "o3 mini",
+            KnowledgeCutoff = new DateTime(2023, 10, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase,
+            TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true, PenaltySettingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "oai-o4", Name = "o4-mini", Description = "o4 mini",
+            KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase,
+            TemperatureSettingNotSupported = true,
             TopPSettingNotSupported = true, PenaltySettingNotSupported = true
         },
         new()
@@ -429,63 +396,79 @@ public class ModelVersionInfo
 
         new()
         {
-            ModelType = "gpt-4.1", Name = "gpt-4.1", Description = "最新版 (2025-04-14)",
+            ModelType = "gpt-4.1", Name = "gpt-4.1", Description = "4.1",
             KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
         new()
         {
-            ModelType = "gpt-4.1", Name = "gpt-4.1-2025-04-14", Description = "2025-04-14",
-            KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase
-        },
-
-        new()
-        {
-            ModelType = "gpt-4.1-mini", Name = "gpt-4.1-mini", Description = "最新版 (2025-04-14)",
+            ModelType = "gpt-4.1", Name = "gpt-4.1-mini", Description = "4.1 mini",
             KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
         new()
         {
-            ModelType = "gpt-4.1-mini", Name = "gpt-4.1-mini-2025-04-14", Description = "2025-04-14",
+            ModelType = "gpt-4.1", Name = "gpt-4.1-nano", Description = "4.1 nano",
             KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
 
         new()
         {
-            ModelType = "gpt-4.1-nano", Name = "gpt-4.1-nano", Description = "最新版 (2025-04-14)",
-            KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
+            ModelType = "gpt-5", Name = "gpt-5-chat-latest", Description = "5 Chat Latest",
+            KnowledgeCutoff = new DateTime(2024, 9, 29), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.O200KBase
         },
         new()
         {
-            ModelType = "gpt-4.1-nano", Name = "gpt-4.1-nano-2025-04-14", Description = "2025-04-14",
-            KnowledgeCutoff = new DateTime(2024, 6, 1), FunctionCallSupported = true,
-            Tokenizer = TokenizerEnum.O200KBase
+            ModelType = "gpt-5", Name = "gpt-5", Description = "5",
+            KnowledgeCutoff = new DateTime(2024, 9, 30), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase, 
+            TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true,
+            PenaltySettingNotSupported = true,
+            StreamingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "gpt-5", Name = "gpt-5-mini", Description = "5 mini",
+            KnowledgeCutoff = new DateTime(2024, 5, 31), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase, 
+            TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true,
+            PenaltySettingNotSupported = true,
+            StreamingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "gpt-5", Name = "gpt-5-nano", Description = "5 nano",
+            KnowledgeCutoff = new DateTime(2024, 5, 31), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.O200KBase, 
+            TemperatureSettingNotSupported = true,
+            TopPSettingNotSupported = true,
+            PenaltySettingNotSupported = true
         },
 
         new()
         {
-            ModelType = "gemini-2.5-pro", Name = "gemini-2.5-pro", Description = "stable",
+            ModelType = "gemini-2.5", Name = "gemini-2.5-pro", Description = "2.5 Pro",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
         },
         new()
         {
-            ModelType = "gemini-2.5-flash", Name = "gemini-2.5-flash", Description = "stable",
+            ModelType = "gemini-2.5", Name = "gemini-2.5-flash", Description = "2.5 Flash",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
         },
         new()
         {
-            ModelType = "gemini-2.5-flash-lite", Name = "gemini-2.0-flash-lite", Description = "stable",
-            KnowledgeCutoff = new DateTime(2024, 8, 1), FunctionCallSupported = false, // TODO
+            ModelType = "gemini-2.5", Name = "gemini-2.5-flash-lite", Description = "stable",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
-            MaxOutput = 8192, PenaltySettingNotSupported = true
+            MaxOutput = 65536, PenaltySettingNotSupported = true
         },
     ];
 }

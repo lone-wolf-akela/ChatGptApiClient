@@ -246,7 +246,17 @@ public class OpenAIEndpoint : IServerEndpoint
                 messages = from m in messages where m is not SystemChatMessage select m;
             }
 
-            _streamingResponse = _client.CompleteChatStreamingAsync(messages, chatCompletionsOptions, cancellationToken);
+            if (!_options.StreamingNotSupported)
+            {
+                _streamingResponse = _client.CompleteChatStreamingAsync(messages, chatCompletionsOptions, cancellationToken);
+                _nonStreamingResponse = null;
+            }
+            else
+            {
+                _nonStreamingResponse = _client.CompleteChatAsync(messages, chatCompletionsOptions, cancellationToken);
+                _streamingResponse = null;
+            }
+            
             _lastResponseIsReasoning = false;
             _responseSb.Clear();
             _reasoningSb.Clear();
@@ -271,118 +281,177 @@ public class OpenAIEndpoint : IServerEndpoint
             yield break;
         }
 
-        if (_streamingResponse is null)
+        if (_streamingResponse is null && _nonStreamingResponse is null)
         {
             throw new InvalidOperationException("Session not built");
         }
 
-        var enumerator = _streamingResponse.GetAsyncEnumerator(cancellationToken);
-
-        try
+        if (_streamingResponse is not null)
         {
-            while (true)
+
+            var enumerator = _streamingResponse.GetAsyncEnumerator(cancellationToken);
+
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                bool hasMore;
-
-                try
+                while (true)
                 {
-                    hasMore = await enumerator.MoveNextAsync().ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    _errorMessage = e.Message;
-                    break;
-                }
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                if (!hasMore)
-                {
-                    break;
-                }
+                    bool hasMore;
 
-                var chatUpdate = enumerator.Current;
-                if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && !chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
-                {
-                    SystemFingerprint = chatUpdate.SystemFingerprint;
-                }
-
-                foreach (var toolCallUpdate in chatUpdate.ToolCallUpdates)
-                {
-                    if (!string.IsNullOrEmpty(toolCallUpdate.ToolCallId))
+                    try
                     {
-                        _toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.ToolCallId;
+                        hasMore = await enumerator.MoveNextAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        _errorMessage = e.Message;
+                        break;
                     }
 
-                    if (!string.IsNullOrEmpty(toolCallUpdate.FunctionName))
+                    if (!hasMore)
                     {
-                        _funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
+                        break;
                     }
 
-                    if (!toolCallUpdate.FunctionArgumentsUpdate.ToMemory().IsEmpty &&
-                        !string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
+                    var chatUpdate = enumerator.Current;
+                    if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) &&
+                        !chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
                     {
-                        if (!_funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
+                        SystemFingerprint = chatUpdate.SystemFingerprint;
+                    }
+
+                    foreach (var toolCallUpdate in chatUpdate.ToolCallUpdates)
+                    {
+                        if (!string.IsNullOrEmpty(toolCallUpdate.ToolCallId))
                         {
-                            arg = new StringBuilder();
-                            _funcArgsByIndex[toolCallUpdate.Index] = arg;
+                            _toolCallIdsByIndex[toolCallUpdate.Index] = toolCallUpdate.ToolCallId;
                         }
 
-                        arg.Append(toolCallUpdate.FunctionArgumentsUpdate);
-                    }
-                }
-
-                var dynChatUpdate = chatUpdate.AsDynamic();
-                if (dynChatUpdate.Choices.Count > 0)
-                {
-                    IDictionary<string, BinaryData>
-                        rawData = dynChatUpdate.Choices[0].Delta.SerializedAdditionalRawData;
-                    if (rawData.TryGetValue("reasoning_content", out var reasoningContent))
-                    {
-                        var reasoningString = reasoningContent.ToString();
-                        if (!string.IsNullOrEmpty(reasoningString) && reasoningString != "null")
+                        if (!string.IsNullOrEmpty(toolCallUpdate.FunctionName))
                         {
-                            reasoningString = JsonConvert.DeserializeObject<string>(reasoningString);
-                            if (!string.IsNullOrEmpty(reasoningString))
+                            _funcNamesByIndex[toolCallUpdate.Index] = toolCallUpdate.FunctionName;
+                        }
+
+                        if (!toolCallUpdate.FunctionArgumentsUpdate.ToMemory().IsEmpty &&
+                            !string.IsNullOrEmpty(toolCallUpdate.FunctionArgumentsUpdate.ToString()))
+                        {
+                            if (!_funcArgsByIndex.TryGetValue(toolCallUpdate.Index, out var arg))
                             {
-                                if (!_lastResponseIsReasoning)
+                                arg = new StringBuilder();
+                                _funcArgsByIndex[toolCallUpdate.Index] = arg;
+                            }
+
+                            arg.Append(toolCallUpdate.FunctionArgumentsUpdate);
+                        }
+                    }
+
+                    var dynChatUpdate = chatUpdate.AsDynamic();
+                    if (dynChatUpdate.Choices.Count > 0)
+                    {
+                        IDictionary<string, BinaryData>
+                            rawData = dynChatUpdate.Choices[0].Delta.SerializedAdditionalRawData;
+                        if (rawData.TryGetValue("reasoning_content", out var reasoningContent))
+                        {
+                            var reasoningString = reasoningContent.ToString();
+                            if (!string.IsNullOrEmpty(reasoningString) && reasoningString != "null")
+                            {
+                                reasoningString = JsonConvert.DeserializeObject<string>(reasoningString);
+                                if (!string.IsNullOrEmpty(reasoningString))
                                 {
-                                    yield return "思考……\n\n";
+                                    if (!_lastResponseIsReasoning)
+                                    {
+                                        yield return "思考……\n\n";
+                                    }
+
+                                    _lastResponseIsReasoning = true;
+                                    _reasoningSb.Append(reasoningString);
+                                    yield return reasoningString;
                                 }
-                                _lastResponseIsReasoning = true;
-                                _reasoningSb.Append(reasoningString);
-                                yield return reasoningString;
                             }
                         }
                     }
-                }
 
-                foreach (var part in chatUpdate.ContentUpdate)
-                {
-                    if (_lastResponseIsReasoning)
+                    foreach (var part in chatUpdate.ContentUpdate)
                     {
-                        _lastResponseIsReasoning = false;
-                        yield return "\n================\n\n";
+                        if (_lastResponseIsReasoning)
+                        {
+                            _lastResponseIsReasoning = false;
+                            yield return "\n================\n\n";
+                        }
+
+                        _responseSb.Append(part.Text);
+                        yield return part.Text;
                     }
-                    _responseSb.Append(part.Text);
-                    yield return part.Text;
-                }
 
-                if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) && chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
-                {
-                    _responseSb.Append(chatUpdate.SystemFingerprint["stopping_word ".Length..]);
-                }
+                    if (!string.IsNullOrEmpty(chatUpdate.SystemFingerprint) &&
+                        chatUpdate.SystemFingerprint.StartsWith("stopping_word"))
+                    {
+                        _responseSb.Append(chatUpdate.SystemFingerprint["stopping_word ".Length..]);
+                    }
 
-                if (chatUpdate.Usage is not null)
-                {
-                    _usageInputToken = chatUpdate.Usage.InputTokenCount;
-                    _usageOutputToken = chatUpdate.Usage.OutputTokenCount;
+                    if (chatUpdate.Usage is not null)
+                    {
+                        _usageInputToken = chatUpdate.Usage.InputTokenCount;
+                        _usageOutputToken = chatUpdate.Usage.OutputTokenCount;
+                    }
                 }
             }
+            finally
+            {
+                await enumerator.DisposeAsync().ConfigureAwait(false);
+            }
         }
-        finally
+
+        if (_nonStreamingResponse is not null)
         {
-            await enumerator.DisposeAsync().ConfigureAwait(false);
+            ChatCompletion response;
+            try
+            {
+                response = await _nonStreamingResponse.ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _errorMessage = e.Message;
+                yield break;
+            }
+            if (!string.IsNullOrEmpty(response.SystemFingerprint) &&
+                        !response.SystemFingerprint.StartsWith("stopping_word"))
+            {
+                SystemFingerprint = response.SystemFingerprint;
+            }
+
+            foreach (var (index, toolCall) in response.ToolCalls.Index())
+            {
+         
+                _toolCallIdsByIndex[index] = toolCall.Id;
+                _funcNamesByIndex[index] = toolCall.FunctionName;
+                _funcArgsByIndex[index] = new StringBuilder(toolCall.FunctionArguments.ToString());
+            }
+
+            foreach (var part in response.Content)
+            {
+                if (_lastResponseIsReasoning)
+                {
+                    _lastResponseIsReasoning = false;
+                    yield return "\n================\n\n";
+                }
+
+                _responseSb.Append(part.Text);
+                yield return part.Text;
+            }
+
+            if (!string.IsNullOrEmpty(response.SystemFingerprint) &&
+                response.SystemFingerprint.StartsWith("stopping_word"))
+            {
+                _responseSb.Append(response.SystemFingerprint["stopping_word ".Length..]);
+            }
+
+            if (response.Usage is not null)
+            {
+                _usageInputToken = response.Usage.InputTokenCount;
+                _usageOutputToken = response.Usage.OutputTokenCount;
+            }
         }
     }
 
@@ -461,6 +530,7 @@ public class OpenAIEndpoint : IServerEndpoint
     private readonly ServerEndpointOptions _options;
     private readonly ChatClient _client;
     private AsyncCollectionResult<StreamingChatCompletionUpdate>? _streamingResponse;
+    private Task<ClientResult<ChatCompletion>>? _nonStreamingResponse;
     private readonly StringBuilder _responseSb = new();
     private readonly StringBuilder _reasoningSb = new();
     private string? _errorMessage;

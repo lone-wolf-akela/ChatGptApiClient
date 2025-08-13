@@ -446,6 +446,7 @@ public partial class SystemState : ObservableObject
             TopPSettingNotSupported = selectedModel.TopPSettingNotSupported,
             PenaltySettingNotSupported = selectedModel.PenaltySettingNotSupported,
             NeedChinesePunctuationNormalization = selectedModel.NeedChinesePunctuationNormalization,
+            StreamingNotSupported = selectedModel.StreamingNotSupported,
             EnableThinking = selectedModel.OptionalThinkingAbility && Config.EnableThinking,
             ThinkingLength = Config.ThinkingLength
         };
