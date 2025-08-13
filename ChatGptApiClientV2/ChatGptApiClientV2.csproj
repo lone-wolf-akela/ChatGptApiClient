@@ -16,6 +16,22 @@
         <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
     </PropertyGroup>
 
+	<ItemGroup Label="AutoSDK_Gemini">
+		<AdditionalFiles Include="$(MSBuildThisFileDirectory)openapi/gemini.json" AutoSDK_OpenApiSpecification="true" />
+	</ItemGroup>
+
+	<!-- All settings optional -->
+	<PropertyGroup Label="AutoSDK_Gemini">
+		<AutoSDK_Namespace>Gemini</AutoSDK_Namespace>
+		<AutoSDK_ClassName>GeminiApi</AutoSDK_ClassName>
+
+		<!-- By default, it generates all models/methods. You can disable this behavior using these properties -->
+		<AutoSDK_GenerateSdk>true</AutoSDK_GenerateSdk>
+		<AutoSDK_GenerateModels>true</AutoSDK_GenerateModels>
+		<AutoSDK_GenerateMethods>true</AutoSDK_GenerateMethods>
+		<AutoSDK_GenerateConstructors>true</AutoSDK_GenerateConstructors>
+	</PropertyGroup>
+
     <ItemGroup>
         <None Remove="font\CascadiaMono.ttf" />
         <None Remove="font\Segoe Fluent Icons.ttf" />
@@ -98,6 +114,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="AutoSDK.SourceGenerators" Version="0.28.1-dev.75">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="boilerplatezero" Version="2.0.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

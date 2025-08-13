@@ -125,6 +125,11 @@ public class ModelInfo
             Name = "gemini-2.5-flash", Description = "Gemini 2.5 Flash", Provider = ProviderEnum.Google,
             DisplayPriority = 290
         },
+        new()
+        {
+            Name = "gemini-2.5-flash-lite", Description = "Gemini 2.5 Flash-Lite", Provider = ProviderEnum.Google,
+            DisplayPriority = 295
+        },
         /*new()
         {
             Name = "oai-o1-pro", Description = "OpenAI o1", Provider = ProviderEnum.OpenAI,
@@ -451,17 +456,24 @@ public class ModelVersionInfo
 
         new()
         {
-            ModelType = "gemini-2.5-pro", Name = "gemini-2.5-pro-preview-05-06", Description = "2025-05-06",
-            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = true,
+            ModelType = "gemini-2.5-pro", Name = "gemini-2.5-pro", Description = "stable",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
         },
         new()
         {
-            ModelType = "gemini-2.5-flash", Name = "gemini-2.5-flash-preview-05-20", Description = "2025-05-20",
-            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = true,
+            ModelType = "gemini-2.5-flash", Name = "gemini-2.5-flash", Description = "stable",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
+        },
+        new()
+        {
+            ModelType = "gemini-2.5-flash-lite", Name = "gemini-2.0-flash-lite", Description = "stable",
+            KnowledgeCutoff = new DateTime(2024, 8, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase,
+            MaxOutput = 8192, PenaltySettingNotSupported = true
         },
     ];
 }

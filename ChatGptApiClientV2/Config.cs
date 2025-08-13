@@ -162,8 +162,8 @@ public partial class Config : ObservableValidator
     {
         get => GoogleGeminiServiceProvider switch
         {
-            GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy => "https://www.artonelico.top/gemini-proxy/v1beta/openai",
-            GoogleGeminiServiceProviderType.Google => "https://generativelanguage.googleapis.com/v1beta/openai",
+            GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy => "https://www.artonelico.top/gemini-proxy",
+            GoogleGeminiServiceProviderType.Google => "https://generativelanguage.googleapis.com",
             _ => field
         };
         set
