@@ -19,7 +19,7 @@ namespace ChatGptApiClientV2.ServerEndpoint;
 public partial class ClaudeEndpoint : IServerEndpoint
 {
     private const string ApiVersion = "2023-06-01";
-    private const string ApiBeta = "tools-2024-05-16,interleaved-thinking-2025-05-14";
+    private const string ApiBeta = "tools-2024-05-16,interleaved-thinking-2025-05-14,output-128k-2025-02-19";
 
     public ClaudeEndpoint(ServerEndpointOptions o)
     {

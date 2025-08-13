@@ -77,6 +77,11 @@ public class ModelInfo
         },
         new()
         {
+            Name = "claude-4.1-opus", Description = "claude-4.1 Opus", Provider = ProviderEnum.Anthropic,
+            DisplayPriority = 165
+        },
+        new()
+        {
             Name = "claude-4-opus", Description = "claude-4 Opus", Provider = ProviderEnum.Anthropic,
             DisplayPriority = 170
         },
@@ -303,6 +308,13 @@ public class ModelVersionInfo
         new()
         {
             ModelType = "claude-4-opus", Name = "claude-opus-4-20250514", Description = "2025-05-14",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
+            Tokenizer = TokenizerEnum.Cl100KBase,
+            MaxOutput = 32000, OptionalThinkingAbility = true
+        },
+        new()
+        {
+            ModelType = "claude-4.1-opus", Name = "claude-opus-4-1-20250805", Description = "2025-08-05",
             KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
             MaxOutput = 32000, OptionalThinkingAbility = true
