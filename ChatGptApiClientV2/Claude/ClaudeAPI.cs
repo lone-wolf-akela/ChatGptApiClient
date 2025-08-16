@@ -49,7 +49,8 @@ public enum ContentCategory
     [EnumMember(Value = "text")] Text,
     [EnumMember(Value = "image")] Image,
     [EnumMember(Value = "tool_use")] ToolUse,
-    [EnumMember(Value = "tool_result")] ToolResult
+    [EnumMember(Value = "tool_result")] ToolResult,
+    [EnumMember(Value = "thinking")] Thinking
 }
 
 public class ContentConverter : JsonConverter<IContent>
@@ -82,6 +83,9 @@ public class ContentConverter : JsonConverter<IContent>
                 case ContentCategory.ToolResult:
                     serializer.Serialize(writer, (ToolResultContent)value);
                     break;
+                case ContentCategory.Thinking:
+                    serializer.Serialize(writer, (ThinkingContent)value);
+                    break;
                 default:
                     throw new JsonSerializationException();
             }
@@ -103,6 +107,8 @@ public class ContentConverter : JsonConverter<IContent>
             ContentCategory.ToolUse => jobj.ToObject<ToolUseContent>(serializer) ??
                                        throw new JsonSerializationException(),
             ContentCategory.ToolResult => jobj.ToObject<ToolResultContent>(serializer) ??
+                                          throw new JsonSerializationException(),
+            ContentCategory.Thinking => jobj.ToObject<ThinkingContent>(serializer) ??
                                           throw new JsonSerializationException(),
             _ => throw new JsonSerializationException()
         };
@@ -136,6 +142,13 @@ public class ToolResultContent : IContent
     public ContentCategory Type => ContentCategory.ToolResult;
     public string ToolUseId { get; set; } = "";
     public string Content { get; set; } = "";
+}
+
+public class ThinkingContent : IContent
+{
+    public ContentCategory Type => ContentCategory.Thinking;
+    public string Signature { get; set; } = "";
+    public string Thinking { get; set; } = "";
 }
 
 [JsonConverter(typeof(StringEnumConverter))]

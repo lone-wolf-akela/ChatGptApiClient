@@ -344,12 +344,6 @@ public partial class Config : ObservableValidator
     public partial string GoogleSearchAPIKey { get; set; }
     partial void OnGoogleSearchAPIKeyChanged(string value) => SaveConfig();
 
-    /*******************************/
-    /* Bing Search Plugin Config */
-    [ObservableProperty]
-    public partial string BingSearchAPIKey { get; set; }
-    partial void OnBingSearchAPIKeyChanged(string value) => SaveConfig();
-
     /*****************************/
     /* Wolfram Alpha Plugin Config*/
     [ObservableProperty]
@@ -642,7 +636,6 @@ public partial class Config : ObservableValidator
         GoogleGeminiAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";
-        BingSearchAPIKey = "";
         WolframAlphaAppid = "";
         Temperature = 0.5f;
         TopP = 1.0f;

@@ -44,11 +44,11 @@ public partial class ClaudeEndpoint : IServerEndpoint
         }
     }
 
-    private IEnumerable<Claude.Tool> GetToolDefinitions()
+    private IEnumerable<Tool> GetToolDefinitions()
     {
         var tools =
             from tool in _options.Tools ?? []
-            select new Claude.Tool
+            select new Tool
             {
                 Name = tool.Function.Name,
                 Description = tool.Function.Description,
@@ -57,7 +57,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
         return tools;
     }
 
-    private static Claude.Message ChatDataMessageToClaudeMessage(IMessage chatDataMsg)
+    private static Message ChatDataMessageToClaudeMessage(IMessage chatDataMsg)
     {
         var contents = chatDataMsg.Content.ToList();
         var claudeContentList = new List<Claude.IContent>();
@@ -66,20 +66,33 @@ public partial class ClaudeEndpoint : IServerEndpoint
             contents.AddRange(userMsg.GenerateAttachmentContentList());
         }
 
+        if (chatDataMsg is AssistantMessage assistantMsg1)
+        {
+            if (assistantMsg1.ResoningContent is not null && assistantMsg1.ReasoningSignature is not null)
+            {
+                var thinkingContent = new ThinkingContent
+                {
+                    Thinking = assistantMsg1.ResoningContent,
+                    Signature = assistantMsg1.ReasoningSignature
+                };
+                claudeContentList.Add(thinkingContent);
+            }
+        }
+
         foreach (var content in contents)
         {
-            if (chatDataMsg is ToolMessage tooMsg)
+            if (chatDataMsg is ToolMessage toolMsg)
             {
-                var toolResultContent = new Claude.ToolResultContent
+                var toolResultContent = new ToolResultContent
                 {
-                    ToolUseId = tooMsg.ToolCallId,
+                    ToolUseId = toolMsg.ToolCallId,
                     Content = ((IMessage.TextContent)content).Text
                 };
                 claudeContentList.Add(toolResultContent);
             }
             else if (content is IMessage.TextContent textContent)
             {
-                claudeContentList.Add(new Claude.TextContent
+                claudeContentList.Add(new TextContent
                 {
                     Text = textContent.Text
                 });
@@ -104,11 +117,11 @@ public partial class ClaudeEndpoint : IServerEndpoint
             }
         }
 
-        if (chatDataMsg is AssistantMessage assistantMsg)
+        if (chatDataMsg is AssistantMessage assistantMsg2)
         {
-            foreach (var toolCall in assistantMsg.ToolCalls ?? [])
+            foreach (var toolCall in assistantMsg2.ToolCalls ?? [])
             {
-                var toolUseContent = new Claude.ToolUseContent
+                var toolUseContent = new ToolUseContent
                 {
                     Id = toolCall.Id,
                     Name = toolCall.Function.Name,
@@ -120,13 +133,13 @@ public partial class ClaudeEndpoint : IServerEndpoint
 
         var role = chatDataMsg.Role switch
         {
-            RoleType.User => Claude.Role.User,
-            RoleType.Assistant => Claude.Role.Assistant,
-            RoleType.System => Claude.Role.User,
-            RoleType.Tool => Claude.Role.User,
+            RoleType.User => Role.User,
+            RoleType.Assistant => Role.Assistant,
+            RoleType.System => Role.User,
+            RoleType.Tool => Role.User,
             _ => throw new ArgumentException("Invalid role")
         };
-        return new Claude.Message
+        return new Message
         {
             Role = role,
             Content = claudeContentList
@@ -195,17 +208,15 @@ public partial class ClaudeEndpoint : IServerEndpoint
             {
                 throw new ArgumentException("Anthropic model must have max_tokens setting");
             }
-            var createMsg = new Claude.CreateMessage
+            var createMsg = new CreateMessage
             {
                 Model = _options.Model,
                 Messages = NormalizeMessages(messages),
                 MaxTokens = _options.MaxTokens.Value,
                 System = systemMessage,
-                Temperature = _options.Temperature,
                 Tools = tools.Count != 0 ? tools : null,
-                TopP = _options.TopP,
                 Stream = true,
-                Metadata = _options.UserId is null ? null : new Claude.Metadata { UserId = _options.UserId },
+                Metadata = _options.UserId is null ? null : new Metadata { UserId = _options.UserId },
                 StopSequences = _options.StopSequences
             };
 
@@ -216,8 +227,20 @@ public partial class ClaudeEndpoint : IServerEndpoint
                     BudgetTokens = Math.Clamp(_options.ThinkingLength, 1024, _options.MaxTokens.Value - 1000),
                     Type = ThinkingType.Enabled
                 };
-                createMsg.Temperature = 1;
+                createMsg.Temperature = null;
                 createMsg.TopP = null;
+            }
+            else
+            {
+                if (!_options.TemperatureSettingNotSupported)
+                {
+                    createMsg.Temperature = _options.Temperature;
+                }
+
+                if (!_options.TopPSettingNotSupported)
+                {
+                    createMsg.TopP = _options.TopP;
+                }
             }
 
             var postStr = createMsg.ToJson();
@@ -512,6 +535,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             var assistantTextContent = new List<IMessage.TextContent>();
             var reasoningContent = new List<string>();
             StringBuilder msgBuilder = new();
+            string? reasoningSignature = null;
 
             var contentIndex = _indexToContentBlockStart.Keys.ToList();
             contentIndex.Sort();
@@ -539,16 +563,17 @@ public partial class ClaudeEndpoint : IServerEndpoint
                     }
                     assistantTextContent.Add(new IMessage.TextContent { Text = text });
                 }
-                else if (start is Claude.StreamingContentBlockThinking thinkingContentStart)
+                else if (start is StreamingContentBlockThinking thinkingContentStart)
                 {
                     msgBuilder.Append(thinkingContentStart.Thinking);
                     foreach (var delta in _indexToContentBlockDeltas[index])
                     {
-                        if (delta.Delta is Claude.StreamingContentBlockSignatureDelta)
+                        if (delta.Delta is StreamingContentBlockSignatureDelta signatureDelta)
                         {
+                            reasoningSignature = signatureDelta.Signature;
                             continue;
                         }
-                        if (delta.Delta is not Claude.StreamingContentBlockThinkingDelta thinkingContentDelta)
+                        if (delta.Delta is not StreamingContentBlockThinkingDelta thinkingContentDelta)
                         {
                             throw new InvalidOperationException("Invalid delta type");
                         }
@@ -574,6 +599,7 @@ public partial class ClaudeEndpoint : IServerEndpoint
             {
                 Content = assistantTextContent,
                 ResoningContent = string.Concat(reasoningContent),
+                ReasoningSignature = reasoningSignature,
                 ToolCalls = ToolCalls.ToList(),
                 Provider = ModelInfo.ProviderEnum.Anthropic,
                 ServerInputTokenNum = _inputTokens,

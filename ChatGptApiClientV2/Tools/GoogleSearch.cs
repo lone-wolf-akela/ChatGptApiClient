@@ -47,7 +47,7 @@ public class GoogleSearch : IToolCollection
         new WebsiteNextPageFunc()
     ];
 
-    public string DisplayName => "Google 搜索";
+    public string DisplayName => "网络访问";
 }
 
 public class GoogleSearchFunc : IToolFunction

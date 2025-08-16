@@ -33,7 +33,6 @@ public static class AllToolCollections
     [
         new DalleImageGen(),
         new GoogleSearch(),
-        new BingSearch(),
         new WolframAlpha(),
         new PythonTool()
     ];

@@ -293,7 +293,7 @@ public class ModelVersionInfo
             ModelType = "claude-4.1", Name = "claude-opus-4-1-20250805", Description = "Opus",
             KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = true,
             Tokenizer = TokenizerEnum.Cl100KBase,
-            MaxOutput = 32000, OptionalThinkingAbility = true
+            MaxOutput = 32000, OptionalThinkingAbility = true, TemperatureSettingNotSupported = true
         },
         new()
         {
