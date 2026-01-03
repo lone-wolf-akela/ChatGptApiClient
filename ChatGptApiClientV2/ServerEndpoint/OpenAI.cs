@@ -1,6 +1,7 @@
 using HandyControl.Tools.Extension;
 using HarmonyLib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAI;
 using OpenAI.Chat;
 using ReflectionMagic;
@@ -17,6 +18,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace ChatGptApiClientV2.ServerEndpoint;
+
+#pragma warning disable SCME0001 // this allow use Json Patch
 
 // Some 3rd party API provider (i.e. Nvidia) will return "finish_reason" as an empty string "",
 // and some others (i.e. Google) return "other" as the finish reason when the response is censored.
@@ -86,6 +89,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 }
             case ServerEndpointOptions.ServiceType.DeepSeek:
             case ServerEndpointOptions.ServiceType.Google:
+            case ServerEndpointOptions.ServiceType.Ali:
             case ServerEndpointOptions.ServiceType.Custom:
             case ServerEndpointOptions.ServiceType.OtherOpenAICompat:
                 {
@@ -239,13 +243,18 @@ public class OpenAIEndpoint : IServerEndpoint
                 chatCompletionsOptions.StopSequences.AddRange(_options.StopSequences);
             }
 
+            if (_options.EnableThinking)
+            {
+                chatCompletionsOptions.Patch.Set("$.enable_thinking"u8, true);
+            }
+
             var messages = GetChatRequestMessages(session.Messages);
 
             if (_options.SystemPromptNotSupported)
             {
                 messages = from m in messages where m is not SystemChatMessage select m;
             }
-
+            
             if (!_options.StreamingNotSupported)
             {
                 _streamingResponse = _client.CompleteChatStreamingAsync(messages, chatCompletionsOptions, cancellationToken);
@@ -349,25 +358,24 @@ public class OpenAIEndpoint : IServerEndpoint
                     var dynChatUpdate = chatUpdate.AsDynamic();
                     if (dynChatUpdate.Choices.Count > 0)
                     {
-                        IDictionary<string, BinaryData>
-                            rawData = dynChatUpdate.Choices[0].Delta.SerializedAdditionalRawData;
-                        if (rawData.TryGetValue("reasoning_content", out var reasoningContent))
+                        var delta = dynChatUpdate.Choices[0].Delta;
+                        ReadOnlyMemory<byte> reasoningContentSpan = delta._patch._rawJson.Value;
+                        var resoningContentJson = Encoding.UTF8.GetString(reasoningContentSpan.Span);
+                        var deltaObj = JObject.Parse(resoningContentJson);
+
+                        if (deltaObj.TryGetValue("reasoning_content", out var reasoningContent))
                         {
                             var reasoningString = reasoningContent.ToString();
                             if (!string.IsNullOrEmpty(reasoningString) && reasoningString != "null")
                             {
-                                reasoningString = JsonConvert.DeserializeObject<string>(reasoningString);
-                                if (!string.IsNullOrEmpty(reasoningString))
+                                if (!_lastResponseIsReasoning)
                                 {
-                                    if (!_lastResponseIsReasoning)
-                                    {
-                                        yield return "思考……\n\n";
-                                    }
-
-                                    _lastResponseIsReasoning = true;
-                                    _reasoningSb.Append(reasoningString);
-                                    yield return reasoningString;
+                                    yield return "思考……\n\n";
                                 }
+
+                                _lastResponseIsReasoning = true;
+                                _reasoningSb.Append(reasoningString);
+                                yield return reasoningString;
                             }
                         }
                     }
@@ -465,7 +473,7 @@ public class OpenAIEndpoint : IServerEndpoint
                 _responseSb.AppendLine(_errorMessage);
             }
 
-            var resoningContent = _reasoningSb.ToString();
+            var resoningContent = _reasoningSb.ToString().Trim();
             var responseContent = _responseSb.ToString();
             if (string.IsNullOrEmpty(resoningContent) &&
                 responseContent.StartsWith("<think>") &&
@@ -492,6 +500,7 @@ public class OpenAIEndpoint : IServerEndpoint
                     ServerEndpointOptions.ServiceType.DeepSeek => ModelInfo.ProviderEnum.DeepSeek,
                     ServerEndpointOptions.ServiceType.Claude => ModelInfo.ProviderEnum.Anthropic,
                     ServerEndpointOptions.ServiceType.Google => ModelInfo.ProviderEnum.Google,
+                    ServerEndpointOptions.ServiceType.Ali => ModelInfo.ProviderEnum.Qwen,
                     _ => ModelInfo.ProviderEnum.OpenAI
                 },
                 ServerInputTokenNum = _usageInputToken,

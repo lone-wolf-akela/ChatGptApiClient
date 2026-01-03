@@ -265,6 +265,11 @@ public partial class Config : ObservableValidator
         }
     }
 
+    public static string AliQwenServiceURL => "https://dashscope.aliyuncs.com/compatible-mode/v1";
+    [ObservableProperty]
+    public partial string AliQwenAPIKey { get; set; }
+    partial void OnAliQwenAPIKeyChanged(string value) => SaveConfig();
+
     [JsonIgnore]
     public string DalleImageGenServiceURL => Url.Combine(ServiceURL, "images/generations");
 
@@ -334,6 +339,20 @@ public partial class Config : ObservableValidator
     [ObservableProperty]
     public partial string GoogleGeminiAPIKey { get; set; }
     partial void OnGoogleGeminiAPIKeyChanged(string value) => SaveConfig();
+
+    [ObservableProperty]
+    public partial bool GoogleGeminiIncludeThoughts { get; set; }
+    partial void OnGoogleGeminiIncludeThoughtsChanged(bool value) => SaveConfig();
+
+    public enum  GoogleGeminiThinkingLevelType
+    {
+        [Description("低")] Low,
+        [Description("高")] High
+    }
+
+    [ObservableProperty]
+    public partial GoogleGeminiThinkingLevelType GoogleGeminiThinkingLevel { get; set; }
+    partial void OnGoogleGeminiThinkingLevelChanged(GoogleGeminiThinkingLevelType value) => SaveConfig();
 
     /* Google Search Plugin Config */
     [ObservableProperty]
@@ -627,12 +646,15 @@ public partial class Config : ObservableValidator
         DeepSeekServiceURL = "";
         GoogleGeminiServiceProvider = GoogleGeminiServiceProviderType.ArtonelicoGeminiProxy;
         GoogleGeminiServiceURL = "";
+        GoogleGeminiIncludeThoughts = true;
+        GoogleGeminiThinkingLevel = GoogleGeminiThinkingLevelType.High;
         API_KEY = "";
         AnthropicAPIKey = "";
         DeepSeekAPIKey = "";
         SiliconFlowAPIKey = "";
         SiliconFlowUseProModel = false;
         NvidiaAPIKey = "";
+        AliQwenAPIKey = "";
         GoogleGeminiAPIKey = "";
         GoogleSearchAPIKey = "";
         GoogleSearchEngineID = "";

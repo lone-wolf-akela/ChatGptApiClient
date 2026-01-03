@@ -201,7 +201,16 @@ public class GeminiEndpoint : IServerEndpoint
             var chatCompletionsOptions = new GenerateContentConfig
             {
                 MaxOutputTokens = _options.MaxTokens,
-                ThinkingConfig = new ThinkingConfig { IncludeThoughts = true }
+                ThinkingConfig = new ThinkingConfig 
+                { 
+                    IncludeThoughts = _options.IncludeThoughts,
+                    ThinkingLevel = _options.ThinkingLevel switch
+                    {
+                        0 => ThinkingLevel.LOW,
+                        1 => ThinkingLevel.HIGH,
+                        _ => throw new ArgumentException("Invalid thinking level")
+                    }
+                }
             };
 
             if (!_options.TemperatureSettingNotSupported)

@@ -248,6 +248,7 @@ public partial class SystemState : ObservableObject
             ModelInfo.ProviderEnum.Anthropic => "Claude",
             ModelInfo.ProviderEnum.DeepSeek => Config.SelectedModel?.Description ?? "DeepSeek Chat",
             ModelInfo.ProviderEnum.Google => "Gemini",
+            ModelInfo.ProviderEnum.Qwen => "Qwen",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelDisplayName,
             _ => throw new InvalidOperationException()
         };
@@ -258,6 +259,7 @@ public partial class SystemState : ObservableObject
             ModelInfo.ProviderEnum.Anthropic => "Anthropic",
             ModelInfo.ProviderEnum.DeepSeek => "DeepSeek",
             ModelInfo.ProviderEnum.Google => "Google",
+            ModelInfo.ProviderEnum.Qwen => "Alibaba",
             ModelInfo.ProviderEnum.OtherOpenAICompat => Config.OtherOpenAICompatModelProviderName,
             _ => throw new InvalidOperationException()
         };
@@ -335,6 +337,8 @@ public partial class SystemState : ObservableObject
         string apiKey;
         int? maxTokens;
         float temperature;
+        int thinkingLevel = -1;
+        bool includeThoughts = true;
 
         var alternativeModelName = AlternativeModelName.Default;
 
@@ -370,6 +374,15 @@ public partial class SystemState : ObservableObject
 
                 break;
             }
+            case ModelInfo.ProviderEnum.Qwen:
+            {
+                service = ServerEndpointOptions.ServiceType.Ali;
+                endpointUrl = Config.AliQwenServiceURL;
+                apiKey = Config.AliQwenAPIKey;
+                maxTokens = Config.MaxTokens == 0 ? null : Config.MaxTokens;
+                temperature = Config.Temperature;
+                break;
+            }
             case ModelInfo.ProviderEnum.Google:
             {
                 service = ServerEndpointOptions.ServiceType.Google;
@@ -382,6 +395,13 @@ public partial class SystemState : ObservableObject
                 maxTokens = Config.MaxTokens == 0 ? selectedModel.MaxOutput
                                               : Math.Min(Config.MaxTokens, selectedModel.MaxOutput.Value);
                 temperature = Config.Temperature;
+                thinkingLevel = Config.GoogleGeminiThinkingLevel switch
+                {
+                    Config.GoogleGeminiThinkingLevelType.Low => 0,
+                    Config.GoogleGeminiThinkingLevelType.High => 1,
+                    _ => -1
+                };
+                includeThoughts = Config.GoogleGeminiIncludeThoughts;
                 break;
             }
             case ModelInfo.ProviderEnum.OtherOpenAICompat:
@@ -448,7 +468,9 @@ public partial class SystemState : ObservableObject
             NeedChinesePunctuationNormalization = selectedModel.NeedChinesePunctuationNormalization,
             StreamingNotSupported = selectedModel.StreamingNotSupported,
             EnableThinking = selectedModel.OptionalThinkingAbility && Config.EnableThinking,
-            ThinkingLength = Config.ThinkingLength
+            ThinkingLength = Config.ThinkingLength,
+            ThinkingLevel = thinkingLevel,
+            IncludeThoughts = includeThoughts
         };
 
         var enabledPlugins = (from plugin in Plugins

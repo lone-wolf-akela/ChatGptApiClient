@@ -35,6 +35,7 @@ public class ModelInfo
         [EnumMember(Value = "anthropic")] Anthropic,
         [EnumMember(Value = "deepseek")] DeepSeek,
         [EnumMember(Value = "google")] Google,
+        [EnumMember(Value = "qwen")] Qwen,
         [EnumMember(Value = "other_oai_compat")] OtherOpenAICompat
     }
     public string Name { get; init; } = "";
@@ -98,18 +99,18 @@ public class ModelInfo
         new()
         {
             Name = "gemini-3", Description = "Gemini 3", Provider = ProviderEnum.Google,
-            DisplayPriority = 280
+            DisplayPriority = 260
         },
         new()
         {
             Name = "gemini-2.5", Description = "Gemini 2.5", Provider = ProviderEnum.Google,
+            DisplayPriority = 270
+        },
+        new()
+        {
+            Name = "qwen-3", Description = "Qwen 3", Provider = ProviderEnum.Qwen,
             DisplayPriority = 280
         },
-        /*new()
-        {
-            Name = "oai-o1-pro", Description = "OpenAI o1", Provider = ProviderEnum.OpenAI,
-            DisplayPriority = 280
-        },*/
         new()
         {
             Name = "ThirdParty", Description = "第三方聊天服务", Provider = ProviderEnum.OtherOpenAICompat,
@@ -463,6 +464,13 @@ public class ModelVersionInfo
         },
         new()
         {
+            ModelType = "gemini-3", Name = "gemini-3-flash-preview", Description = "3 Flash Preview",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase,
+            MaxOutput = 65536, PenaltySettingNotSupported = true
+        },
+        new()
+        {
             ModelType = "gemini-2.5", Name = "gemini-2.5-pro", Description = "2.5 Pro",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
@@ -482,5 +490,23 @@ public class ModelVersionInfo
             Tokenizer = TokenizerEnum.O200KBase,
             MaxOutput = 65536, PenaltySettingNotSupported = true
         },
+        new()
+        {
+            ModelType = "qwen-3", Name = "qwen3-max", Description = "Max",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase, OptionalThinkingAbility = true,
+        },
+        new()
+        {
+            ModelType = "qwen-3", Name = "qwen-plus", Description = "Plus",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase, OptionalThinkingAbility = true,
+        },
+        new()
+        {
+            ModelType = "qwen-3", Name = "qwen-flash", Description = "Flash",
+            KnowledgeCutoff = new DateTime(2025, 3, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase, OptionalThinkingAbility = true,
+        }
     ];
 }

@@ -61,6 +61,7 @@ public class ServerEndpointOptions
         Claude,
         DeepSeek,
         Google,
+        Ali,
         OtherOpenAICompat,
         Custom
     }
@@ -78,6 +79,9 @@ public class ServerEndpointOptions
     public IEnumerable<string>? StopSequences { get; set; }
     public bool EnableThinking { get; set; }
     public int ThinkingLength { get; set; }
+
+    public bool IncludeThoughts { get; set; } = true;
+    public int ThinkingLevel { get; set; } = -1;
 
     public bool SystemPromptNotSupported { get; set; }
     public bool TemperatureSettingNotSupported { get; set; }
