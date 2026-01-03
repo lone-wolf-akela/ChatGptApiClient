@@ -1,4 +1,8 @@
+using DocumentFormat.OpenXml.Vml;
+using Google.GenAI;
+using Google.GenAI.Types;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +14,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Gemini;
 
 namespace ChatGptApiClientV2.ServerEndpoint;
 
@@ -27,16 +30,11 @@ public class GeminiEndpoint : IServerEndpoint
         {
             case ServerEndpointOptions.ServiceType.Google:
                 {
-                    var httpClientHandler = new SocketsHttpHandler
+                    _client = new Client(apiKey: _options.Key, httpOptions: new HttpOptions
                     {
-                        AutomaticDecompression = DecompressionMethods.All,
-                    };
-
-                    var httpClient = new HttpClient(httpClientHandler);
-                    httpClient.Timeout = defaultTimeout;
-                    httpClient.DefaultRequestHeaders.Add("x-goog-api-key", _options.Key);
-                    httpClient.BaseAddress = new Uri(_options.Endpoint);
-                    _client = new GeminiApi(httpClient, new Uri(_options.Endpoint));
+                        BaseUrl = _options.Endpoint,
+                        Timeout = (int)defaultTimeout.TotalMilliseconds
+                    });
                     break;
                 }
             case ServerEndpointOptions.ServiceType.OpenAI:
@@ -52,17 +50,22 @@ public class GeminiEndpoint : IServerEndpoint
 
     }
 
-    /*private IEnumerable<ChatTool> GetToolDefinitions()
+    private Tool GetToolDefinitions()
     {
         var lst =
             from tool in _options.Tools ?? []
-            select ChatTool.CreateFunctionTool(
-                tool.Function.Name,
-                tool.Function.Description,
-                BinaryData.FromString(tool.Function.Parameters.ToJson())
-                );
-        return lst;
-    }*/
+            select new FunctionDeclaration
+            {
+                Name = tool.Function.Name,
+                Description = tool.Function.Description ?? "",
+                ParametersJsonSchema = tool.Function.Parameters.ToJson()
+            };
+
+        return new Tool
+        {
+            FunctionDeclarations = lst.ToList()
+        };
+    }
 
     private static Content ChatDataMessageToGeminiContent(IMessage chatDataMsg)
     {
@@ -84,13 +87,18 @@ public class GeminiEndpoint : IServerEndpoint
                 }
                 else if (content is IMessage.ImageContent imageContent)
                 {
-                    /*var detailLevel =
-                        imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
-                            ? ChatImageDetailLevel.Low
-                            : ChatImageDetailLevel.High;
                     var imageData = imageContent.ImageUrl.Url;
-                    contentLst.Add(ChatMessageContentPart.CreateImagePart(imageData?.Data, imageData?.MimeType, detailLevel));*/
-                    throw new NotImplementedException();
+                    contentLst.Add(new Part
+                    {
+                        InlineData = new Blob
+                        {
+                            MimeType = imageData?.MimeType,
+                            Data = imageData?.Data?.ToArray()
+                        },
+                        MediaResolution = imageContent.ImageUrl.Detail == IMessage.ImageContent.ImageUrlType.ImageDetail.Low
+                            ? new PartMediaResolution { Level = PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM }
+                            : new PartMediaResolution { Level = PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH }
+                    });
                 }
                 else
                 {
@@ -99,21 +107,22 @@ public class GeminiEndpoint : IServerEndpoint
             }
         }
 
-        foreach (var content in contents)
-        {
-            if (content.Type is not IMessage.ContentCategory.Text)
-            {
-                throw new ArgumentException("Non user message content must be text");
-            }
-        }
-
         var textContents = from content in contents select ((IMessage.TextContent)content).Text;
-        var combinedContent = string.Join("\n\n", textContents);
 
         if (chatDataMsg is SystemMessage)
         {
             message.Role = "user";
-            contentLst.Add(new Part { Text = combinedContent });
+            foreach (var content in contents)
+            {
+                if (content is IMessage.TextContent textContent)
+                {
+                    contentLst.Add(new Part { Text = textContent.Text });
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid content type");
+                }
+            }
         }
 
         if (chatDataMsg is AssistantMessage assistantMessage)
@@ -129,7 +138,26 @@ public class GeminiEndpoint : IServerEndpoint
             chatRequestAssistantMsg.ToolCalls.AddRange(convertedToolCalls);
             return chatRequestAssistantMsg;*/
             message.Role = "model";
-            contentLst.Add(new Part { Text = combinedContent });
+            if (assistantMessage.ReasoningSignature is not null)
+            {
+                contentLst.Add(new Part
+                {
+                    Thought = true, 
+                    Text = assistantMessage.ResoningContent,
+                    ThoughtSignature = Convert.FromBase64String(assistantMessage.ReasoningSignature)
+                });
+            }
+            foreach (var content in contents)
+            {
+                if (content is IMessage.TextContent textContent)
+                {
+                    contentLst.Add(new Part { Text = textContent.Text });
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid content type");
+                }
+            }
         }
 
         if (chatDataMsg is ToolMessage toolMessage)
@@ -170,10 +198,10 @@ public class GeminiEndpoint : IServerEndpoint
                 messages.Add(ChatDataMessageToGeminiContent(msg));
             }
 
-            var chatCompletionsOptions = new GenerationConfig
+            var chatCompletionsOptions = new GenerateContentConfig
             {
                 MaxOutputTokens = _options.MaxTokens,
-                // ThinkingConfig = new ThinkingConfig(true, null)
+                ThinkingConfig = new ThinkingConfig { IncludeThoughts = true }
             };
 
             if (!_options.TemperatureSettingNotSupported)
@@ -186,37 +214,31 @@ public class GeminiEndpoint : IServerEndpoint
                 chatCompletionsOptions.TopP = _options.TopP;
             }
 
-            //todo: chatCompletionsOptions.Tools.AddRange(GetToolDefinitions());
-
             if (_options.StopSequences is not null)
             {
                 chatCompletionsOptions.StopSequences = [.. _options.StopSequences];
             }
 
-            /*if (_options.SystemPromptNotSupported)
-            {
-                messages = from m in messages where m is not SystemChatMessage select m;
-            }*/
-
             List<SafetySetting> safetySettings = [
-                new (HarmCategory.HATESPEECH, SafetySettingThreshold.BLOCKNONE),
-                new (HarmCategory.SEXUALLYEXPLICIT, SafetySettingThreshold.BLOCKNONE),
-                new (HarmCategory.DANGEROUSCONTENT, SafetySettingThreshold.BLOCKNONE),
-                new (HarmCategory.HARASSMENT, SafetySettingThreshold.BLOCKNONE),
+                new SafetySetting { Category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, Threshold=HarmBlockThreshold.BLOCK_NONE },
+                new SafetySetting { Category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, Threshold=HarmBlockThreshold.BLOCK_NONE },
+                new SafetySetting { Category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, Threshold=HarmBlockThreshold.BLOCK_NONE },
+                new SafetySetting { Category=HarmCategory.HARM_CATEGORY_HARASSMENT, Threshold=HarmBlockThreshold.BLOCK_NONE },
+                new SafetySetting { Category=HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY, Threshold=HarmBlockThreshold.BLOCK_NONE },
             ];
 
-            _request = new GenerateContentRequest(
-                _options.Model,
-                messages,
-                systemMessage,
-                null,
-                null,
-                safetySettings,
-                chatCompletionsOptions,
-                null
+            chatCompletionsOptions.SystemInstruction = systemMessage;
+            chatCompletionsOptions.Tools = [GetToolDefinitions()];
+            chatCompletionsOptions.SafetySettings = safetySettings;
+
+            _request = _client.Models.GenerateContentAsync(
+                model: _options.Model,
+                contents: messages,
+                config: chatCompletionsOptions
                 );
 
             _lastResponseIsReasoning = false;
+            _response = null;
             _responseSb.Clear();
             _reasoningSb.Clear();
             _errorMessage = null;
@@ -246,15 +268,13 @@ public class GeminiEndpoint : IServerEndpoint
             throw new InvalidOperationException("Session not built");
         }
 
-        GenerateContentResponse? response = null;
         try
         {
-            response = await _client.GenerateContentAsync(_options.Model, _request, cancellationToken)
-                .ConfigureAwait(false);
+            _response = await _request.ConfigureAwait(false);
         }
-        catch (ApiException e)
+        catch (Exception e)
         {
-            _errorMessage = $"{e.Message}\n{e.ResponseBody}";
+            _errorMessage = $"{e.Message}";
         }
 
         if (_errorMessage is not null)
@@ -262,7 +282,7 @@ public class GeminiEndpoint : IServerEndpoint
             yield break;
         }
 
-        var usage = response?.UsageMetadata;
+        var usage = _response?.UsageMetadata;
 
         var nOut = usage?.ThoughtsTokenCount + usage?.CandidatesTokenCount;
         var nIn = usage?.PromptTokenCount;
@@ -277,7 +297,7 @@ public class GeminiEndpoint : IServerEndpoint
             _usageInputToken = nIn.Value;
         }
 
-        var parts = response?.Candidates?.FirstOrDefault()?.Content?.Parts ?? [];
+        var parts = _response?.Candidates?.FirstOrDefault()?.Content?.Parts ?? [];
         foreach (var part in parts)
         {
             if (part.Thought is true)
@@ -306,28 +326,46 @@ public class GeminiEndpoint : IServerEndpoint
     {
         get
         {
-            if (!string.IsNullOrEmpty(_errorMessage))
+            var content = new List<IMessage.IContent>();
+            
+            var assistantMsg = new AssistantMessage
             {
-                _responseSb.AppendLine();
-                _responseSb.AppendLine(_errorMessage);
-            }
-
-            var resoningContent = _reasoningSb.ToString().TrimEnd();
-            var responseContent = _responseSb.ToString().TrimEnd();
-
-            var response = new AssistantMessage
-            {
-                Content =
-                [
-                    new IMessage.TextContent { Text = responseContent }
-                ],
-                ResoningContent = resoningContent,
-                ToolCalls = ToolCalls.ToList(),
+                Content = content,
+                ToolCalls = [.. ToolCalls],
                 Provider = ModelInfo.ProviderEnum.Google,
                 ServerInputTokenNum = _usageInputToken,
                 ServerOutputTokenNum = _usageOutputToken
             };
-            return response;
+
+            if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                content.Add(new IMessage.TextContent { Text = _errorMessage });
+                return assistantMsg;
+            }
+
+            if (_response is null)
+            {
+                throw new InvalidOperationException("No response received");
+            }
+
+            foreach (var part in _response.Candidates?.First()?.Content?.Parts ?? [])
+            {
+                if (part.ThoughtSignature is not null)
+                {
+                    assistantMsg.ReasoningSignature = Convert.ToBase64String(part.ThoughtSignature);
+                }
+                if (part.Thought is not true && part.Text is not null)
+                {
+                    content.Add(new IMessage.TextContent { Text = part.Text});
+                }
+            }
+
+            if (_reasoningSb.Length != 0)
+            {
+                assistantMsg.ResoningContent = _reasoningSb.ToString().Trim();
+            }
+
+            return assistantMsg;
         }
     }
 
@@ -358,8 +396,9 @@ public class GeminiEndpoint : IServerEndpoint
     private int _usageInputToken;
     private int _usageOutputToken;
     private readonly ServerEndpointOptions _options;
-    private readonly GeminiApi _client;
-    private GenerateContentRequest? _request;
+    private readonly Client _client;
+    private Task<GenerateContentResponse>? _request;
+    private GenerateContentResponse? _response;
     private readonly StringBuilder _responseSb = new();
     private readonly StringBuilder _reasoningSb = new();
     private string? _errorMessage;

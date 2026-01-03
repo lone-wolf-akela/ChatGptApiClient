@@ -97,6 +97,11 @@ public class ModelInfo
         },
         new()
         {
+            Name = "gemini-3", Description = "Gemini 3", Provider = ProviderEnum.Google,
+            DisplayPriority = 280
+        },
+        new()
+        {
             Name = "gemini-2.5", Description = "Gemini 2.5", Provider = ProviderEnum.Google,
             DisplayPriority = 280
         },
@@ -449,6 +454,13 @@ public class ModelVersionInfo
             PenaltySettingNotSupported = true
         },
 
+        new()
+        {
+            ModelType = "gemini-3", Name = "gemini-3-pro-preview", Description = "3 Pro Preview",
+            KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
+            Tokenizer = TokenizerEnum.O200KBase,
+            MaxOutput = 65536, PenaltySettingNotSupported = true
+        },
         new()
         {
             ModelType = "gemini-2.5", Name = "gemini-2.5-pro", Description = "2.5 Pro",
