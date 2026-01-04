@@ -173,6 +173,7 @@ public class ModelVersionInfo
     public int? MaxOutput { get; init; }
     public bool NeedChinesePunctuationNormalization { get; init; }
     public bool OptionalThinkingAbility { get; init; }
+    public bool ThinkingLevelSettingNotSupported { get; init; }
 
     public static readonly ImmutableArray<ModelVersionInfo> VersionList =
     [
@@ -474,21 +475,21 @@ public class ModelVersionInfo
             ModelType = "gemini-2.5", Name = "gemini-2.5-pro", Description = "2.5 Pro",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
-            MaxOutput = 65536, PenaltySettingNotSupported = true
+            MaxOutput = 65536, PenaltySettingNotSupported = true, ThinkingLevelSettingNotSupported = true
         },
         new()
         {
             ModelType = "gemini-2.5", Name = "gemini-2.5-flash", Description = "2.5 Flash",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
-            MaxOutput = 65536, PenaltySettingNotSupported = true
+            MaxOutput = 65536, PenaltySettingNotSupported = true, ThinkingLevelSettingNotSupported = true
         },
         new()
         {
             ModelType = "gemini-2.5", Name = "gemini-2.5-flash-lite", Description = "2.5 Flash Lite",
             KnowledgeCutoff = new DateTime(2025, 1, 1), FunctionCallSupported = false, // TODO
             Tokenizer = TokenizerEnum.O200KBase,
-            MaxOutput = 65536, PenaltySettingNotSupported = true
+            MaxOutput = 65536, PenaltySettingNotSupported = true, ThinkingLevelSettingNotSupported = true
         },
         new()
         {
